@@ -6,10 +6,41 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" type="text/css" href="stylesheet.css">
 	<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌐</text></svg>">
+  <style>
+    .nav-bar {
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 14px 20px 0 20px;
+      box-sizing: border-box;
+      display: flex;
+      gap: 22px;
+      border-bottom: 1px solid #e0e0e0;
+      margin-bottom: 8px;
+    }
+    .nav-bar a {
+      font-size: 15px;
+      color: #555;
+      padding-bottom: 8px;
+      text-decoration: none;
+      border-bottom: 2px solid transparent;
+    }
+    .nav-bar a:hover { color: #f09228; }
+    .nav-bar a.active {
+      color: #1772d0;
+      border-bottom: 2px solid #1772d0;
+      font-weight: 700;
+    }
+  </style>
 </head>
 
-	
+
 <body>
+
+  <div class="nav-bar">
+    <a href="index.html" class="active">Home</a>
+    <a href="learning.html">LearningMyself</a>
+  </div>
 	
   <table style="width:100%;max-width:800px;border:0px;border-spacing:0px;border-collapse:separate;margin-right:auto;margin-left:auto;"><tbody>
     <tr style="padding:0px">

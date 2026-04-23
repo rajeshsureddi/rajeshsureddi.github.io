@@ -1,0 +1,1973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Camera Geometry: Intrinsics & Extrinsics</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
+<style>
+/* ─── Base ─────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0c0c14;color:#d4d4e0;line-height:1.75;}
+a{color:#38bdf8;}
+/* ─── Article ────────────────────────────────────────── */
+.article-body{max-width:880px;margin:0 auto;padding:3.5rem 1.5rem 5rem;}
+h1{font-size:2.6rem;font-weight:800;color:#f0f0f8;letter-spacing:-.03em;margin-bottom:.8rem;}
+h2{font-size:1.65rem;font-weight:700;color:#f0f0f8;margin:3.5rem 0 1.2rem;padding-bottom:.6rem;border-bottom:2px solid #1e1e30;}
+h3{font-size:1.15rem;font-weight:600;color:#c0c0d8;margin:2rem 0 .8rem;}
+p{margin-bottom:1.4rem;color:#a0a0b8;}
+ul,ol{padding-left:1.6rem;margin-bottom:1.4rem;}
+li{margin-bottom:.5rem;color:#a0a0b8;}
+strong{color:#d4d4e8;}
+/* ─── Pipeline Overview ──────────────────────────────── */
+.pipeline{display:flex;align-items:center;gap:0;flex-wrap:wrap;margin:2rem 0;row-gap:10px;}
+.pipe-node{background:#1a1a2e;border:1.5px solid #2a2a45;border-radius:10px;padding:10px 16px;text-align:center;flex-shrink:0;}
+.pipe-node .pn-label{font-size:.7rem;color:#6060a0;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;}
+.pipe-node .pn-math{font-family:monospace;font-size:.92rem;color:#e0e0f5;}
+.pipe-node .pn-space{font-size:.72rem;color:#38bdf8;margin-top:3px;}
+.pipe-arrow{display:flex;flex-direction:column;align-items:center;padding:0 6px;flex-shrink:0;}
+.pipe-arrow .pa-label{font-size:.7rem;color:#a78bfa;font-weight:700;margin-bottom:2px;}
+.pipe-arrow .pa-sym{color:#4a4a70;font-size:1.1rem;}
+/* ─── Graphic Containers ─────────────────────────────── */
+.graphic-container{background:#09090f;border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5);margin:2.5rem 0;border:1px solid #1a1a28;}
+.canvas-wrapper{position:relative;width:100%;background:radial-gradient(ellipse at center,#16182a 0%,#06060f 100%);cursor:grab;user-select:none;}
+.canvas-wrapper:active{cursor:grabbing;}
+.canvas-wrapper canvas{display:block;width:100%;height:100%;}
+/* ─── HUD ─────────────────────────────────────────────── */
+.hud{position:absolute;background:rgba(6,6,18,.88);backdrop-filter:blur(10px);border:1px solid #252540;border-radius:10px;padding:14px 16px;pointer-events:none;z-index:10;box-shadow:0 8px 30px rgba(0,0,0,.6);}
+.hud-title{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#38bdf8;border-bottom:1px solid #252540;padding-bottom:8px;margin-bottom:10px;}
+.hud-row{display:flex;justify-content:space-between;gap:12px;font-size:.8rem;margin-bottom:5px;color:#8080a8;}
+.hud-row span.val{color:#f0f0f8;font-family:monospace;}
+.hud-row span.hl{color:#34d399;font-family:monospace;font-weight:700;}
+.hud-matrix{display:grid;gap:2px;font-family:monospace;font-size:.78rem;background:rgba(0,0,0,.4);border:1px solid #252540;border-radius:6px;padding:8px;}
+.hud-matrix.g3{grid-template-columns:repeat(3,1fr);}
+.hud-matrix.g4{grid-template-columns:repeat(4,1fr);}
+.hud-matrix span{text-align:center;color:#c0c0e0;padding:2px 4px;}
+.hud-matrix span.c-r{color:#f87171;}
+.hud-matrix span.c-g{color:#4ade80;}
+.hud-matrix span.c-b{color:#60a5fa;}
+.hud-matrix span.c-y{color:#facc15;}
+.hud-matrix span.c-p{color:#c084fc;}
+.hud-matrix .bracket-l,.hud-matrix .bracket-r{color:#4a4a70;font-size:1.4rem;display:flex;align-items:center;}
+/* ─── Controls ────────────────────────────────────────── */
+.controls{background:#0f0f1e;border-top:1px solid #1a1a28;padding:20px 24px;}
+.ctrl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px 24px;}
+.ctrl-group{display:flex;flex-direction:column;gap:5px;}
+.ctrl-group label{font-size:.82rem;font-weight:600;color:#7070a0;display:flex;justify-content:space-between;}
+.ctrl-group label span.val{color:#38bdf8;font-family:monospace;}
+input[type=range]{-webkit-appearance:none;width:100%;background:transparent;cursor:pointer;}
+input[type=range]::-webkit-slider-runnable-track{height:4px;background:#1e1e38;border-radius:2px;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#38bdf8;margin-top:-6px;box-shadow:0 0 8px rgba(56,189,248,.5);}
+/* ─── Math boxes ──────────────────────────────────────── */
+.math-box{background:#fff;border:1px solid #e4e4e7;border-radius:10px;padding:1.4rem;margin:1.4rem 0;text-align:center;overflow-x:auto;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.math-box.dark{background:#0f0f1e;border-color:#1e1e38;}
+.math-box.dark .katex{color:#d4d4f0;}
+/* ─── Two-column graphic split ──────────────────────── */
+.viz-split{display:grid;grid-template-columns:1fr 360px;height:460px;}
+@media(max-width:760px){.viz-split{grid-template-columns:1fr;height:auto;}}
+.split-3d{position:relative;background:radial-gradient(ellipse at center,#16182a,#06060f);}
+.split-2d{position:relative;background:#090910;border-left:1px solid #1a1a28;display:flex;flex-direction:column;}
+/* ─── Pipeline Calculator ────────────────────────────── */
+.calc-container{background:#0f0f1e;border-radius:14px;border:1px solid #1a1a28;overflow:hidden;margin:2rem 0;}
+.calc-header{background:#151525;padding:14px 20px;border-bottom:1px solid #1a1a28;font-weight:700;color:#c0c0e0;font-size:.9rem;}
+.calc-body{padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+@media(max-width:700px){.calc-body{grid-template-columns:1fr;}}
+.calc-section{background:#0c0c18;border:1px solid #1a1a28;border-radius:10px;padding:16px;}
+.calc-section h4{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6060a0;margin-bottom:12px;}
+.calc-step{display:flex;align-items:center;gap:10px;margin:10px 0;font-size:.82rem;font-family:monospace;}
+.calc-step .cs-label{color:#7070a0;min-width:60px;}
+.calc-step .cs-eq{color:#c0c0e0;flex:1;}
+.calc-step .cs-res{color:#34d399;font-weight:700;}
+.calc-mat{font-family:monospace;font-size:.78rem;color:#a0a0c0;background:#060610;border:1px solid #1e1e30;border-radius:6px;padding:10px;line-height:2;}
+.calc-mat .h{color:#38bdf8;}
+.calc-mat .v{color:#34d399;font-weight:700;}
+.calc-mat .r{color:#f87171;}
+.calc-inputs{padding:16px 20px;border-top:1px solid #1a1a28;display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px 20px;}
+/* ─── Coord legend ───────────────────────────────────── */
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin:1rem 0;}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:.82rem;}
+.legend-dot{width:10px;height:10px;border-radius:50%;}
+/* ─── Similar Triangles canvas ──────────────────────── */
+#persp-canvas{display:block;width:100%;background:#09090f;border-radius:14px;border:1px solid #1a1a28;margin:1rem 0;}
+.persp-controls{background:#0f0f1e;border:1px solid #1a1a28;border-radius:0 0 14px 14px;padding:16px 20px;margin-top:-12px;}
+/* ─── Camera view overlay ────────────────────────────── */
+#cam-view-overlay{position:absolute;bottom:14px;right:14px;width:200px;height:130px;border:1.5px solid #38bdf8;border-radius:6px;background:#000;z-index:10;}
+.cam-view-label{position:absolute;bottom:130px+14+6;right:14px;background:rgba(56,189,248,.15);color:#38bdf8;font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:4px 4px 0 0;z-index:10;pointer-events:none;}
+.cam-view-wrap{position:absolute;bottom:14px;right:14px;z-index:10;}
+.cam-view-wrap canvas{display:block;border-radius:4px;border:1.5px solid #38bdf8;}
+.cam-view-wrap .cvlabel{font-size:.6rem;font-weight:700;color:#38bdf8;text-align:center;background:rgba(6,6,18,.8);padding:2px 0;}
+/* ─── ISO canvas ─────────────────────────────────────── */
+#iso-canvas{display:block;width:100%;}
+/* ─── World Coordinates ──────────────────────────────── */
+.origin-btns{display:flex;gap:8px;flex-wrap:wrap;margin:1.2rem 0;}
+.origin-btn{background:#111128;border:1.5px solid #252545;color:#a0a0c0;padding:7px 16px;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .15s;}
+.origin-btn:hover{border-color:#38bdf8;color:#38bdf8;}
+.origin-btn.active{background:#0d1a2e;border-color:#38bdf8;color:#38bdf8;box-shadow:0 0 10px rgba(56,189,248,.2);}
+.world-label{position:absolute;font-family:monospace;font-size:.68rem;font-weight:700;background:rgba(6,6,18,.88);border:1px solid #252545;padding:2px 7px;border-radius:4px;pointer-events:none;z-index:8;transform:translate(-50%,-120%);white-space:nowrap;transition:all .2s;}
+.conv-table{width:100%;border-collapse:collapse;margin:1.2rem 0;font-size:.82rem;}
+.conv-table th{background:#111128;color:#6060a0;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;padding:8px 12px;border:1px solid #1e1e38;text-align:left;}
+.conv-table td{padding:8px 12px;border:1px solid #1e1e38;color:#9090b0;}
+.conv-table tr:nth-child(2n){background:#0a0a16;}
+.conv-table .hl{color:#38bdf8;font-weight:700;}
+/* ─── Real Camera Pipeline ───────────────────────────── */
+#pipe-canvas{display:block;width:100%;background:#09090f;border-radius:14px;border:1px solid #1a1a28;margin:1.5rem 0;cursor:pointer;}
+.pipe-detail{background:#0f0f1e;border:1px solid #1a1a28;border-radius:10px;padding:18px 22px;margin:.5rem 0 1.4rem;display:none;}
+.pipe-detail.active{display:block;}
+.pipe-detail h4{font-size:.9rem;font-weight:700;margin-bottom:8px;color:#f0f0f8;}
+.pipe-detail p{font-size:.85rem;color:#8080a8;margin-bottom:.6rem;}
+.pipe-detail ul{font-size:.84rem;color:#8080a8;}
+.pipe-detail li{margin-bottom:.35rem;}
+.math-callout{background:#091a10;border:1.5px solid #1a4a28;border-radius:10px;padding:16px 20px;margin:1.4rem 0;}
+.math-callout .mc-title{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#34d399;margin-bottom:10px;}
+.math-callout p{font-size:.85rem;color:#8080a8;margin-bottom:.6rem;}
+.math-callout ul{font-size:.84rem;color:#8080a8;padding-left:1.4rem;}
+.math-callout li{margin-bottom:.35rem;}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:1.2rem 0;}
+@media(max-width:600px){.info-grid{grid-template-columns:1fr;}}
+.info-card{background:#0f0f1e;border:1px solid #1a1a28;border-radius:10px;padding:14px 16px;}
+.info-card h4{font-size:.82rem;font-weight:700;color:#c0c0d8;margin-bottom:7px;}
+.info-card p{font-size:.82rem;color:#7070a0;margin:0;}
+</style>
+</head>
+<body>
+<main class="article-body">
+
+<!-- ══════════════════════════════════════════════════
+     HERO
+══════════════════════════════════════════════════ -->
+<header style="margin-bottom:3rem;">
+  <p style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#6060a0;margin-bottom:.6rem;">Computer Vision Fundamentals</p>
+  <h1>The Geometry of a Camera</h1>
+  <p style="font-size:1.1rem;color:#7070a0;max-width:560px;">How a camera maps the 3D world onto a 2D pixel grid — step by step, with interactive visualizations for every stage.</p>
+</header>
+
+<!-- ══════════════════════════════════════════════════
+     PIPELINE OVERVIEW
+══════════════════════════════════════════════════ -->
+<h2>The Full Pipeline at a Glance</h2>
+<p>A 3D world point travels through four transformations before becoming a pixel on your screen. Each stage is handled by a matrix multiplication — and we can compose them all into a single $3 \times 4$ camera matrix $P$.</p>
+
+<div class="pipeline">
+  <div class="pipe-node">
+    <div class="pn-label">3D World Point</div>
+    <div class="pn-math">$(X_w,Y_w,Z_w)$</div>
+    <div class="pn-space">World Space</div>
+  </div>
+  <div class="pipe-arrow">
+    <div class="pa-label">[R|t]</div>
+    <div class="pa-sym">→</div>
+    <div class="pa-label" style="font-size:.6rem;color:#6060a0;">Extrinsics</div>
+  </div>
+  <div class="pipe-node">
+    <div class="pn-label">3D Camera Point</div>
+    <div class="pn-math">$(X_c,Y_c,Z_c)$</div>
+    <div class="pn-space">Camera Space</div>
+  </div>
+  <div class="pipe-arrow">
+    <div class="pa-label">K</div>
+    <div class="pa-sym">→</div>
+    <div class="pa-label" style="font-size:.6rem;color:#6060a0;">Intrinsics</div>
+  </div>
+  <div class="pipe-node">
+    <div class="pn-label">Homogeneous</div>
+    <div class="pn-math">$(x',y',w')$</div>
+    <div class="pn-space">Image Space</div>
+  </div>
+  <div class="pipe-arrow">
+    <div class="pa-label">÷$Z_c$</div>
+    <div class="pa-sym">→</div>
+    <div class="pa-label" style="font-size:.6rem;color:#6060a0;">Persp. Divide</div>
+  </div>
+  <div class="pipe-node" style="border-color:#38bdf8;">
+    <div class="pn-label">2D Pixel</div>
+    <div class="pn-math">$(u,v)$</div>
+    <div class="pn-space" style="color:#34d399;">Screen Space</div>
+  </div>
+</div>
+
+<div class="math-box">
+$$\begin{bmatrix}u \\ v \\ 1\end{bmatrix} \sim P \begin{bmatrix}X_w \\ Y_w \\ Z_w \\ 1\end{bmatrix},\qquad P = K\,[R\,|\,t]$$
+</div>
+
+<p>The $\sim$ means "equal up to scale" (the homogeneous divide). Let's build each piece from scratch.</p>
+
+<!-- ══════════════════════════════════════════════════
+     HOMOGENEOUS COORDINATES
+══════════════════════════════════════════════════ -->
+<h2>Primer: Homogeneous Coordinates</h2>
+<p>To rotate and translate a point in one matrix multiply, we need a trick. In 3D Cartesian coordinates:</p>
+<ul>
+  <li><strong>Rotation:</strong> multiply by a $3\times3$ matrix $R$.</li>
+  <li><strong>Translation:</strong> add a vector $t$. You cannot embed addition into a matrix multiply in 3D.</li>
+</ul>
+<p>The fix: lift the point into 4D by appending a $1$. Now both rotation and translation fit into a single $3\times4$ multiply.</p>
+
+<div class="math-box">
+$$\underbrace{\begin{bmatrix}X_w\\Y_w\\Z_w\\1\end{bmatrix}}_{\text{Homogeneous}} \xrightarrow{\times\,[R|t]}
+\begin{bmatrix}X_c\\Y_c\\Z_c\end{bmatrix} = R\begin{bmatrix}X_w\\Y_w\\Z_w\end{bmatrix}+t$$
+</div>
+
+<p>When you convert back, just divide by the last coordinate. Any scalar multiple $\lambda(x,y,w)^T$ represents the same 2D point $(x/w,\,y/w)$.</p>
+
+<!-- ══════════════════════════════════════════════════
+     WORLD COORDINATES
+══════════════════════════════════════════════════ -->
+<h2>0 — World Space: Where Does Everything Live?</h2>
+<p>Before any camera math, we need a shared stage: the <strong>world coordinate system</strong>. It is a fixed reference frame defined by a chosen <strong>origin point</strong> and three perpendicular axes (X, Y, Z). Every object, every camera, and every measurement in your scene is expressed relative to this one frame.</p>
+
+<h3>The Origin Is Your Choice</h3>
+<p>There is no "correct" world origin. It is wherever <em>you</em> decide it should be:</p>
+<ul>
+  <li>A robotics lab might set the origin at the robot's starting position.</li>
+  <li>A construction site uses a surveyed ground-control point.</li>
+  <li>A film studio might use the center of the stage.</li>
+  <li>A self-driving car stack resets the origin to the car's GPS position at boot time.</li>
+</ul>
+<p>Once chosen, every 3D point $(X_w, Y_w, Z_w)$ is measured in your chosen units (meters, millimetres, etc.) along your chosen axes. Crucially, <strong>the origin choice changes the numbers but not the physics</strong> — the objects don't move, only how we describe them changes.</p>
+
+<p><strong>Interact:</strong> Click a preset below to move the world origin. The boxes stay in place, but their coordinate labels update — because coordinates are always relative to the origin.</p>
+
+<div class="origin-btns">
+  <button class="origin-btn active" data-ox="0" data-oy="0" data-oz="0">Origin: Scene Center</button>
+  <button class="origin-btn" data-ox="-6" data-oy="0" data-oz="-6">Origin: Far Corner</button>
+  <button class="origin-btn" data-ox="5" data-oy="0" data-oz="3">Origin: Doorway</button>
+</div>
+
+<div class="graphic-container">
+  <div id="world-wrapper" class="canvas-wrapper" style="height:420px;">
+    <div id="world-labels"></div>
+    <!-- Left HUD: origin info -->
+    <div class="hud" style="top:14px;left:14px;min-width:215px;">
+      <div class="hud-title">World Origin &amp; Frame</div>
+      <div class="hud-row"><span>Origin $O$</span><span class="val" id="w-origin-disp">(0.0, 0.0, 0.0)</span></div>
+      <div class="hud-row" style="margin-top:6px;"><span style="font-size:.72rem;color:#404060;">Axes</span></div>
+      <div style="margin-top:3px;font-size:.76rem;font-family:monospace;line-height:1.9;">
+        <span style="color:#ff4444;">■ X</span> → East / Right<br>
+        <span style="color:#44ff44;">■ Y</span> → Up<br>
+        <span style="color:#4488ff;">■ Z</span> → South / Forward
+      </div>
+    </div>
+    <!-- Right HUD: object coordinates in current frame -->
+    <div class="hud" style="top:14px;right:14px;min-width:195px;">
+      <div class="hud-title">Object Coords in This Frame</div>
+      <div id="w-pt-readout" style="font-size:.77rem;font-family:monospace;line-height:1.9;color:#a0a0c0;"></div>
+    </div>
+  </div>
+</div>
+
+<h3>Point Coordinates Change, Distances Don't</h3>
+<p>Moving the origin changes $(X_w, Y_w, Z_w)$ values, but it never changes the <em>distance</em> between two objects, or the <em>angle</em> between two directions. Those are intrinsic geometric properties. This is why you can freely pick any convenient origin — it only affects bookkeeping, not geometry.</p>
+
+<div class="math-box">
+$$\text{If origin moves by } \Delta O,\quad X_w^{\text{new}} = X_w^{\text{old}} - \Delta O_x \;\text{(and similarly Y, Z)}$$
+</div>
+
+<h3>Axis Conventions Vary by Field</h3>
+<p>The orientation of the axes is also a convention. Different communities disagree — which causes bugs whenever you mix tools. The key rule: <strong>always check which convention a library uses before plugging in numbers.</strong></p>
+
+<table class="conv-table">
+  <thead>
+    <tr><th>System</th><th>X</th><th>Y</th><th>Z</th><th>Camera looks toward</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="hl">OpenCV (this blog)</td><td>Right</td><td>Down ↓</td><td>Into scene</td><td>+Z</td></tr>
+    <tr><td>OpenGL / WebGL / Three.js</td><td>Right</td><td>Up ↑</td><td>Out of screen</td><td>−Z</td></tr>
+    <tr><td>ROS / Robotics</td><td>Forward</td><td>Left</td><td>Up ↑</td><td>+X</td></tr>
+    <tr><td>Unreal Engine</td><td>Forward</td><td>Right</td><td>Up ↑</td><td>+X</td></tr>
+    <tr><td>Unity 3D</td><td>Right</td><td>Up ↑</td><td>Into scene</td><td>+Z</td></tr>
+  </tbody>
+</table>
+
+<h3>From World Space to Camera Space</h3>
+<p>A camera is just another object living at some position $\mathbf{C} = (C_x, C_y, C_z)$ in world space, pointing in some direction. The job of the <strong>extrinsic matrix</strong> is to express every world point <em>relative to the camera</em> instead of relative to the world origin. After this transformation, the camera sits at the origin and looks along +Z — which is the coordinate frame the intrinsic matrix $K$ expects.</p>
+
+<div class="math-box">
+$$\underbrace{P_{\text{camera}}}_{\text{point relative to camera}} = R\,\underbrace{P_{\text{world}}}_{\text{point in world}} + \underbrace{t}_{t = -R\,C}$$
+</div>
+
+<p>$R$ rotates world axes to align with camera axes. $t$ shifts the origin from the world origin to the camera position. Together, $[R\,|\,t]$ is a rigid-body transformation — it preserves distances and angles.</p>
+
+<!-- ══════════════════════════════════════════════════
+     EXTRINSICS
+══════════════════════════════════════════════════ -->
+<h2>1 — Extrinsics: World → Camera Space</h2>
+<p>The <strong>extrinsic matrix</strong> $[R\,|\,t]$ answers: <em>where is the camera sitting in the world, and which way is it pointing?</em></p>
+<ul>
+  <li>$R$ — a $3\times3$ rotation matrix describing the camera's <strong>orientation</strong>. Its columns are the camera's local X, Y, Z axes expressed in world coordinates.</li>
+  <li>$t$ — a $3\times1$ translation vector. In the OpenCV convention, $t = -R\,C$ where $C$ is the camera's world-space position. It is <em>not</em> the camera position directly.</li>
+</ul>
+
+<div class="math-box">
+$$\begin{bmatrix}X_c\\Y_c\\Z_c\end{bmatrix} = \underbrace{\begin{bmatrix}r_{11}&r_{12}&r_{13}&t_x\\r_{21}&r_{22}&r_{23}&t_y\\r_{31}&r_{32}&r_{33}&t_z\end{bmatrix}}_{[R\,|\,t]}\begin{bmatrix}X_w\\Y_w\\Z_w\\1\end{bmatrix}$$
+</div>
+
+<p><strong>Interact:</strong> Move the camera around the world scene below. The colored boxes are fixed reference objects. Watch how the <strong>rotation matrix $R$</strong> changes as you turn the camera, and how <strong>$t$</strong> tracks its position. The small inset shows what the camera actually sees.</p>
+
+<!-- Extrinsics 3D scene -->
+<div class="graphic-container">
+  <div id="ext-wrapper" class="canvas-wrapper" style="height:460px;">
+    <!-- Camera view overlay -->
+    <div class="cam-view-wrap">
+      <div class="cvlabel">Camera POV</div>
+      <canvas id="cam-view-canvas" width="200" height="130"></canvas>
+    </div>
+    <!-- HUD: translation -->
+    <div class="hud" style="top:14px;left:14px;min-width:200px;">
+      <div class="hud-title">Translation $t$ (Camera Position in World)</div>
+      <div class="hud-row"><span>$t_x$</span><span class="val" id="e-tx">0.00</span></div>
+      <div class="hud-row"><span>$t_y$</span><span class="val" id="e-ty">2.00</span></div>
+      <div class="hud-row"><span>$t_z$</span><span class="val" id="e-tz">4.00</span></div>
+    </div>
+    <!-- HUD: rotation matrix -->
+    <div class="hud" style="top:14px;right:14px;min-width:240px;">
+      <div class="hud-title">Rotation Matrix $R$ (Camera Axes → World)</div>
+      <div style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:4px;">
+        <span style="color:#3a3a60;font-size:1.5rem;">&#91;</span>
+        <div class="hud-matrix g3" style="border:none;padding:0;">
+          <span id="r00">1.00</span><span id="r01">0.00</span><span id="r02">0.00</span>
+          <span id="r10">0.00</span><span id="r11">1.00</span><span id="r12">0.00</span>
+          <span id="r20">0.00</span><span id="r21">0.00</span><span id="r22">1.00</span>
+        </div>
+        <span style="color:#3a3a60;font-size:1.5rem;">&#93;</span>
+      </div>
+      <div style="margin-top:8px;font-size:.72rem;color:#6060a0;">Columns = camera X(red), Y(green), Z(blue) in world</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="ctrl-grid">
+      <div class="ctrl-group">
+        <label>Camera X (t<sub>x</sub>)<span class="val" id="lbl-tx">0.0</span></label>
+        <input type="range" id="sl-tx" min="-8" max="8" step="0.1" value="0">
+      </div>
+      <div class="ctrl-group">
+        <label>Camera Y (t<sub>y</sub>)<span class="val" id="lbl-ty">2.0</span></label>
+        <input type="range" id="sl-ty" min="0" max="8" step="0.1" value="2">
+      </div>
+      <div class="ctrl-group">
+        <label>Camera Z (t<sub>z</sub>)<span class="val" id="lbl-tz">4.0</span></label>
+        <input type="range" id="sl-tz" min="-8" max="8" step="0.1" value="4">
+      </div>
+      <div class="ctrl-group">
+        <label>Yaw (turn left/right)<span class="val" id="lbl-yaw">0°</span></label>
+        <input type="range" id="sl-yaw" min="-150" max="150" step="1" value="0">
+      </div>
+      <div class="ctrl-group">
+        <label>Pitch (tilt up/down)<span class="val" id="lbl-pitch">0°</span></label>
+        <input type="range" id="sl-pitch" min="-60" max="60" step="1" value="0">
+      </div>
+      <div class="ctrl-group">
+        <label>Roll (rotate)<span class="val" id="lbl-roll">0°</span></label>
+        <input type="range" id="sl-roll" min="-45" max="45" step="1" value="0">
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3>Key Insight: $R$ Is Orthogonal</h3>
+<p>Because $R$ is a pure rotation, its columns are mutually perpendicular unit vectors. This means $R^{-1} = R^T$ — you can undo any rotation just by transposing. The determinant of $R$ is always $+1$ (no reflection, no scaling).</p>
+
+<!-- ══════════════════════════════════════════════════
+     INTRINSICS
+══════════════════════════════════════════════════ -->
+<h2>2 — Intrinsics: Camera Space → Image Plane</h2>
+<p>The <strong>intrinsic matrix</strong> $K$ encodes the physical properties of the camera's sensor and lens. It maps the 3D camera-space point $(X_c, Y_c, Z_c)$ to a 2D image point.</p>
+
+<div class="math-box">
+$$\begin{bmatrix}x'\\y'\\w'\end{bmatrix} = \underbrace{\begin{bmatrix}f_x & \gamma & c_x \\ 0 & f_y & c_y \\ 0 & 0 & 1\end{bmatrix}}_{K} \begin{bmatrix}X_c\\Y_c\\Z_c\end{bmatrix}$$
+</div>
+
+<p>The four parameters that matter most:</p>
+<ul>
+  <li>$f_x, f_y$ — <strong>Focal lengths</strong> in pixels. Higher = more zoom. For square pixels $f_x = f_y$.</li>
+  <li>$c_x, c_y$ — <strong>Principal point</strong>. Where the optical axis hits the sensor, usually near the image center $(W/2, H/2)$.</li>
+  <li>$\gamma$ — <strong>Skew</strong>. Zero for modern cameras. Handles non-rectangular pixels.</li>
+</ul>
+<p>After multiplying, we get $w' = Z_c$ (the depth). Dividing $x'$ and $y'$ by $w'$ gives the final pixel.</p>
+
+<div class="math-box">
+$$u = \frac{x'}{w'} = f_x\frac{X_c}{Z_c} + c_x, \qquad v = \frac{y'}{w'} = f_y\frac{Y_c}{Z_c} + c_y$$
+</div>
+
+<p><strong>Interact:</strong> The left panel shows the 3D pinhole geometry — drag to orbit. The right panel shows the image plane: where does your chosen 3D point land in pixels? Adjust the K matrix parameters and watch the dot move.</p>
+
+<!-- Intrinsics scene: 3D + 2D split -->
+<div class="graphic-container">
+  <div class="viz-split">
+    <!-- Left: 3D pinhole scene -->
+    <div id="int-wrapper" class="split-3d" style="position:relative;cursor:grab;">
+      <div class="hud" style="top:12px;left:12px;font-size:.76rem;">
+        <div class="hud-title">Pinhole Geometry (Camera Space)</div>
+        <div class="hud-row"><span>Object $X_c$</span><span class="val" id="h-xc">0.0</span></div>
+        <div class="hud-row"><span>Object $Y_c$</span><span class="val" id="h-yc">1.5</span></div>
+        <div class="hud-row"><span>Object $Z_c$ (depth)</span><span class="val" id="h-zc">8.0</span></div>
+        <div style="margin-top:8px;padding-top:8px;border-top:1px solid #252540;">
+          <div class="hud-row"><span>$X_c/Z_c$</span><span class="val" id="h-xzr">0.000</span></div>
+          <div class="hud-row"><span>$Y_c/Z_c$</span><span class="val" id="h-yzr">0.188</span></div>
+        </div>
+      </div>
+    </div>
+    <!-- Right: 2D image plane -->
+    <div class="split-2d">
+      <div style="padding:12px 14px;border-bottom:1px solid #1a1a28;">
+        <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#38bdf8;">Image Plane (640×480 sensor)</div>
+        <div style="font-size:.72rem;color:#6060a0;margin-top:2px;">Drag the 2D dot to move the 3D point</div>
+      </div>
+      <canvas id="img-plane-canvas" style="flex:1;display:block;width:100%;"></canvas>
+      <!-- K matrix HUD on the 2D side -->
+      <div style="padding:12px 14px;border-top:1px solid #1a1a28;background:#060610;">
+        <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#38bdf8;margin-bottom:8px;">K Matrix (Live)</div>
+        <div style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:4px;font-family:monospace;font-size:.72rem;">
+          <span style="color:#3a3a60;font-size:1.3rem;">&#91;</span>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;text-align:center;background:#1a1a28;border:1px solid #1a1a28;border-radius:4px;overflow:hidden;">
+            <span style="background:#0c0c1a;padding:3px 2px;color:#a78bfa;" id="k-fx">500</span>
+            <span style="background:#0c0c1a;padding:3px 2px;color:#5050a0;">0</span>
+            <span style="background:#0c0c1a;padding:3px 2px;color:#38bdf8;" id="k-cx">320</span>
+            <span style="background:#0c0c1a;padding:3px 2px;color:#5050a0;">0</span>
+            <span style="background:#0c0c1a;padding:3px 2px;color:#a78bfa;" id="k-fy">500</span>
+            <span style="background:#0c0c1a;padding:3px 2px;color:#38bdf8;" id="k-cy">240</span>
+            <span style="background:#0c0c1a;padding:3px 2px;color:#5050a0;">0</span>
+            <span style="background:#0c0c1a;padding:3px 2px;color:#5050a0;">0</span>
+            <span style="background:#0c0c1a;padding:3px 2px;color:#5050a0;">1</span>
+          </div>
+          <span style="color:#3a3a60;font-size:1.3rem;">&#93;</span>
+        </div>
+        <div style="margin-top:8px;font-family:monospace;font-size:.76rem;color:#6060a0;">
+          <div>u = <span style="color:#a78bfa;">f<sub>x</sub></span>·(X<sub>c</sub>/Z<sub>c</sub>) + <span style="color:#38bdf8;">c<sub>x</sub></span> = <span style="color:#34d399;font-weight:700;" id="res-u">320</span></div>
+          <div>v = <span style="color:#a78bfa;">f<sub>y</sub></span>·(Y<sub>c</sub>/Z<sub>c</sub>) + <span style="color:#38bdf8;">c<sub>y</sub></span> = <span style="color:#34d399;font-weight:700;" id="res-v">334</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="controls">
+    <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#a78bfa;margin-bottom:10px;">K Matrix Parameters</div>
+    <div class="ctrl-grid">
+      <div class="ctrl-group">
+        <label>$f_x$ (focal len X)<span class="val" id="lbl-fx">500</span></label>
+        <input type="range" id="sl-fx" min="100" max="1200" step="10" value="500">
+      </div>
+      <div class="ctrl-group">
+        <label>$f_y$ (focal len Y)<span class="val" id="lbl-fy">500</span></label>
+        <input type="range" id="sl-fy" min="100" max="1200" step="10" value="500">
+      </div>
+      <div class="ctrl-group">
+        <label>$c_x$ (principal pt X)<span class="val" id="lbl-cx">320</span></label>
+        <input type="range" id="sl-cx" min="0" max="640" step="1" value="320">
+      </div>
+      <div class="ctrl-group">
+        <label>$c_y$ (principal pt Y)<span class="val" id="lbl-cy">240</span></label>
+        <input type="range" id="sl-cy" min="0" max="480" step="1" value="240">
+      </div>
+    </div>
+    <div style="height:1px;background:#1a1a28;margin:14px 0;"></div>
+    <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6060a0;margin-bottom:10px;">3D Point in Camera Space</div>
+    <div class="ctrl-grid">
+      <div class="ctrl-group">
+        <label>$X_c$ (left/right)<span class="val" id="lbl-xc">0.0</span></label>
+        <input type="range" id="sl-xc" min="-5" max="5" step="0.1" value="0">
+      </div>
+      <div class="ctrl-group">
+        <label>$Y_c$ (up/down)<span class="val" id="lbl-yc">1.5</span></label>
+        <input type="range" id="sl-yc" min="-5" max="5" step="0.1" value="1.5">
+      </div>
+      <div class="ctrl-group">
+        <label>$Z_c$ (depth — farther=smaller)<span class="val" id="lbl-zc">8.0</span></label>
+        <input type="range" id="sl-zc" min="1" max="20" step="0.1" value="8">
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3>Why does $f_x$ behave like zoom?</h3>
+<p>$f_x$ multiplies the angle ratio $X_c/Z_c$. Doubling $f_x$ doubles the image size of every object — exactly like zooming in. This is why telephoto lenses (long focal length) make distant objects appear large.</p>
+
+<!-- ══════════════════════════════════════════════════
+     PERSPECTIVE DIVIDE / SIMILAR TRIANGLES
+══════════════════════════════════════════════════ -->
+<h2>3 — Perspective Divide: Why Far Objects Look Small</h2>
+<p>After applying $K$, we have the homogeneous coordinate $(x', y', w')$. Converting to actual pixels requires dividing by $w'$. Since the bottom row of $K$ is $[0\;0\;1]$, we always get $w' = Z_c$ — the depth. So:</p>
+
+<div class="math-box">
+$$u = \frac{x'}{Z_c},\quad v = \frac{y'}{Z_c}$$
+</div>
+
+<p>Dividing by $Z_c$ is what makes this <strong>perspective projection</strong>. The deeper an object (larger $Z_c$), the smaller it appears in the image. This is the mathematical reason for the basic visual phenomenon: objects shrink with distance.</p>
+
+<h3>Proof via Similar Triangles</h3>
+<p>Consider a side view of the pinhole camera. A point at height $Y_c$ and depth $Z_c$ casts a ray through the pinhole. By similar triangles, the image height $y'$ satisfies:</p>
+
+<div class="math-box">
+$$\frac{y'}{f} = \frac{Y_c}{Z_c} \quad\Longrightarrow\quad y' = f \cdot \frac{Y_c}{Z_c}$$
+</div>
+
+<p><strong>Interact:</strong> Adjust the object height, depth, and focal length. Watch the two similar triangles (red = real, cyan = image) scale together, always maintaining the ratio $Y_c/Z_c = y'/f$.</p>
+
+<canvas id="persp-canvas" height="310"></canvas>
+<div class="persp-controls">
+  <div class="ctrl-grid">
+    <div class="ctrl-group">
+      <label>Object Height $Y_c$<span class="val" id="lbl-py">3.0</span></label>
+      <input type="range" id="sl-py" min="0.5" max="7" step="0.1" value="3">
+    </div>
+    <div class="ctrl-group">
+      <label>Object Depth $Z_c$ (distance)<span class="val" id="lbl-pz">8.0</span></label>
+      <input type="range" id="sl-pz" min="2" max="18" step="0.1" value="8">
+    </div>
+    <div class="ctrl-group">
+      <label>Focal Length $f$<span class="val" id="lbl-pf">3.0</span></label>
+      <input type="range" id="sl-pf" min="0.5" max="7" step="0.1" value="3">
+    </div>
+  </div>
+  <div id="persp-formula" style="margin-top:12px;padding:10px 14px;background:#060610;border:1px solid #1a1a28;border-radius:8px;font-family:monospace;font-size:.82rem;color:#8080a0;">
+    y' = f × Y/Z = <span id="pf-f" style="color:#a78bfa;">3.0</span> × <span id="pf-Y" style="color:#ef4444;">3.0</span> / <span id="pf-Z" style="color:#38bdf8;">8.0</span> = <span id="pf-res" style="color:#34d399;font-weight:700;">1.125</span>
+    &nbsp;&nbsp;|&nbsp;&nbsp; Y/Z ratio = <span id="pf-ratio" style="color:#facc15;">0.375</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     FIELD OF VIEW
+══════════════════════════════════════════════════ -->
+<h2>Connecting $f$ to Field of View</h2>
+<p>Focal length and field of view (FoV) are inversely related. Given a sensor half-width $W/2$ and focal length $f$, the horizontal half-angle is:</p>
+<div class="math-box">
+$$\text{FoV}_h = 2\arctan\!\left(\frac{W/2}{f_x}\right)$$
+</div>
+<p>A small $f_x$ → wide angle. A large $f_x$ → narrow telephoto. This is why wide-angle lenses seem to "fit more in the frame."</p>
+
+<!-- ══════════════════════════════════════════════════
+     FULL PIPELINE CALCULATOR
+══════════════════════════════════════════════════ -->
+<h2>4 — Full Pipeline: End-to-End Calculator</h2>
+<p>Let's trace a real point through every step. Adjust the 3D world point and camera setup; each matrix multiplication is shown with the actual computed numbers.</p>
+
+<div class="calc-container">
+  <div class="calc-header">Live Pipeline Calculator: $(X_w,Y_w,Z_w,1)^T \xrightarrow{K[R|t]} (u,v)$</div>
+  <div class="calc-inputs">
+    <div class="ctrl-group">
+      <label>World $X_w$<span class="val" id="lbl-wxc">2.0</span></label>
+      <input type="range" id="sl-wxc" min="-8" max="8" step="0.1" value="2">
+    </div>
+    <div class="ctrl-group">
+      <label>World $Y_w$<span class="val" id="lbl-wyc">1.5</span></label>
+      <input type="range" id="sl-wyc" min="-5" max="8" step="0.1" value="1.5">
+    </div>
+    <div class="ctrl-group">
+      <label>World $Z_w$<span class="val" id="lbl-wzc">-5.0</span></label>
+      <input type="range" id="sl-wzc" min="-12" max="0" step="0.1" value="-5">
+    </div>
+    <div class="ctrl-group">
+      <label>Camera $f_x = f_y$<span class="val" id="lbl-wfx">600</span></label>
+      <input type="range" id="sl-wfx" min="100" max="1200" step="10" value="600">
+    </div>
+    <div class="ctrl-group">
+      <label>Camera Yaw<span class="val" id="lbl-wyaw">0°</span></label>
+      <input type="range" id="sl-wyaw" min="-90" max="90" step="1" value="0">
+    </div>
+  </div>
+  <div class="calc-body">
+    <div class="calc-section">
+      <h4>Step 1 — Apply Extrinsics [R|t]</h4>
+      <div class="calc-mat" id="calc-ext-mat">...</div>
+      <div class="calc-step" style="margin-top:10px;">
+        <span class="cs-label">Result:</span>
+        <span class="cs-eq">Camera coords</span>
+        <span class="cs-res" id="calc-cam-pt">...</span>
+      </div>
+    </div>
+    <div class="calc-section">
+      <h4>Step 2 — Apply Intrinsics K</h4>
+      <div class="calc-mat" id="calc-int-mat">...</div>
+      <div class="calc-step" style="margin-top:10px;">
+        <span class="cs-label">Raw:</span>
+        <span class="cs-eq">Homogeneous $(x', y', w')$</span>
+        <span class="cs-res" id="calc-hom-pt">...</span>
+      </div>
+    </div>
+    <div class="calc-section" style="grid-column:1/-1;">
+      <h4>Step 3 — Perspective Divide (÷$Z_c$)</h4>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;">
+        <div style="font-family:monospace;font-size:.82rem;color:#8080a0;flex:1;">
+          $u = x' / Z_c = $ <span id="calc-u-eq" style="color:#c0c0e0;">...</span> = <span id="calc-u" style="color:#34d399;font-weight:700;font-size:1rem;">...</span> px<br>
+          $v = y' / Z_c = $ <span id="calc-v-eq" style="color:#c0c0e0;">...</span> = <span id="calc-v" style="color:#34d399;font-weight:700;font-size:1rem;">...</span> px
+        </div>
+        <div id="pixel-preview" style="width:120px;height:90px;background:#000;border:1px solid #252540;border-radius:6px;position:relative;flex-shrink:0;">
+          <canvas id="px-preview-canvas" width="120" height="90" style="display:block;"></canvas>
+          <div style="position:absolute;bottom:2px;right:4px;font-size:.6rem;color:#404060;">640×480</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     LENS DISTORTION (brief)
+══════════════════════════════════════════════════ -->
+<h2>5 — Lens Distortion (Real Cameras)</h2>
+<p>The K matrix assumes a perfect pinhole — a mathematical idealization. Real lenses introduce <strong>distortion</strong>, which makes straight lines curve in the image. The two dominant types:</p>
+<ul>
+  <li><strong>Radial distortion</strong> $(k_1, k_2, k_3)$: barrel or pincushion warping. A wide-angle lens bows lines outward (barrel distortion, $k_1 < 0$).</li>
+  <li><strong>Tangential distortion</strong> $(p_1, p_2)$: the lens is not perfectly parallel to the sensor.</li>
+</ul>
+<div class="math-box">
+$$r^2 = x_n^2 + y_n^2,\qquad x_{\text{dist}} = x_n(1 + k_1 r^2 + k_2 r^4) + 2p_1 x_n y_n + p_2(r^2 + 2x_n^2)$$
+</div>
+<p>Camera calibration (e.g., using a chessboard with OpenCV's <code>calibrateCamera</code>) estimates $K$ and the distortion coefficients simultaneously.</p>
+
+<!-- ══════════════════════════════════════════════════
+     ISO
+══════════════════════════════════════════════════ -->
+<h2>6 — From Photons to Pixels: ISO & Noise</h2>
+<p>Once the geometry is done, the physical photons hitting each pixel are converted to a digital value. The <strong>ISO</strong> setting is a digital gain applied to the raw photoelectron count. Amplifying the signal also amplifies sensor noise — which is why high-ISO photos look grainy.</p>
+<div class="math-box">
+$$\text{Pixel Value} = \text{clamp}\!\left(\text{ISO}_{\text{gain}} \times (\text{Photons} + \mathcal{N}(0,\sigma)),\;0,\;255\right)$$
+</div>
+<p><strong>Interact:</strong> Raise ISO and watch the scene brighten — then become noisy. At ISO 25600 the noise dominates.</p>
+
+<div class="graphic-container">
+  <div class="canvas-wrapper" style="height:340px;">
+    <canvas id="iso-canvas" width="900" height="340"></canvas>
+    <div class="hud" style="top:14px;left:14px;min-width:220px;">
+      <div class="hud-title">Digital Signal</div>
+      <div class="hud-row"><span>Base Photons</span><span class="val">15 (dark scene)</span></div>
+      <div class="hud-row"><span>ISO</span><span class="val" id="h-iso">100</span></div>
+      <div class="hud-row"><span>Gain ($×$)</span><span class="val" id="h-gain">1.0×</span></div>
+      <div class="hud-row"><span>Noise $\sigma$</span><span class="val" id="h-noise">0</span></div>
+      <div style="margin-top:8px;border-top:1px solid #252540;padding-top:8px;">
+        <div class="hud-row"><span>Brightness</span><span class="hl" id="h-bright">15/255</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="ctrl-group">
+      <label>ISO (Digital Gain) — higher = brighter but noisier<span class="val" id="lbl-iso">100</span></label>
+      <input type="range" id="sl-iso" min="100" max="25600" step="100" value="100">
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     HOW REAL CAMERAS WORK
+══════════════════════════════════════════════════ -->
+<h2>7 — Do Real Cameras Run This Math?</h2>
+<p>Here is the answer most people get wrong: <strong>no</strong>. The matrix multiplications $[R\,|\,t]$ and $K$ are not computed inside the camera hardware. The perspective projection happens entirely through <em>physics</em> — light and optics do it automatically. The math is a model that lets software reason about what the physics did.</p>
+
+<h3>The Physical Pipeline Inside a Camera</h3>
+<p><strong>Click each stage below</strong> for details. Notice where the camera geometry math maps onto the physics, and where actual computation begins.</p>
+
+<canvas id="pipe-canvas" height="185"></canvas>
+
+<!-- Stage detail panels (shown on click) -->
+<div id="pipe-stage-0" class="pipe-detail active">
+  <h4>① Scene — Light Travelling in Straight Lines</h4>
+  <p>Photons bounce off every surface and travel outward in straight lines. This straight-line travel is the physical mechanism behind perspective projection — an object twice as far away subtends half the angle, so it appears half as large. <strong>No computation needed: the geometry is baked into the physics of light.</strong></p>
+  <p>This is what $[R\,|\,t]$ and $K$ model mathematically: they describe the same geometry that photons obey naturally.</p>
+</div>
+<div id="pipe-stage-1" class="pipe-detail">
+  <h4>② Aperture &amp; Lens — Optical Projection</h4>
+  <p>The <strong>aperture</strong> (f-number) controls how much light enters. The <strong>lens</strong> bends incoming rays so that every photon from a single scene point converges to a single point on the sensor. This convergence is the physical implementation of focal length $f_x, f_y$.</p>
+  <p>A longer focal-length lens bends light at a shallower angle → smaller field of view → apparent zoom. A wider lens bends more aggressively → larger FoV → distortion at the edges (barrel/pincushion, modelled by $k_1, k_2$). <strong>Still no computation — this is pure optics.</strong></p>
+</div>
+<div id="pipe-stage-2" class="pipe-detail">
+  <h4>③ CMOS/CCD Sensor — Photons → Electrons</h4>
+  <p>Each pixel is a photodiode that accumulates electrons proportional to the number of photons hitting it during the exposure. Modern sensors use a <strong>Bayer colour filter array</strong>: a repeating RGGB mosaic so each physical pixel captures only <em>one</em> colour channel. A 12 MP sensor captures ~6 M green, ~3 M red, and ~3 M blue measurements — not 12 M full-colour pixels.</p>
+  <p>The ISO setting multiplies the charge before the next stage, amplifying both signal and noise.</p>
+</div>
+<div id="pipe-stage-3" class="pipe-detail">
+  <h4>④ ADC — Analog → Digital (RAW)</h4>
+  <p>An <strong>Analog-to-Digital Converter</strong> reads the voltage on each photodiode and converts it to a binary integer. Consumer cameras use 10–14 bits per channel, giving 1024–16384 discrete brightness levels. The raw binary grid of single-channel values is the <strong>RAW file format</strong> — a direct readout of the sensor, before any image processing.</p>
+</div>
+<div id="pipe-stage-4" class="pipe-detail">
+  <h4>⑤ ISP — Image Signal Processor</h4>
+  <p>The ISP is a dedicated chip (or SoC block) that runs image algorithms in real time at 30–120 fps. <strong>This is where actual computation first happens inside the camera:</strong></p>
+  <ul>
+    <li><strong>Demosaicing:</strong> interpolates the Bayer RGGB grid into full-colour RGB for every pixel (bilinear, AHD, or neural).</li>
+    <li><strong>Noise reduction:</strong> bilateral filtering, BM3D, or neural denoising.</li>
+    <li><strong>White balance:</strong> multiplies R, G, B channels by three calibrated scalars — a $3\times3$ diagonal matrix multiply per pixel.</li>
+    <li><strong>Sharpening &amp; tone mapping:</strong> unsharp masking, HDR→SDR curve.</li>
+    <li><strong>Lens distortion correction:</strong> a per-pixel lookup table or polynomial warp using $k_1, k_2$ — <em>this is the one place $K$-related math actually runs in hardware</em>.</li>
+    <li><strong>Compression:</strong> JPEG (block DCT), HEIF (neural), H.264/H.265 for video.</li>
+  </ul>
+</div>
+<div id="pipe-stage-5" class="pipe-detail">
+  <h4>⑥ Output — JPEG / RAW / Video Stream</h4>
+  <p>The processed image exits as a JPEG, HEIF, RAW file, or a live MIPI/USB stream to a host computer. At this point the data is a 2D array of RGB values. <strong>All 3D depth information has been permanently lost</strong> in the projection — this is why recovering 3D structure from images (SfM, stereo, depth estimation) is a hard inverse problem.</p>
+  <p>On smartphones, a final <strong>NPU (Neural Processing Unit)</strong> pass may run computational photography: Night Sight, Super Res Zoom, computational bokeh, or scene-adaptive sharpening — these are matrix-heavy neural network operations on 2D images.</p>
+</div>
+
+<div class="math-callout">
+  <div class="mc-title">So where does $P = K\,[R\,|\,t]$ actually run?</div>
+  <p><strong>In software, not in the camera.</strong> The projection matrix is used whenever a program needs to reason about the relationship between 3D geometry and 2D images:</p>
+  <ul>
+    <li><strong>Computer Vision (OpenCV, etc.):</strong> predicts where a known 3D world point will appear in the image ($u,v = K[R|t]\,P_w$), or triangulates 3D points from multiple images (inverse).</li>
+    <li><strong>SLAM / 3D Reconstruction:</strong> estimates $R, t$ of each camera frame and recovers 3D structure simultaneously, iterating $P$ at every frame.</li>
+    <li><strong>Augmented Reality:</strong> renders virtual 3D objects at the correct 2D screen position using $P$, in real time at 60–90 fps.</li>
+    <li><strong>Autonomous Vehicles:</strong> dedicated GPU/FPGA accelerators compute $K[R|t]$ for LiDAR-camera fusion, object detection, and occupancy grids at 100+ fps.</li>
+    <li><strong>Camera Calibration:</strong> OpenCV's <code>calibrateCamera</code> solves for $K$, $k_1, k_2$, and $[R|t]$ by minimising reprojection error on a chessboard — this is optimisation over $P$, not a single matrix multiply.</li>
+  </ul>
+</div>
+
+<h3>Real-Time Performance</h3>
+<div class="info-grid">
+  <div class="info-card">
+    <h4>Inside the Camera (ISP)</h4>
+    <p>Dedicated fixed-function hardware. Processes 50 MP at 30 fps (1.5 Gpixels/s). No general-purpose CPU involved in demosaic/denoise/compress. Uses 100–500 mW.</p>
+  </div>
+  <div class="info-card">
+    <h4>In a Vision System (GPU)</h4>
+    <p>An NVIDIA Jetson can run full camera projection + neural detection on 4 cameras at 30 fps. A data-centre GPU processes batch camera projections for 3D reconstruction at thousands of fps equivalent.</p>
+  </div>
+  <div class="info-card">
+    <h4>Smartphone Computational Photo</h4>
+    <p>Apple A17 Pro NPU: ~35 TOPS for neural-network-based denoising, super-resolution, and bokeh synthesis. Runs in parallel with the ISP on each captured frame.</p>
+  </div>
+  <div class="info-card">
+    <h4>Camera Calibration Workflow</h4>
+    <p>Capture 20–50 images of a chessboard → OpenCV detects corners → non-linear optimisation estimates $K$, $k_1$–$k_3$, $p_1$–$p_2$ → reprojection error typically &lt; 0.5 px RMS.</p>
+  </div>
+</div>
+
+</main>
+
+<!-- ══════════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════════ -->
+<script>
+"use strict";
+document.addEventListener('DOMContentLoaded', () => {
+  initWorldCoordinates();
+  initExtrinsics();
+  initIntrinsics();
+  initPerspectiveDivide();
+  initPipelineCalc();
+  initISO();
+  initCameraPipeline();
+});
+
+/* ─────────────────────────────────────────────────────────
+   HELPERS
+───────────────────────────────────────────────────────── */
+const $ = id => document.getElementById(id);
+const f2 = n => (Math.abs(n)<0.005? '0.00':(n>0?' ':'')+n.toFixed(2));
+const f3 = n => n.toFixed(3);
+const f1 = n => n.toFixed(1);
+const clamp = (v,lo,hi) => Math.max(lo, Math.min(hi, v));
+
+function makeArrow(scene, color, length=2) {
+  const mat = new THREE.LineBasicMaterial({color});
+  const geom = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(0,0,0),
+    new THREE.Vector3(0,length,0)
+  ]);
+  return new THREE.Line(geom, mat);
+}
+
+function buildFrustum(fovDeg, aspect, near, far) {
+  const h_n = near * Math.tan(fovDeg * Math.PI / 360);
+  const w_n = h_n * aspect;
+  const h_f = far  * Math.tan(fovDeg * Math.PI / 360);
+  const w_f = h_f * aspect;
+  const v = new Float32Array([
+    0,0,0,
+    -w_n,-h_n,-near,  w_n,-h_n,-near,  w_n,h_n,-near,  -w_n,h_n,-near,
+    -w_f,-h_f,-far,   w_f,-h_f,-far,   w_f,h_f,-far,   -w_f,h_f,-far,
+  ]);
+  const idx = [
+    0,1, 0,2, 0,3, 0,4,
+    1,2, 2,3, 3,4, 4,1,
+    5,6, 6,7, 7,8, 8,5,
+    1,5, 2,6, 3,7, 4,8,
+  ];
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(v,3));
+  g.setIndex(idx);
+  return new THREE.LineSegments(g, new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:0.55}));
+}
+
+/* ─────────────────────────────────────────────────────────
+   1. EXTRINSICS
+───────────────────────────────────────────────────────── */
+function initExtrinsics() {
+  const wrap = $('ext-wrapper');
+  if (!wrap) return;
+
+  // Main renderer
+  const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+  wrap.insertBefore(renderer.domElement, wrap.firstChild);
+
+  // Observer camera
+  const obsCam = new THREE.PerspectiveCamera(42, wrap.clientWidth/wrap.clientHeight, 0.1, 200);
+  obsCam.position.set(12, 10, 16);
+  obsCam.lookAt(0,1,0);
+
+  const scene = new THREE.Scene();
+  scene.add(new THREE.GridHelper(24, 24, 0x1e1e38, 0x141428));
+  scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+  const dl = new THREE.DirectionalLight(0xffffff, 0.9);
+  dl.position.set(8,16,8); scene.add(dl);
+
+  // World axes (large)
+  scene.add(new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 3.5, 0xff4444, 0.3, 0.15));
+  scene.add(new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), 3.5, 0x44ff44, 0.3, 0.15));
+  scene.add(new THREE.ArrowHelper(new THREE.Vector3(0,0,1), new THREE.Vector3(0,0,0), 3.5, 0x4488ff, 0.3, 0.15));
+
+  // Reference objects in the world
+  const boxes = [
+    {pos:[5,0.5,0],  color:0xff5555},
+    {pos:[-5,0.5,0], color:0x55ff55},
+    {pos:[0,0.5,-6], color:0x5588ff},
+    {pos:[0,0.5, 6], color:0xffaa22},
+    {pos:[4,0.5,-4], color:0xcc44ff},
+  ];
+  boxes.forEach(b => {
+    const m = new THREE.Mesh(
+      new THREE.BoxGeometry(1,1,1),
+      new THREE.MeshStandardMaterial({color:b.color, roughness:0.6})
+    );
+    m.position.set(...b.pos);
+    scene.add(m);
+    // label post
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,b.pos[1]),
+      new THREE.MeshStandardMaterial({color:0x303050}));
+    post.position.set(b.pos[0], b.pos[1]/2, b.pos[2]);
+    scene.add(post);
+  });
+
+  // Camera group (virtual camera in the world)
+  const camGroup = new THREE.Group();
+
+  // Body
+  const body = new THREE.Mesh(
+    new THREE.BoxGeometry(0.8, 0.6, 0.5),
+    new THREE.MeshStandardMaterial({color:0x111122, roughness:0.9, metalness:0.1})
+  );
+  // Lens
+  const lens = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.25, 0.25, 0.7, 24),
+    new THREE.MeshStandardMaterial({color:0x080810, metalness:0.3, roughness:0.2})
+  );
+  lens.rotation.x = Math.PI/2;
+  lens.position.z = -0.6;
+
+  // Glass element
+  const glass = new THREE.Mesh(
+    new THREE.CircleGeometry(0.22, 24),
+    new THREE.MeshPhysicalMaterial({color:0x80c0ff, transmission:0.8, roughness:0.05, side:THREE.DoubleSide})
+  );
+  glass.position.z = -0.96;
+
+  // Frustum
+  const frustum = buildFrustum(55, 4/3, 0.4, 5);
+
+  // Local axes
+  const axX = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 1.2, 0xff4444, 0.15, 0.08);
+  const axY = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), 1.2, 0x44ff44, 0.15, 0.08);
+  const axZ = new THREE.ArrowHelper(new THREE.Vector3(0,0,-1), new THREE.Vector3(0,0,0), 1.2, 0x4488ff, 0.15, 0.08);
+
+  camGroup.add(body, lens, glass, frustum, axX, axY, axZ);
+  scene.add(camGroup);
+
+  // Camera view canvas / renderer
+  const cvCanvas = $('cam-view-canvas');
+  const cvRenderer = new THREE.WebGLRenderer({canvas: cvCanvas, antialias:true});
+  cvRenderer.setSize(200, 130);
+  const virtualCam = new THREE.PerspectiveCamera(55, 200/130, 0.1, 100);
+
+  // Sliders
+  const sliders = {
+    tx: $('sl-tx'), ty: $('sl-ty'), tz: $('sl-tz'),
+    yaw: $('sl-yaw'), pitch: $('sl-pitch'), roll: $('sl-roll')
+  };
+
+  function updateExtrinsics() {
+    const tx = parseFloat(sliders.tx.value);
+    const ty = parseFloat(sliders.ty.value);
+    const tz = parseFloat(sliders.tz.value);
+    const yaw   = parseFloat(sliders.yaw.value)   * Math.PI / 180;
+    const pitch = parseFloat(sliders.pitch.value)  * Math.PI / 180;
+    const roll  = parseFloat(sliders.roll.value)   * Math.PI / 180;
+
+    // Update labels
+    $('lbl-tx').textContent = f1(tx);
+    $('lbl-ty').textContent = f1(ty);
+    $('lbl-tz').textContent = f1(tz);
+    $('lbl-yaw').textContent   = Math.round(parseFloat(sliders.yaw.value))  + '°';
+    $('lbl-pitch').textContent = Math.round(parseFloat(sliders.pitch.value)) + '°';
+    $('lbl-roll').textContent  = Math.round(parseFloat(sliders.roll.value))  + '°';
+
+    // Apply to camera group
+    camGroup.position.set(tx, ty, tz);
+    camGroup.rotation.order = 'YXZ';
+    camGroup.rotation.y = yaw;
+    camGroup.rotation.x = pitch;
+    camGroup.rotation.z = roll;
+    camGroup.updateMatrixWorld(true);
+
+    // Extract rotation matrix (3x3, col-major in THREE)
+    const m = camGroup.matrixWorld.elements;
+    // Elements: m[col*4 + row]
+    const R = [
+      [m[0],m[4],m[8]],
+      [m[1],m[5],m[9]],
+      [m[2],m[6],m[10]],
+    ];
+    // Update HUD: translation
+    $('e-tx').textContent = f2(tx);
+    $('e-ty').textContent = f2(ty);
+    $('e-tz').textContent = f2(tz);
+    // Update HUD: rotation
+    const ids = [['r00','r01','r02'],['r10','r11','r12'],['r20','r21','r22']];
+    ids.forEach((row,i) => row.forEach((id,j) => {
+      $(id).textContent = f2(R[i][j]);
+    }));
+
+    // Virtual camera = same pose as camera group
+    virtualCam.position.copy(camGroup.position);
+    virtualCam.quaternion.copy(camGroup.quaternion);
+    virtualCam.updateMatrixWorld(true);
+
+    renderer.render(scene, obsCam);
+    cvRenderer.render(scene, virtualCam);
+  }
+
+  Object.values(sliders).forEach(sl => sl.addEventListener('input', updateExtrinsics));
+
+  // Orbit observer cam by dragging
+  let drag = false, px=0, py=0;
+  wrap.addEventListener('mousedown', e => { drag=true; px=e.clientX; py=e.clientY; });
+  window.addEventListener('mouseup',  () => drag=false);
+  window.addEventListener('mousemove', e => {
+    if (!drag) return;
+    const dx = e.clientX-px, dy=e.clientY-py;
+    px=e.clientX; py=e.clientY;
+    obsCam.position.applyAxisAngle(new THREE.Vector3(0,1,0), -dx*0.008);
+    obsCam.position.y = clamp(obsCam.position.y + dy*0.05, 2, 25);
+    obsCam.lookAt(0,1,0);
+    renderer.render(scene, obsCam);
+    cvRenderer.render(scene, virtualCam);
+  });
+  // Touch
+  let lastTouch = null;
+  wrap.addEventListener('touchstart', e => { lastTouch = e.touches[0]; }, {passive:true});
+  wrap.addEventListener('touchmove', e => {
+    if (!lastTouch) return;
+    const dx = e.touches[0].clientX - lastTouch.clientX;
+    lastTouch = e.touches[0];
+    obsCam.position.applyAxisAngle(new THREE.Vector3(0,1,0), -dx*0.01);
+    obsCam.lookAt(0,1,0);
+    updateExtrinsics();
+  }, {passive:true});
+
+  window.addEventListener('resize', () => {
+    renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+    obsCam.aspect = wrap.clientWidth/wrap.clientHeight;
+    obsCam.updateProjectionMatrix();
+    updateExtrinsics();
+  });
+
+  updateExtrinsics();
+}
+
+/* ─────────────────────────────────────────────────────────
+   2. INTRINSICS
+───────────────────────────────────────────────────────── */
+function initIntrinsics() {
+  const wrap = $('int-wrapper');
+  if (!wrap) return;
+
+  const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+  function setSize() {
+    renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+  }
+  setSize();
+  wrap.insertBefore(renderer.domElement, wrap.firstChild);
+
+  const scene = new THREE.Scene();
+  const cam = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+  cam.position.set(6, 4, -9);
+  cam.lookAt(5, 0, 0);
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+  const dl = new THREE.DirectionalLight(0xffffff, 0.8);
+  dl.position.set(5, 10, -5); scene.add(dl);
+
+  // Optical axis line
+  const axMat = new THREE.LineDashedMaterial({color:0x303060, dashSize:0.3, gapSize:0.15});
+  const axGeom = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(0,0,0), new THREE.Vector3(22,0,0)
+  ]);
+  const axLine = new THREE.Line(axGeom, axMat);
+  axLine.computeLineDistances();
+  scene.add(axLine);
+
+  // Pinhole (bright sphere at origin)
+  const pinhole = new THREE.Mesh(
+    new THREE.SphereGeometry(0.12, 20, 20),
+    new THREE.MeshBasicMaterial({color:0xffffff})
+  );
+  scene.add(pinhole);
+
+  // Object box
+  const objMesh = new THREE.Mesh(
+    new THREE.BoxGeometry(0.6, 0.6, 0.6),
+    new THREE.MeshStandardMaterial({color:0xf97316, roughness:0.5})
+  );
+  scene.add(objMesh);
+  // Object position marker (floor line)
+  const floorMat = new THREE.LineDashedMaterial({color:0xf97316, dashSize:0.2, gapSize:0.1, transparent:true, opacity:0.5});
+  const floorLine = new THREE.Line(new THREE.BufferGeometry(), floorMat);
+  scene.add(floorLine);
+
+  // Image plane
+  const IMG_W = 1.6, IMG_H = 1.2;
+  const imgPlane = new THREE.Mesh(
+    new THREE.PlaneGeometry(IMG_W, IMG_H),
+    new THREE.MeshBasicMaterial({color:0x111122, side:THREE.DoubleSide})
+  );
+  const imgGrid = new THREE.GridHelper(Math.max(IMG_W, IMG_H), 8, 0x1a2a4a, 0x0a1020);
+  imgGrid.rotation.x = Math.PI/2;
+  const imgBorder = new THREE.LineLoop(
+    new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(-IMG_W/2,-IMG_H/2,0),
+      new THREE.Vector3(IMG_W/2,-IMG_H/2,0),
+      new THREE.Vector3(IMG_W/2,IMG_H/2,0),
+      new THREE.Vector3(-IMG_W/2,IMG_H/2,0),
+    ]),
+    new THREE.LineBasicMaterial({color:0x38bdf8})
+  );
+  const imgGroup = new THREE.Group();
+  imgGroup.add(imgPlane, imgGrid, imgBorder);
+  scene.add(imgGroup);
+
+  // Projected dot on image plane
+  const projDot = new THREE.Mesh(
+    new THREE.SphereGeometry(0.07, 16, 16),
+    new THREE.MeshBasicMaterial({color:0x34d399})
+  );
+  scene.add(projDot);
+
+  // Light rays
+  const rayMat = new THREE.LineBasicMaterial({color:0xfde047, transparent:true, opacity:0.7});
+  const ray1 = new THREE.Line(new THREE.BufferGeometry(), rayMat);
+  const ray2 = new THREE.Line(new THREE.BufferGeometry(), rayMat.clone());
+  scene.add(ray1, ray2);
+
+  // Big triangle (cyan)
+  const triMat1 = new THREE.LineBasicMaterial({color:0xef4444, transparent:true, opacity:0.8});
+  const triMat2 = new THREE.LineBasicMaterial({color:0x22d3ee, transparent:true, opacity:0.8});
+  const triObj  = new THREE.LineLoop(new THREE.BufferGeometry(), triMat1);
+  const triImg  = new THREE.LineLoop(new THREE.BufferGeometry(), triMat2);
+  scene.add(triObj, triImg);
+
+  // Visual focal length scale
+  const VIS_F_SCALE = 0.35; // maps real f to 3D units
+
+  function updateIntrinsics() {
+    const fx = parseFloat($('sl-fx').value);
+    const fy = parseFloat($('sl-fy').value);
+    const cx = parseFloat($('sl-cx').value);
+    const cy = parseFloat($('sl-cy').value);
+    const Xc = parseFloat($('sl-xc').value);
+    const Yc = parseFloat($('sl-yc').value);
+    const Zc = parseFloat($('sl-zc').value);
+
+    // Update labels
+    $('lbl-fx').textContent = Math.round(fx);
+    $('lbl-fy').textContent = Math.round(fy);
+    $('lbl-cx').textContent = Math.round(cx);
+    $('lbl-cy').textContent = Math.round(cy);
+    $('lbl-xc').textContent = f1(Xc);
+    $('lbl-yc').textContent = f1(Yc);
+    $('lbl-zc').textContent = f1(Zc);
+
+    // K matrix display
+    $('k-fx').textContent = Math.round(fx);
+    $('k-fy').textContent = Math.round(fy);
+    $('k-cx').textContent = Math.round(cx);
+    $('k-cy').textContent = Math.round(cy);
+
+    // Compute projection
+    const xzr = Xc/Zc, yzr = Yc/Zc;
+    const u = fx * xzr + cx;
+    const v = fy * yzr + cy;
+
+    $('h-xc').textContent = f1(Xc);
+    $('h-yc').textContent = f1(Yc);
+    $('h-zc').textContent = f1(Zc);
+    $('h-xzr').textContent = f3(xzr);
+    $('h-yzr').textContent = f3(yzr);
+    $('res-u').textContent = u.toFixed(1);
+    $('res-v').textContent = v.toFixed(1);
+
+    // 3D scene: place object at (Zc, Yc, Xc) using optical axis along +X
+    objMesh.position.set(Zc, Yc, Xc);
+
+    // Image plane at x = f_vis
+    const f_vis = clamp(fx, 100, 800) * VIS_F_SCALE / 100; // rough visual scale
+    imgGroup.position.set(f_vis, 0, 0);
+    imgGroup.rotation.y = Math.PI/2;
+    imgGrid.position.set(0, 0, 0.01);
+
+    // Projected dot on image plane
+    // In camera space: u_n = Xc/Zc, v_n = Yc/Zc (normalized, before K)
+    // On image plane: x = u_n * (IMG_W/2), y = -v_n * (IMG_H/2)
+    // (flip y because image +v is down, 3D +y is up)
+    const dot_x = xzr * (IMG_W/2) * clamp(fx/500, 0.5, 2.5);
+    const dot_y = -yzr * (IMG_H/2) * clamp(fy/500, 0.5, 2.5);
+    projDot.position.set(f_vis, clamp(dot_y, -IMG_H/2+0.1, IMG_H/2-0.1), clamp(dot_x, -IMG_W/2+0.1, IMG_W/2-0.1));
+
+    // Light rays: object top/bottom through pinhole to projected dot area
+    const objTop = new THREE.Vector3(Zc, Yc+0.3, Xc);
+    const objBot = new THREE.Vector3(Zc, Yc-0.3, Xc);
+    const origin = new THREE.Vector3(0, 0, 0);
+    // Ray from origin toward object top → hits image plane
+    const dir1 = objTop.clone().normalize().multiplyScalar(f_vis/Zc);
+    const dir2 = objBot.clone().normalize().multiplyScalar(f_vis/Zc);
+    ray1.geometry.setFromPoints([objTop, origin, new THREE.Vector3(dir1.x*Zc/f_vis*f_vis, dir1.y*Zc/f_vis*f_vis, dir1.z*Zc/f_vis*f_vis)]);
+    // Simpler: just draw rays from obj corners to pinhole
+    ray1.geometry.setFromPoints([objTop, origin]);
+    ray2.geometry.setFromPoints([objBot, origin]);
+
+    // Similar triangles: object vs image
+    triObj.geometry.setFromPoints([
+      new THREE.Vector3(0,0,0),
+      new THREE.Vector3(Zc, 0, 0),
+      new THREE.Vector3(Zc, Yc, Xc),
+    ]);
+    triImg.geometry.setFromPoints([
+      new THREE.Vector3(0,0,0),
+      new THREE.Vector3(f_vis, 0, 0),
+      projDot.position.clone(),
+    ]);
+
+    floorLine.geometry.setFromPoints([
+      new THREE.Vector3(Zc,0,Xc),
+      new THREE.Vector3(Zc,Yc,Xc)
+    ]);
+    floorLine.computeLineDistances();
+
+    renderer.render(scene, cam);
+    draw2DImagePlane(fx, fy, cx, cy, Xc, Yc, Zc, u, v);
+  }
+
+  // 2D image plane canvas
+  const ipCanvas = $('img-plane-canvas');
+  function draw2DImagePlane(fx, fy, cx, cy, Xc, Yc, Zc, u, v) {
+    const canvas = ipCanvas;
+    if (!canvas) return;
+    const W = canvas.offsetWidth || 360, H = canvas.offsetHeight || 260;
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#060610';
+    ctx.fillRect(0, 0, W, H);
+
+    // Scale: map 640×480 sensor to canvas
+    const SX = W/640, SY = H/480;
+
+    // Grid (every 80px in sensor space)
+    ctx.strokeStyle = '#111128'; ctx.lineWidth = 0.5;
+    for (let gx=0; gx<=640; gx+=80) {
+      ctx.beginPath(); ctx.moveTo(gx*SX,0); ctx.lineTo(gx*SX,H); ctx.stroke();
+    }
+    for (let gy=0; gy<=480; gy+=60) {
+      ctx.beginPath(); ctx.moveTo(0,gy*SY); ctx.lineTo(W,gy*SY); ctx.stroke();
+    }
+
+    // Sensor border
+    ctx.strokeStyle = '#1e1e38'; ctx.lineWidth = 1;
+    ctx.strokeRect(0, 0, W, H);
+
+    // Principal point cross-hair
+    const cpx = cx*SX, cpy = cy*SY;
+    ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 1; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(cpx-18,cpy); ctx.lineTo(cpx+18,cpy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cpx,cpy-18); ctx.lineTo(cpx,cpy+18); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#38bdf8'; ctx.font = 'bold 9px monospace';
+    ctx.textAlign = 'left'; ctx.fillText('(cx,cy)', cpx+5, cpy-5);
+
+    // Projected point
+    const pu = clamp(u,0,640)*SX, pv = clamp(v,0,480)*SY;
+    const inSensor = (u>=0 && u<=640 && v>=0 && v<=480);
+
+    // Line from principal point to projected point
+    ctx.strokeStyle = inSensor ? 'rgba(52,211,153,.35)' : 'rgba(239,68,68,.35)';
+    ctx.lineWidth = 1; ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(cpx,cpy); ctx.lineTo(pu,pv); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Projected dot
+    ctx.fillStyle = inSensor ? '#34d399' : '#ef4444';
+    ctx.beginPath(); ctx.arc(pu, pv, 5, 0, Math.PI*2); ctx.fill();
+    // Halo
+    ctx.strokeStyle = inSensor ? 'rgba(52,211,153,.4)' : 'rgba(239,68,68,.4)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(pu, pv, 9, 0, Math.PI*2); ctx.stroke();
+
+    // Label
+    ctx.fillStyle = inSensor ? '#34d399' : '#ef4444';
+    ctx.font = 'bold 10px monospace'; ctx.textAlign = 'left';
+    const labelText = `(${u.toFixed(0)}, ${v.toFixed(0)})`;
+    ctx.fillText(labelText, Math.min(pu+8, W-65), clamp(pv-8, 10, H-10));
+
+    // "Out of frame" message
+    if (!inSensor) {
+      ctx.fillStyle = 'rgba(239,68,68,.7)'; ctx.font = '9px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('OUT OF FRAME', W/2, H-8);
+    }
+  }
+
+  // Slider events
+  ['sl-fx','sl-fy','sl-cx','sl-cy','sl-xc','sl-yc','sl-zc'].forEach(id => {
+    const el = $(id);
+    if (el) el.addEventListener('input', updateIntrinsics);
+  });
+
+  // Observer drag
+  let drag=false, px=0, py=0;
+  wrap.addEventListener('mousedown', e => { drag=true; px=e.clientX; py=e.clientY; });
+  window.addEventListener('mouseup',  () => drag=false);
+  window.addEventListener('mousemove', e => {
+    if (!drag) return;
+    const dx=e.clientX-px, dy=e.clientY-py;
+    px=e.clientX; py=e.clientY;
+    cam.position.applyAxisAngle(new THREE.Vector3(0,1,0), -dx*0.01);
+    cam.position.y = clamp(cam.position.y + dy*0.05, 1, 15);
+    cam.lookAt(5,0,0);
+    renderer.render(scene, cam);
+  });
+
+  window.addEventListener('resize', () => {
+    setSize();
+    cam.aspect = wrap.clientWidth / wrap.clientHeight;
+    cam.updateProjectionMatrix();
+    updateIntrinsics();
+  });
+
+  setTimeout(() => {
+    setSize();
+    cam.aspect = wrap.clientWidth / wrap.clientHeight;
+    cam.updateProjectionMatrix();
+    updateIntrinsics();
+  }, 80);
+}
+
+/* ─────────────────────────────────────────────────────────
+   3. PERSPECTIVE DIVIDE / SIMILAR TRIANGLES
+───────────────────────────────────────────────────────── */
+function initPerspectiveDivide() {
+  const canvas = $('persp-canvas');
+  if (!canvas) return;
+
+  function draw() {
+    const Y  = parseFloat($('sl-py').value);
+    const Z  = parseFloat($('sl-pz').value);
+    const f  = parseFloat($('sl-pf').value);
+    const yp = f * Y / Z; // projected height
+
+    $('lbl-py').textContent = f1(Y);
+    $('lbl-pz').textContent = f1(Z);
+    $('lbl-pf').textContent = f1(f);
+    $('pf-f').textContent   = f1(f);
+    $('pf-Y').textContent   = f1(Y);
+    $('pf-Z').textContent   = f1(Z);
+    $('pf-res').textContent = yp.toFixed(3);
+    $('pf-ratio').textContent = (Y/Z).toFixed(3);
+
+    const W = canvas.offsetWidth || 760;
+    const H = 310;
+    canvas.width  = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#09090f';
+    ctx.fillRect(0, 0, W, H);
+
+    // Layout
+    const PX = 70;   // pinhole x
+    const CY = H * 0.68; // optical axis y (lower part for labels)
+    const ZSCALE = Math.min(38, (W - PX - 80) / Z);  // pixels per real meter
+    const YSCALE = Math.min(30, (CY - 30) / Math.max(Y, yp));
+
+    const Z_px = Z * ZSCALE; // object distance in canvas pixels
+    const f_px = f * ZSCALE; // focal length in canvas pixels
+    const Y_px = Y * YSCALE; // object height in canvas pixels
+    const yp_px = yp * YSCALE; // image height in canvas pixels
+
+    const OBJ_X  = PX + Z_px; // x of object
+    const IMG_X  = PX + f_px; // x of image plane
+
+    // Background grid
+    ctx.strokeStyle = '#12121e'; ctx.lineWidth = 1;
+    for (let gx=0; gx<W; gx+=40) {
+      ctx.beginPath(); ctx.moveTo(gx,0); ctx.lineTo(gx,H); ctx.stroke();
+    }
+    for (let gy=0; gy<H; gy+=40) {
+      ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(W,gy); ctx.stroke();
+    }
+
+    // ── Optical axis ──
+    ctx.strokeStyle = '#252545'; ctx.lineWidth = 1.5; ctx.setLineDash([8,6]);
+    ctx.beginPath(); ctx.moveTo(0, CY); ctx.lineTo(W, CY); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // ── Big triangle (object) — red ──
+    ctx.fillStyle   = 'rgba(239,68,68,0.12)';
+    ctx.strokeStyle = 'rgba(239,68,68,0.9)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(PX, CY);
+    ctx.lineTo(OBJ_X, CY);
+    ctx.lineTo(OBJ_X, CY - Y_px);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+
+    // ── Small triangle (image) — cyan ──
+    ctx.fillStyle   = 'rgba(34,211,238,0.12)';
+    ctx.strokeStyle = 'rgba(34,211,238,0.9)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(PX, CY);
+    ctx.lineTo(IMG_X, CY);
+    ctx.lineTo(IMG_X, CY - Math.min(yp_px, CY-20));
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+
+    // ── Image plane (vertical line, dashed) ──
+    ctx.strokeStyle = 'rgba(34,211,238,0.5)'; ctx.lineWidth = 1.5; ctx.setLineDash([4,4]);
+    ctx.beginPath();
+    ctx.moveTo(IMG_X, CY + 30);
+    ctx.lineTo(IMG_X, Math.max(CY - Math.min(yp_px,CY-20) - 20, 15));
+    ctx.stroke(); ctx.setLineDash([]);
+
+    // ── Object (vertical bar) ──
+    ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(OBJ_X, CY); ctx.lineTo(OBJ_X, CY - Y_px); ctx.stroke();
+
+    // ── Ray from object top through pinhole ──
+    ctx.strokeStyle = 'rgba(249,226,175,.7)'; ctx.lineWidth = 1.5; ctx.setLineDash([5,5]);
+    ctx.beginPath();
+    ctx.moveTo(OBJ_X, CY - Y_px);
+    ctx.lineTo(PX, CY);
+    ctx.lineTo(IMG_X, CY - Math.min(yp_px, CY-20));
+    ctx.stroke(); ctx.setLineDash([]);
+
+    // ── Pinhole ──
+    ctx.fillStyle = '#f9e2af';
+    ctx.beginPath(); ctx.arc(PX, CY, 7, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#0c0c14'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(PX, CY, 7, 0, Math.PI*2); ctx.stroke();
+
+    // ── Dimension labels ──
+    ctx.font = 'bold 13px monospace'; ctx.textAlign = 'center';
+
+    // Y label (object height)
+    ctx.fillStyle = '#ef4444';
+    ctx.fillText(`Y=${f1(Y)}`, OBJ_X + 28, CY - Y_px/2 + 4);
+    // Z label (object distance)
+    ctx.fillStyle = '#38bdf8';
+    ctx.fillText(`Z=${f1(Z)}`, PX + Z_px/2, CY + 28);
+    // f label
+    ctx.fillStyle = '#a78bfa';
+    ctx.fillText(`f=${f1(f)}`, PX + f_px/2, CY + 18);
+    // y' label (image height)
+    const yp_disp = Math.min(yp_px, CY-20);
+    ctx.fillStyle = '#22d3ee';
+    if (yp_disp > 5) ctx.fillText(`y'=${yp.toFixed(2)}`, IMG_X - 40, CY - yp_disp/2);
+
+    // ── Axis label ──
+    ctx.fillStyle = '#3a3a60'; ctx.font = '11px monospace'; ctx.textAlign = 'left';
+    ctx.fillText('Pinhole (origin)', PX - 60, CY + 44);
+    ctx.fillStyle = '#404070'; ctx.textAlign = 'right';
+    ctx.fillText('Z →', W - 8, CY + 15);
+
+    // Right angle boxes
+    function drawRightAngle(cx2, cy2, sz, flipX, flipY) {
+      const sx = flipX ? -sz : sz, sy = flipY ? -sz : sz;
+      ctx.strokeStyle = 'rgba(100,100,180,.6)'; ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(cx2, cy2+sy); ctx.lineTo(cx2+sx, cy2+sy); ctx.lineTo(cx2+sx, cy2);
+      ctx.stroke();
+    }
+    drawRightAngle(OBJ_X, CY, 8, false, true);
+    drawRightAngle(IMG_X, CY, 8, true, true);
+
+    // ── Similarity annotation ──
+    ctx.fillStyle = '#facc15'; ctx.font = 'bold 12px monospace'; ctx.textAlign = 'center';
+    ctx.fillText(`Y/Z = y'/f  →  ${f1(Y)}/${f1(Z)} = ${yp.toFixed(2)}/${f1(f)} = ${(Y/Z).toFixed(3)}`, W/2, H - 12);
+  }
+
+  ['sl-py','sl-pz','sl-pf'].forEach(id => $(id).addEventListener('input', draw));
+  window.addEventListener('resize', draw);
+  draw();
+}
+
+/* ─────────────────────────────────────────────────────────
+   4. FULL PIPELINE CALCULATOR
+───────────────────────────────────────────────────────── */
+function initPipelineCalc() {
+  const inputs = ['sl-wxc','sl-wyc','sl-wzc','sl-wfx','sl-wyaw'];
+  inputs.forEach(id => {
+    const el = $(id);
+    if (el) el.addEventListener('input', updateCalc);
+  });
+
+  const pxCanvas = $('px-preview-canvas');
+
+  function updateCalc() {
+    const Xw = parseFloat($('sl-wxc').value);
+    const Yw = parseFloat($('sl-wyc').value);
+    const Zw = parseFloat($('sl-wzc').value);
+    const fx = parseFloat($('sl-wfx').value);
+    const yaw = parseFloat($('sl-wyaw').value) * Math.PI/180;
+
+    $('lbl-wxc').textContent = f1(Xw);
+    $('lbl-wyc').textContent = f1(Yw);
+    $('lbl-wzc').textContent = f1(Zw);
+    $('lbl-wfx').textContent = Math.round(fx);
+    $('lbl-wyaw').textContent = Math.round(parseFloat($('sl-wyaw').value))+'°';
+
+    // Camera at (0,2,8) looking -Z, yaw applied
+    const cy = Math.cos(yaw), sy = Math.sin(yaw);
+    // Rotation about Y: R_y
+    const R = [[cy, 0, sy], [0, 1, 0], [-sy, 0, cy]];
+    const t = [0, -2, -8]; // translation: camera at (0,2,8) in world
+
+    // Camera coords: Pc = R * Pw + t
+    const Xc = R[0][0]*Xw + R[0][1]*Yw + R[0][2]*Zw + t[0];
+    const Yc = R[1][0]*Xw + R[1][1]*Yw + R[1][2]*Zw + t[1];
+    const Zc = R[2][0]*Xw + R[2][1]*Yw + R[2][2]*Zw + t[2];
+
+    // Intrinsics
+    const fy = fx, cx = 320, cy2 = 240;
+
+    // Homogeneous image coords
+    const xp = fx * Xc + cx * Zc;
+    const yp = fy * Yc + cy2 * Zc;
+    const wp = Zc;
+
+    // Pixel coords
+    const u = (Zc !== 0) ? fx * Xc / Zc + cx : 0;
+    const v = (Zc !== 0) ? fy * Yc / Zc + cy2 : 0;
+
+    // ── Extrinsics display ──
+    $('calc-ext-mat').innerHTML =
+      `<div><span class="h">[R|t]</span> × World point:</div>` +
+      `<div style="margin-top:4px;">` +
+      `[<span class="r">${f2(R[0][0])}</span> <span class="r">${f2(R[0][1])}</span> <span class="r">${f2(R[0][2])}</span> | <span class="v">${f2(t[0])}</span>]  [<span class="h">${f1(Xw)}</span>]</div>` +
+      `<div>[<span class="r">${f2(R[1][0])}</span> <span class="r">${f2(R[1][1])}</span> <span class="r">${f2(R[1][2])}</span> | <span class="v">${f2(t[1])}</span>]  [<span class="h">${f1(Yw)}</span>]</div>` +
+      `<div>[<span class="r">${f2(R[2][0])}</span> <span class="r">${f2(R[2][1])}</span> <span class="r">${f2(R[2][2])}</span> | <span class="v">${f2(t[2])}</span>]  [<span class="h">${f1(Zw)}</span>]</div>` +
+      `<div style="color:#5050a0;">                                               [  1.0 ]</div>`;
+
+    $('calc-cam-pt').textContent = `(${f2(Xc)}, ${f2(Yc)}, ${f2(Zc)})`;
+
+    // ── Intrinsics display ──
+    $('calc-int-mat').innerHTML =
+      `<div><span class="h">K</span> × Camera point:</div>` +
+      `<div style="margin-top:4px;">` +
+      `[<span class="v">${Math.round(fx)}</span>   0  ${Math.round(cx)}]  [<span class="h">${f2(Xc)}</span>]</div>` +
+      `<div>[  0  <span class="v">${Math.round(fy)}</span> ${Math.round(cy2)}]  [<span class="h">${f2(Yc)}</span>]</div>` +
+      `<div>[  0    0    1]  [<span class="h">${f2(Zc)}</span>]</div>`;
+
+    $('calc-hom-pt').textContent = `(${xp.toFixed(1)}, ${yp.toFixed(1)}, ${wp.toFixed(2)})`;
+
+    // ── Divide ──
+    const validZ = Zc > 0.01;
+    $('calc-u-eq').textContent = validZ ? `${xp.toFixed(1)} / ${wp.toFixed(2)}` : 'Z≤0, behind camera';
+    $('calc-v-eq').textContent = validZ ? `${yp.toFixed(1)} / ${wp.toFixed(2)}` : '—';
+    $('calc-u').textContent    = validZ ? u.toFixed(1) : '—';
+    $('calc-v').textContent    = validZ ? v.toFixed(1) : '—';
+
+    // ── Pixel preview ──
+    if (pxCanvas) {
+      const W=120, H=90;
+      pxCanvas.width=W; pxCanvas.height=H;
+      const ctx=pxCanvas.getContext('2d');
+      ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H);
+      ctx.strokeStyle='#111128'; ctx.lineWidth=.5;
+      for(let x=0;x<=W;x+=24){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+      for(let y=0;y<=H;y+=18){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+      if (validZ) {
+        const pu=clamp(u,0,640)/640*W, pv=clamp(v,0,480)/480*H;
+        const inFrame = u>=0&&u<=640&&v>=0&&v<=480;
+        ctx.fillStyle = inFrame?'#34d399':'#ef4444';
+        ctx.beginPath(); ctx.arc(pu,pv,4,0,Math.PI*2); ctx.fill();
+      }
+      // border
+      ctx.strokeStyle='#252545'; ctx.lineWidth=1;
+      ctx.strokeRect(0,0,W,H);
+    }
+  }
+
+  updateCalc();
+}
+
+/* ─────────────────────────────────────────────────────────
+   5. ISO / EXPOSURE
+───────────────────────────────────────────────────────── */
+function initISO() {
+  const canvas = $('iso-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  function draw() {
+    const iso   = parseInt($('sl-iso').value);
+    const gain  = iso / 100;
+    const base  = 15;
+    let bright  = clamp(Math.floor(base * gain), 0, 255);
+    const noise = Math.pow(iso / 25600, 1.4) * 140;
+
+    canvas.width  = canvas.offsetWidth  || 900;
+    canvas.height = 340;
+    const W = canvas.width, H = canvas.height;
+
+    // Sky gradient
+    const sky = ctx.createLinearGradient(0, 0, 0, H*0.6);
+    const b = clamp(bright*0.8, 0, 255);
+    sky.addColorStop(0, `rgb(${clamp(b*0.6,0,255)},${clamp(b*0.7,0,255)},${clamp(b,0,255)})`);
+    sky.addColorStop(1, `rgb(${clamp(b*0.3,0,255)},${clamp(b*0.35,0,255)},${clamp(b*0.5,0,255)})`);
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W, H*0.6);
+
+    // Ground
+    const ground = ctx.createLinearGradient(0, H*0.6, 0, H);
+    const g = clamp(bright*0.4, 0, 255);
+    ground.addColorStop(0, `rgb(${clamp(g*0.5,0,255)},${clamp(g*0.65,0,255)},${clamp(g*0.4,0,255)})`);
+    ground.addColorStop(1, `rgb(${clamp(g*0.3,0,255)},${clamp(g*0.35,0,255)},${clamp(g*0.25,0,255)})`);
+    ctx.fillStyle = ground;
+    ctx.fillRect(0, H*0.6, W, H*0.4);
+
+    // Moon/sun
+    const starBright = clamp(bright*0.9, 0, 255);
+    ctx.fillStyle = `rgb(${starBright},${starBright},${clamp(starBright*1.05,0,255)})`;
+    ctx.beginPath(); ctx.arc(W*0.78, H*0.18, 24, 0, Math.PI*2); ctx.fill();
+
+    // Mountains
+    const mtBright = clamp(bright*0.25, 0, 255);
+    ctx.fillStyle = `rgb(${mtBright},${clamp(mtBright*1.05,0,255)},${clamp(mtBright*1.1,0,255)})`;
+    [[0.05,0.6,0.25,0.3],[0.2,0.5,0.2,0.35],[0.5,0.55,0.25,0.32],[0.7,0.5,0.3,0.38],[0.85,0.6,0.2,0.3]]
+      .forEach(([x,y,w,h]) => {
+        ctx.beginPath();
+        ctx.moveTo(W*x, H*y);
+        ctx.lineTo(W*(x+w/2), H*(y-h));
+        ctx.lineTo(W*(x+w), H*y);
+        ctx.fill();
+      });
+
+    // Trees
+    const treeBright = clamp(bright*0.15, 0, 255);
+    ctx.fillStyle = `rgb(${treeBright},${clamp(treeBright*1.2,0,255)},${treeBright})`;
+    [[0.1,0.62],[0.15,0.60],[0.3,0.61],[0.6,0.60],[0.65,0.62],[0.8,0.61],[0.9,0.60]]
+      .forEach(([x,y]) => {
+        ctx.beginPath();
+        ctx.moveTo(W*x, H*y);
+        ctx.lineTo(W*(x+0.015), H*(y-0.08));
+        ctx.lineTo(W*(x+0.03), H*y);
+        ctx.fill();
+      });
+
+    // Noise grain
+    if (noise > 1) {
+      const imgData = ctx.getImageData(0, 0, W, H);
+      const d = imgData.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const n = (Math.random()-0.5)*noise;
+        d[i]   = clamp(d[i]+n,   0, 255);
+        d[i+1] = clamp(d[i+1]+(Math.random()-0.5)*noise, 0, 255);
+        d[i+2] = clamp(d[i+2]+n, 0, 255);
+      }
+      ctx.putImageData(imgData, 0, 0);
+    }
+
+    // Labels
+    $('sl-iso').parentElement.querySelector('label').querySelector('.val').textContent = iso;
+    $('h-iso').textContent   = iso;
+    $('h-gain').textContent  = gain.toFixed(1)+'×';
+    $('h-noise').textContent = noise.toFixed(0)+(noise>0?' (visible)':'');
+    $('h-bright').textContent= `${bright}/255`;
+
+    // Overlay: ISO badge
+    ctx.fillStyle = 'rgba(0,0,0,.55)';
+    ctx.fillRect(W-90, H-32, 86, 26);
+    ctx.fillStyle = iso > 3200 ? '#ef4444' : iso > 800 ? '#facc15' : '#34d399';
+    ctx.font = 'bold 14px monospace'; ctx.textAlign = 'right';
+    ctx.fillText(`ISO ${iso}`, W-10, H-12);
+  }
+
+  $('sl-iso').addEventListener('input', draw);
+  window.addEventListener('resize', draw);
+  draw();
+}
+
+/* ─────────────────────────────────────────────────────────
+   WORLD COORDINATES
+───────────────────────────────────────────────────────── */
+function initWorldCoordinates() {
+  const wrap = $('world-wrapper');
+  if (!wrap) return;
+
+  const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+  wrap.insertBefore(renderer.domElement, wrap.firstChild);
+
+  const scene = new THREE.Scene();
+  const cam = new THREE.PerspectiveCamera(42, wrap.clientWidth/wrap.clientHeight, 0.1, 100);
+  cam.position.set(12, 10, 12);
+  cam.lookAt(0, 0, 0);
+
+  scene.add(new THREE.GridHelper(28, 28, 0x1a1a30, 0x0e0e1e));
+  scene.add(new THREE.AmbientLight(0xffffff, 0.65));
+  const dl = new THREE.DirectionalLight(0xffffff, 0.85);
+  dl.position.set(10, 15, 8); scene.add(dl);
+
+  // Fixed world objects (absolute positions, never move)
+  const OBJECTS = [
+    {pos:[3,  0.5, -2],  color:0xff5533, name:'Box A',   geom:'box'},
+    {pos:[-4, 0.5,  1],  color:0x33cc66, name:'Box B',   geom:'box'},
+    {pos:[2,  0.5,  4],  color:0x4488ff, name:'Box C',   geom:'box'},
+    {pos:[-2, 0.5, -4],  color:0xffaa22, name:'Box D',   geom:'box'},
+    {pos:[0,  1.5,  0],  color:0xcc44ff, name:'Tower',   geom:'cone'},
+    {pos:[5,  0.4,  1],  color:0xff8888, name:'Camera',  geom:'cam'},
+  ];
+
+  const meshes = OBJECTS.map(o => {
+    let geom;
+    if (o.geom === 'cone')  geom = new THREE.ConeGeometry(0.7, 2, 4);
+    else if (o.geom === 'cam') geom = new THREE.BoxGeometry(0.7, 0.5, 0.4);
+    else                    geom = new THREE.BoxGeometry(1, 1, 1);
+    const m = new THREE.Mesh(geom, new THREE.MeshStandardMaterial({color:o.color, roughness:.55}));
+    m.position.set(...o.pos);
+    scene.add(m);
+    // Camera-specific lens nub
+    if (o.geom === 'cam') {
+      const lens = new THREE.Mesh(new THREE.CylinderGeometry(.15,.15,.5,12),
+        new THREE.MeshStandardMaterial({color:0x111111}));
+      lens.rotation.x = Math.PI/2; lens.position.z = -.45;
+      m.add(lens);
+      // Add a mini frustum
+      m.add(buildFrustum(55, 4/3, 0.3, 2.5));
+    }
+    return m;
+  });
+
+  // Origin marker
+  const originMarker = new THREE.Group();
+  const sphere = new THREE.Mesh(new THREE.SphereGeometry(.16,20,20),
+    new THREE.MeshBasicMaterial({color:0xffffff}));
+  const ring = new THREE.Mesh(new THREE.RingGeometry(.3,.44,32),
+    new THREE.MeshBasicMaterial({color:0xffffff,side:THREE.DoubleSide}));
+  ring.rotation.x = -Math.PI/2;
+  originMarker.add(sphere, ring);
+  scene.add(originMarker);
+
+  // Axes group (moves with origin)
+  const axesGroup = new THREE.Group();
+  const AX_LEN = 3.5;
+  axesGroup.add(new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), AX_LEN, 0xff4444, .35,.18));
+  axesGroup.add(new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), AX_LEN, 0x44ff44, .35,.18));
+  axesGroup.add(new THREE.ArrowHelper(new THREE.Vector3(0,0,1), new THREE.Vector3(0,0,0), AX_LEN, 0x4488ff, .35,.18));
+  scene.add(axesGroup);
+
+  // Dashed lines from origin to each object
+  const lineMat = new THREE.LineDashedMaterial({color:0x2a2a50,dashSize:.3,gapSize:.2,transparent:true,opacity:.6});
+  const lineGroup = new THREE.Group();
+  const connLines = OBJECTS.map(() => {
+    const l = new THREE.Line(new THREE.BufferGeometry(), lineMat.clone());
+    lineGroup.add(l); return l;
+  });
+  scene.add(lineGroup);
+
+  // HTML coordinate labels
+  const labelContainer = $('world-labels');
+  const labels = OBJECTS.map((o) => {
+    const el = document.createElement('div');
+    el.className = 'world-label';
+    el.style.borderColor = '#' + o.color.toString(16).padStart(6,'0') + '88';
+    labelContainer.appendChild(el);
+    return el;
+  });
+
+  let worldOrigin = [0, 0, 0];
+
+  function setOrigin(ox, oy, oz) {
+    worldOrigin = [ox, oy, oz];
+    axesGroup.position.set(ox, oy, oz);
+    originMarker.position.set(ox, oy, oz);
+
+    // Update dashed lines from origin to each object
+    OBJECTS.forEach((o, i) => {
+      connLines[i].geometry.setFromPoints([
+        new THREE.Vector3(ox, oy, oz),
+        new THREE.Vector3(o.pos[0], o.pos[1], o.pos[2])
+      ]);
+      connLines[i].computeLineDistances();
+    });
+
+    $('w-origin-disp').textContent = `(${f1(ox)}, ${f1(oy)}, ${f1(oz)})`;
+
+    // Right-panel readout
+    let html = '';
+    OBJECTS.forEach((o, i) => {
+      const cx = +(o.pos[0]-ox).toFixed(1);
+      const cy = +(o.pos[1]-oy).toFixed(1);
+      const cz = +(o.pos[2]-oz).toFixed(1);
+      const hex = '#' + o.color.toString(16).padStart(6,'0');
+      html += `<span style="color:${hex}">${o.name}</span>&nbsp;(${cx},&nbsp;${cy},&nbsp;${cz})<br>`;
+    });
+    $('w-pt-readout').innerHTML = html;
+
+    render();
+  }
+
+  function render() {
+    renderer.render(scene, cam);
+
+    // Update HTML label positions
+    const W = wrap.clientWidth, H = wrap.clientHeight;
+    OBJECTS.forEach((o, i) => {
+      const p3 = new THREE.Vector3(o.pos[0], o.pos[1]+.8, o.pos[2]).project(cam);
+      if (p3.z > 1) { labels[i].style.display='none'; return; }
+      labels[i].style.display = 'block';
+      labels[i].style.left = ((p3.x*.5+.5)*W)+'px';
+      labels[i].style.top  = ((-p3.y*.5+.5)*H)+'px';
+      const cx = (o.pos[0]-worldOrigin[0]).toFixed(1);
+      const cy = (o.pos[1]-worldOrigin[1]).toFixed(1);
+      const cz = (o.pos[2]-worldOrigin[2]).toFixed(1);
+      labels[i].textContent = `(${cx}, ${cy}, ${cz})`;
+      labels[i].style.color = '#'+o.color.toString(16).padStart(6,'0');
+    });
+  }
+
+  // Origin preset buttons
+  document.querySelectorAll('.origin-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.origin-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      setOrigin(
+        parseFloat(btn.dataset.ox),
+        parseFloat(btn.dataset.oy),
+        parseFloat(btn.dataset.oz)
+      );
+    });
+  });
+
+  // Orbit by dragging
+  let drag=false, px=0, py=0;
+  wrap.addEventListener('mousedown', e => { drag=true; px=e.clientX; py=e.clientY; });
+  window.addEventListener('mouseup',  () => drag=false);
+  window.addEventListener('mousemove', e => {
+    if (!drag) return;
+    cam.position.applyAxisAngle(new THREE.Vector3(0,1,0), -(e.clientX-px)*.008);
+    cam.position.y = clamp(cam.position.y+(e.clientY-py)*.05, 2, 22);
+    cam.lookAt(0,0,0);
+    px=e.clientX; py=e.clientY;
+    render();
+  });
+
+  // Touch orbit
+  let lt=null;
+  wrap.addEventListener('touchstart', e => { lt=e.touches[0]; }, {passive:true});
+  wrap.addEventListener('touchmove',  e => {
+    if (!lt) return;
+    cam.position.applyAxisAngle(new THREE.Vector3(0,1,0), -(e.touches[0].clientX-lt.clientX)*.01);
+    cam.lookAt(0,0,0);
+    lt=e.touches[0];
+    render();
+  }, {passive:true});
+
+  window.addEventListener('resize', () => {
+    renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+    cam.aspect = wrap.clientWidth/wrap.clientHeight;
+    cam.updateProjectionMatrix();
+    render();
+  });
+
+  setOrigin(0, 0, 0);
+}
+
+/* ─────────────────────────────────────────────────────────
+   CAMERA PIPELINE ANIMATION
+───────────────────────────────────────────────────────── */
+function initCameraPipeline() {
+  const canvas = $('pipe-canvas');
+  if (!canvas) return;
+
+  const STAGES = [
+    { label:'Scene',   sub:'Photons in\nstraight lines', color:'#f97316', math:null },
+    { label:'Lens',    sub:'Optical\nprojection',        color:'#38bdf8', math:'K[R|t] physics' },
+    { label:'Sensor',  sub:'CMOS Bayer\nphotocurrent',   color:'#4ade80', math:null },
+    { label:'ADC',     sub:'Analog →\nDigital (RAW)',    color:'#facc15', math:null },
+    { label:'ISP',     sub:'Demosaic\n+ algorithms',     color:'#a78bfa', math:'distortion corr.' },
+    { label:'Output',  sub:'JPEG/RAW\nvideo stream',     color:'#34d399', math:null },
+  ];
+
+  // Photon particles
+  const particles = [];
+  let lastSpawn = 0;
+  let activeStage = 0;
+
+  function spawnParticle(ts) {
+    if (particles.length >= 16) return;
+    particles.push({
+      t: 0,           // 0→1 across full pipeline
+      speed: .0012 + Math.random()*.0014,
+      yOff: (Math.random()-.5)*.28,
+      r:    2.5 + Math.random()*3,
+      alpha:.55 + Math.random()*.35,
+    });
+    lastSpawn = ts;
+  }
+
+  function rrect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.lineTo(x+w-r, y); ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+    ctx.lineTo(x+w, y+h-r); ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+    ctx.lineTo(x+r, y+h); ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+    ctx.lineTo(x, y+r); ctx.quadraticCurveTo(x, y, x+r, y);
+    ctx.closePath();
+  }
+
+  function draw(ctx, W, H) {
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle = '#09090f';
+    ctx.fillRect(0,0,W,H);
+
+    const MX = 18, MY = 14;
+    const SW = (W - MX*2) / STAGES.length;
+    const BW = SW * .78;
+    const BH = H - MY*2;
+    const BX0 = (SW - BW)/2;
+
+    // Draw connectors first
+    for (let i=0; i<STAGES.length-1; i++) {
+      const x1 = MX + (i+1)*SW - BX0;
+      const x2 = MX + (i+1)*SW + BX0;
+      const cy = MY + BH/2;
+      ctx.strokeStyle = '#1a1a38'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(x1,cy); ctx.lineTo(x2,cy); ctx.stroke();
+      ctx.fillStyle = '#1a1a38';
+      ctx.beginPath(); ctx.moveTo(x2,cy); ctx.lineTo(x2-7,cy-4); ctx.lineTo(x2-7,cy+4); ctx.closePath(); ctx.fill();
+    }
+
+    // Draw stage boxes
+    STAGES.forEach((s, i) => {
+      const bx = MX + i*SW + BX0;
+      const by = MY;
+      const isAct = i === activeStage;
+
+      if (isAct) { ctx.shadowColor = s.color; ctx.shadowBlur = 18; }
+      ctx.fillStyle = isAct ? '#151525' : '#0d0d1a';
+      ctx.strokeStyle = isAct ? s.color : '#252545';
+      ctx.lineWidth = isAct ? 2 : 1;
+      rrect(ctx, bx, by, BW, BH, 7); ctx.fill(); ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // Colour accent bar (top 4px)
+      ctx.fillStyle = s.color;
+      rrect(ctx, bx, by, BW, 4, {tl:7,tr:7,bl:0,br:0}); ctx.fill();
+
+      // Stage number dot
+      ctx.fillStyle = s.color+'44';
+      ctx.beginPath(); ctx.arc(bx+BW/2, by+18, 9, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = s.color;
+      ctx.font = 'bold 10px monospace'; ctx.textAlign = 'center';
+      ctx.fillText(i+1, bx+BW/2, by+22);
+
+      // Label
+      ctx.font = `bold ${Math.max(9,Math.min(12, SW*.15))}px monospace`;
+      ctx.fillStyle = isAct ? '#f0f0f8' : '#7070a0';
+      ctx.fillText(s.label, bx+BW/2, by+40);
+
+      // Subtitle (2 lines)
+      ctx.font = `${Math.max(7,Math.min(9,SW*.11))}px sans-serif`;
+      ctx.fillStyle = isAct ? '#9090b0' : '#404060';
+      const lines = s.sub.split('\n');
+      lines.forEach((ln, li) => ctx.fillText(ln, bx+BW/2, by+54+li*11));
+
+      // Math annotation
+      if (s.math) {
+        ctx.font = `bold ${Math.max(6,Math.min(8,SW*.10))}px monospace`;
+        ctx.fillStyle = isAct ? s.color : s.color+'44';
+        ctx.fillText(s.math, bx+BW/2, by+BH-8);
+      }
+    });
+
+    // Draw particles
+    particles.forEach(p => {
+      const stageF = p.t * STAGES.length;
+      const si = Math.min(Math.floor(stageF), STAGES.length-1);
+      const bx = MX + si*SW + BX0 + (stageF-si)*SW;
+      const py = MY + BH/2 + p.yOff * BH;
+      const s = STAGES[si];
+      ctx.fillStyle = s.color;
+      ctx.globalAlpha = p.alpha * (1 - Math.max(0, (stageF - (STAGES.length-.5))));
+      ctx.beginPath(); ctx.arc(bx, py, p.r, 0, Math.PI*2); ctx.fill();
+      ctx.globalAlpha = 1;
+    });
+
+    // Footer labels
+    ctx.fillStyle = '#3a3a60'; ctx.font = '9px sans-serif'; ctx.textAlign = 'left';
+    ctx.fillText('← photons enter', MX+4, H-4);
+    ctx.textAlign = 'right';
+    ctx.fillText('pixels exit →', W-MX, H-4);
+  }
+
+  let animId, ctx;
+  function animate(ts) {
+    animId = requestAnimationFrame(animate);
+    const W = canvas.offsetWidth || 800;
+    const H = 185;
+    if (canvas.width !== W || canvas.height !== H) { canvas.width=W; canvas.height=H; }
+    if (!ctx) ctx = canvas.getContext('2d');
+
+    // Spawn
+    if (ts - lastSpawn > 280) spawnParticle(ts);
+
+    // Move & reap particles
+    for (let i=particles.length-1; i>=0; i--) {
+      particles[i].t += particles[i].speed;
+      if (particles[i].t >= 1.05) particles.splice(i,1);
+    }
+
+    // Sync active stage to avg particle position
+    if (particles.length > 0) {
+      const avg = particles.reduce((s,p)=>s+p.t,0)/particles.length;
+      activeStage = Math.min(Math.floor(avg * STAGES.length), STAGES.length-1);
+    }
+
+    draw(ctx, canvas.width, canvas.height);
+  }
+
+  // Click on a stage box to show its detail panel
+  canvas.addEventListener('click', e => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const W = canvas.width;
+    const SW = (W - 36) / STAGES.length;
+    const idx = clamp(Math.floor((mx - 18) / SW), 0, STAGES.length-1);
+    // Show detail panel
+    document.querySelectorAll('.pipe-detail').forEach(d => d.classList.remove('active'));
+    const det = $(`pipe-stage-${idx}`);
+    if (det) det.classList.add('active');
+    activeStage = idx;
+    if (ctx) draw(ctx, canvas.width, canvas.height);
+  });
+
+  window.addEventListener('resize', () => {
+    ctx = null; // force canvas resize on next frame
+  });
+
+  animate(0);
+}
+</script>
+</body>
+</html>

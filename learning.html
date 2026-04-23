@@ -1,0 +1,187 @@
+<!DOCTYPE HTML>
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LearningMyself – Rajesh Sureddi</title>
+  <meta name="author" content="Rajesh Sureddi">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" type="text/css" href="stylesheet.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌐</text></svg>">
+  <style>
+    .nav-bar {
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 14px 20px 0 20px;
+      box-sizing: border-box;
+      display: flex;
+      gap: 22px;
+      border-bottom: 1px solid #e0e0e0;
+      margin-bottom: 8px;
+    }
+    .nav-bar a {
+      font-size: 15px;
+      color: #555;
+      padding-bottom: 8px;
+      text-decoration: none;
+      border-bottom: 2px solid transparent;
+    }
+    .nav-bar a:hover { color: #f09228; }
+    .nav-bar a.active {
+      color: #1772d0;
+      border-bottom: 2px solid #1772d0;
+      font-weight: 700;
+    }
+
+    .card-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0px;
+    }
+    .card {
+      display: flex;
+      align-items: flex-start;
+      gap: 18px;
+      padding: 20px;
+      border-bottom: 1px solid #f0f0f0;
+      text-decoration: none;
+      color: inherit;
+      transition: background 0.15s;
+    }
+    .card:hover { background: #fafafa; }
+    .card-icon {
+      width: 80px;
+      min-width: 80px;
+      height: 60px;
+      background: #eef3fb;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+    }
+    .card-body { flex: 1; }
+    .card-title {
+      font-family: 'Lato', Verdana, Helvetica, sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      color: #1772d0;
+      margin: 0 0 4px 0;
+    }
+    .card:hover .card-title { color: #f09228; }
+    .card-desc {
+      font-family: 'Lato', Verdana, Helvetica, sans-serif;
+      font-size: 13px;
+      color: #444;
+      margin: 0 0 6px 0;
+      line-height: 1.5;
+    }
+    .card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .tag {
+      font-family: 'Lato', Verdana, Helvetica, sans-serif;
+      font-size: 11px;
+      background: #eef3fb;
+      color: #1772d0;
+      border-radius: 10px;
+      padding: 2px 8px;
+    }
+    .section-intro {
+      font-family: 'Lato', Verdana, Helvetica, sans-serif;
+      font-size: 14px;
+      color: #555;
+      padding: 0 20px 12px 20px;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="nav-bar">
+    <a href="index.html">Home</a>
+    <a href="learning.html" class="active">LearningMyself</a>
+  </div>
+
+  <table style="width:100%;max-width:800px;border:0px;border-spacing:0px;border-collapse:separate;margin-right:auto;margin-left:auto;"><tbody>
+    <tr style="padding:0px">
+      <td style="padding:0px">
+
+        <table style="width:100%;border:0px;border-spacing:0px;border-collapse:separate;margin-right:auto;margin-left:auto;"><tbody>
+          <tr>
+            <td style="padding:20px;width:100%;vertical-align:middle">
+              <heading>LearningMyself</heading>
+            </td>
+          </tr>
+        </tbody></table>
+
+        <p class="section-intro">
+          Interactive notes I write while teaching myself the math behind computer vision.
+          Each article pairs the equations with live visualizations you can drag and tweak.
+        </p>
+
+        <table style="width:100%;border:0px;border-spacing:0px;border-collapse:separate;margin-right:auto;margin-left:auto;"><tbody>
+          <tr>
+            <td style="padding:0 0 20px 0;">
+              <div class="card-grid">
+
+                <a class="card" href="learning/camera.html">
+                  <div class="card-icon">📷</div>
+                  <div class="card-body">
+                    <p class="card-title">Camera Intrinsics &amp; Extrinsics — The Full Projection Pipeline</p>
+                    <p class="card-desc">
+                      How a 3D point in the world ends up as a pixel on your screen.
+                      Covers world coordinates, the extrinsic matrix [R|t], the intrinsic matrix K,
+                      perspective divide, and what a real camera's sensor actually does — all interactive.
+                    </p>
+                    <div class="card-tags">
+                      <span class="tag">Camera Model</span>
+                      <span class="tag">Extrinsics</span>
+                      <span class="tag">Intrinsics</span>
+                      <span class="tag">Projection</span>
+                      <span class="tag">Three.js</span>
+                    </div>
+                  </div>
+                </a>
+
+                <a class="card" href="learning/3D_to_2D_projection.html">
+                  <div class="card-icon">📐</div>
+                  <div class="card-body">
+                    <p class="card-title">3D → 2D Projection in a Local Frame</p>
+                    <p class="card-desc">
+                      Given two 3D points defining a local axis, how do you find the 2D coordinates
+                      of a third point relative to that frame? A step-by-step walkthrough of
+                      dot products, vector normalization, and perpendicular distance — with live plots.
+                    </p>
+                    <div class="card-tags">
+                      <span class="tag">Linear Algebra</span>
+                      <span class="tag">Dot Product</span>
+                      <span class="tag">Coordinate Frames</span>
+                      <span class="tag">Plotly</span>
+                    </div>
+                  </div>
+                </a>
+
+              </div>
+            </td>
+          </tr>
+        </tbody></table>
+
+        <table style="width:100%;border:0px;border-spacing:0px;border-collapse:separate;margin-right:auto;margin-left:auto;"><tbody>
+          <tr>
+            <td style="padding:0px">
+              <br>
+              <p style="text-align:right;float:right;font-size:small;">
+                Source code of this website is credited to <a href="https://jonbarron.info/" target="_blank">Dr. Jon Barron</a>
+              </p>
+            </td>
+          </tr>
+        </tbody></table>
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>

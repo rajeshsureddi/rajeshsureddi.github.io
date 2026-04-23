@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D → 2D Projection — A Visual Guide</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+            onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            margin: 0; padding: 0;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #eef0f6;
+            color: #2d2d2d;
+            line-height: 1.65;
+        }
+
+        /* ── Hero ── */
+        .hero {
+            background: linear-gradient(135deg, #0a0a23 0%, #1a1a5e 55%, #0d3b8e 100%);
+            color: white; padding: 52px 24px 44px; text-align: center;
+        }
+        .hero .badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.13);
+            border: 1px solid rgba(255,255,255,0.28);
+            padding: 4px 16px; border-radius: 20px;
+            font-size: 0.76em; letter-spacing: 1.2px; text-transform: uppercase;
+            margin-bottom: 18px;
+        }
+        .hero h1 { font-size: 2.15em; font-weight: 700; margin: 0 0 14px; letter-spacing: -0.5px; }
+        .hero p  { font-size: 1.05em; opacity: 0.82; max-width: 560px; margin: 0 auto; }
+
+        /* ── Layout ── */
+        .content { max-width: 1180px; margin: 0 auto; padding: 0 20px 70px; }
+
+        /* ── Cards ── */
+        .card {
+            background: white; border-radius: 12px; padding: 24px 28px;
+            margin: 24px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        .card.accent { border-left: 5px solid #0d3b8e; }
+        .card h2 { font-size: 1.2em; color: #1a1a5e; margin: 0 0 10px; }
+        .card p  { margin: 8px 0; font-size: 0.93em; color: #444; }
+
+        /* ── Plots ── */
+        .plots-row { display: flex; gap: 20px; margin: 24px 0; }
+        .plot-card {
+            flex: 1; background: white; border-radius: 12px; padding: 16px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            display: flex; flex-direction: column;
+        }
+        .plot-card-title { font-weight: 700; color: #1a1a5e; font-size: 0.93em; text-align: center; margin-bottom: 3px; }
+        .plot-card-sub   { font-size: 0.77em; color: #888; text-align: center; margin-bottom: 8px; }
+        .plot-area       { height: 390px; }
+
+        /* ── Controls ── */
+        .controls-card {
+            background: white; border-radius: 12px; padding: 20px 28px;
+            margin: 24px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            display: flex; align-items: center; gap: 28px; flex-wrap: wrap;
+        }
+        .ctrl-label { font-size: 0.88em; font-weight: 700; color: #555; width: 100%; margin-bottom: -10px; }
+        .ctrl-group { display: flex; flex-direction: column; gap: 6px; min-width: 170px; }
+        .ctrl-group label { font-weight: 600; font-size: 0.88em; display: flex; justify-content: space-between; }
+        input[type=range] { cursor: pointer; accent-color: #0d3b8e; width: 100%; }
+        .tip-box {
+            flex: 1; min-width: 220px; max-width: 320px;
+            font-size: 0.82em; color: #555;
+            background: #f4f6ff; padding: 12px 16px;
+            border-radius: 8px; border: 1px solid #d0d8f0;
+        }
+
+        /* ── Section header ── */
+        .section-header {
+            font-size: 1.45em; font-weight: 700; color: #1a1a5e;
+            margin: 36px 0 18px;
+            display: flex; align-items: center; gap: 12px;
+        }
+        .section-header::after {
+            content: ''; flex: 1; height: 2px;
+            background: linear-gradient(to right, #1a1a5e33, transparent);
+        }
+
+        /* ── Step cards ── */
+        .steps-row { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 24px; }
+        .step-card {
+            flex: 1; min-width: 290px;
+            background: white; border-radius: 12px; padding: 22px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        .step-head  { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+        .step-num   {
+            width: 36px; height: 36px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; color: white; font-size: 1em; flex-shrink: 0;
+        }
+        .step-title { font-weight: 700; font-size: 1em; }
+        .step-desc  { font-size: 0.85em; color: #555; margin: 0 0 14px; }
+
+        /* ── Math box ── */
+        .math-box {
+            background: #f4f6ff; border: 1px solid #dde3f5; border-radius: 8px;
+            padding: 14px 10px; text-align: center; margin: 10px 0;
+            overflow-x: auto;
+        }
+        .math-box .katex-display { margin: 6px 0 !important; }
+
+        /* ── Live computation ── */
+        .live-box {
+            background: #1e1e2e; color: #cdd6f4;
+            border-radius: 8px; padding: 14px 16px; margin-top: 12px;
+            font-family: 'Cascadia Code', 'Fira Code', 'Courier New', monospace;
+            font-size: 0.79em; line-height: 1.85;
+        }
+        .lc  { color: #585b80; }          /* comment */
+        .lv  { color: #89b4fa; }          /* variable name */
+        .lo  { color: #fab387; font-weight: bold; }  /* orange value */
+        .lg  { color: #a6e3a1; font-weight: bold; }  /* green value */
+        .lr  { color: #f38ba8; font-weight: bold; }  /* red value */
+        .lh  { color: #f9e2af; font-weight: bold; }  /* highlight */
+
+        /* ── Intuition card ── */
+        .intuition-card {
+            background: #fffbea; border: 1px solid #ffe082; border-radius: 12px;
+            padding: 22px 28px; margin: 24px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .intuition-card h3 { color: #b45309; margin: 0 0 10px; font-size: 1.08em; }
+        .intuition-card p  { font-size: 0.9em; color: #555; margin: 7px 0; }
+        .math-center { text-align: center; margin: 10px 0; }
+
+        /* ── Result ── */
+        .result-card {
+            background: linear-gradient(135deg, #0d3b8e, #1a1a5e);
+            color: white; border-radius: 12px; padding: 28px;
+            margin: 24px 0; box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        }
+        .result-card h2 { color: white; margin: 0 0 18px; font-size: 1.2em; }
+        .result-coords  { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+        .coord-pill {
+            background: rgba(255,255,255,0.13);
+            border: 1px solid rgba(255,255,255,0.25);
+            border-radius: 8px; padding: 12px 22px;
+            font-family: 'Courier New', monospace;
+        }
+        .coord-pill .clabel { font-size: 0.72em; opacity: 0.6; margin-bottom: 4px; letter-spacing: 0.5px; }
+        .coord-pill .cval   { font-size: 1.15em; font-weight: bold; }
+        .result-card .note  {
+            font-size: 0.84em; opacity: 0.75;
+            border-top: 1px solid rgba(255,255,255,0.15);
+            padding-top: 14px; margin-top: 0;
+        }
+
+        /* ── Color helpers ── */
+        .co { color: #e67e22; }
+        .cg { color: #27ae60; }
+        .cr { color: #c0392b; }
+
+        /* ── Responsive ── */
+        @media (max-width: 700px) {
+            .plots-row, .steps-row { flex-direction: column; }
+            .hero h1 { font-size: 1.5em; }
+            .plot-area { height: 320px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ════════════════════════════ HERO ════════════════════════════ -->
+<div class="hero">
+    <div class="badge">Step 1 of the Pipeline</div>
+    <h1>Projecting a 3D Triangle into 2D</h1>
+    <p>How to flatten a triangle from 3D world space into a <em>canonical local frame</em> — capturing pure shape, free from position and rotation.</p>
+</div>
+
+<div class="content">
+
+<!-- ════════════════════════════ PROBLEM ════════════════════════════ -->
+<div class="card accent">
+    <h2>The Problem</h2>
+    <p>A triangle in 3D space is defined by three vertices — <strong>v0</strong>, <strong>v1</strong>, and <strong>v2</strong> — at arbitrary positions. The same triangle could appear at many different positions and rotations in the world, yet its <em>shape</em> (relative side lengths and angles) never changes.</p>
+    <p>To compare or process triangle geometry, we need a <strong>canonical 2D representation</strong>: a coordinate frame built <em>from the triangle itself</em>, where v0 sits at the origin and the base edge lies along the X-axis. The 2D coordinate of v2 in this frame fully describes the shape — no matter where the triangle was in 3D space.</p>
+</div>
+
+<!-- ════════════════════════════ PLOTS ════════════════════════════ -->
+<div class="plots-row">
+    <div class="plot-card">
+        <div class="plot-card-title">INPUT — 3D World Space</div>
+        <div class="plot-card-sub">
+            Drag to rotate &nbsp;|&nbsp;
+            Base $\vec{u}_1$ <span class="co">■</span> &nbsp;&nbsp;
+            Offset $\vec{u}_2$ <span class="cg">■</span>
+        </div>
+        <div id="plot3d" class="plot-area"></div>
+    </div>
+    <div class="plot-card">
+        <div class="plot-card-title">OUTPUT — 2D Local Frame</div>
+        <div class="plot-card-sub">
+            Base <span class="co">■</span> on X-axis &nbsp;|&nbsp;
+            Shadow <span class="co">- -</span> &nbsp;|&nbsp;
+            Height <span class="cr">┊</span>
+        </div>
+        <div id="plot2d" class="plot-area"></div>
+    </div>
+</div>
+
+<!-- ════════════════════════════ CONTROLS ════════════════════════════ -->
+<div class="controls-card">
+    <div class="ctrl-label">Move v2 in 3D space and watch the 2D frame update live:</div>
+    <div class="ctrl-group">
+        <label>v2.x &nbsp;<span id="valX">1.0</span></label>
+        <input type="range" id="slideX" min="-2" max="6" step="0.1" value="1.0">
+    </div>
+    <div class="ctrl-group">
+        <label>v2.y &nbsp;<span id="valY">5.0</span></label>
+        <input type="range" id="slideY" min="-2" max="6" step="0.1" value="5.0">
+    </div>
+    <div class="ctrl-group">
+        <label>v2.z &nbsp;<span id="valZ">1.0</span></label>
+        <input type="range" id="slideZ" min="-2" max="6" step="0.1" value="1.0">
+    </div>
+    <div class="tip-box">
+        <strong>Try:</strong> Slide only <b>Z</b>. The 3D triangle moves in depth, but the 2D output barely changes — Z has no effect on the base, so it contributes only a small height shift. This proves we're capturing <em>shape</em>, not world position.
+    </div>
+</div>
+
+<!-- ════════════════════════════ MATH STEPS ════════════════════════════ -->
+<div class="section-header">The Math — Step by Step</div>
+
+<div class="steps-row">
+
+    <!-- ─── Step 1 ─── -->
+    <div class="step-card">
+        <div class="step-head">
+            <div class="step-num" style="background:#e67e22">1</div>
+            <div class="step-title">Build the Local Coordinate Frame</div>
+        </div>
+        <p class="step-desc">
+            Pin <strong>v0 at the origin</strong>. The base edge v0→v1 defines the local X-axis.
+            Dividing by its length gives a unit vector $\hat{u}_1$ — our X-axis direction.
+        </p>
+        <div class="math-box">
+            $$\vec{u}_1 = v_1 - v_0$$
+            $$L = \lVert\vec{u}_1\rVert, \qquad \hat{u}_1 = \frac{\vec{u}_1}{L}$$
+        </div>
+        <div class="live-box">
+<span class="lc"># v0 and v1 are fixed</span><br>
+<span class="lv">v0</span> = [1.0, 2.0, 1.0]<br>
+<span class="lv">v1</span> = [5.0, 2.0, 1.0]<br>
+<span class="lv">u1</span> = v1 − v0 = <span class="lo" id="lv-u1">[4.00, 0.00, 0.00]</span><br>
+<span class="lv">L</span>  = |u1|   = <span class="lo" id="lv-L">4.000</span><br>
+<span class="lv">û1</span> = u1/L  = <span class="lg" id="lv-u1n">[1.000, 0.000, 0.000]</span>
+        </div>
+    </div>
+
+    <!-- ─── Step 2 ─── -->
+    <div class="step-card">
+        <div class="step-head">
+            <div class="step-num" style="background:#27ae60">2</div>
+            <div class="step-title">Project v2 onto the Base — Shadow (X)</div>
+        </div>
+        <p class="step-desc">
+            Express v2 relative to v0 to get the offset $\vec{u}_2$.
+            The <strong>dot product</strong> of $\vec{u}_2$ with the unit base $\hat{u}_1$ gives the
+            component that lies <em>along</em> the base — the local X-coordinate.
+        </p>
+        <div class="math-box">
+            $$\vec{u}_2 = v_2 - v_0$$
+            $$x = \vec{u}_2 \cdot \hat{u}_1$$
+        </div>
+        <div class="live-box">
+<span class="lc"># v2 moves with the sliders</span><br>
+<span class="lv">v2</span> = [<span id="lv-v2x">1.0</span>, <span id="lv-v2y">5.0</span>, <span id="lv-v2z">1.0</span>]<br>
+<span class="lv">u2</span> = v2 − v0 = <span class="lg" id="lv-u2">[0.00, 3.00, 0.00]</span><br>
+<span class="lc"># dot product = shadow on base axis</span><br>
+<span class="lv">x</span>  = u2 · û1  = <span class="lh" id="lv-x">0.000</span>
+        </div>
+    </div>
+
+    <!-- ─── Step 3 ─── -->
+    <div class="step-card">
+        <div class="step-head">
+            <div class="step-num" style="background:#c0392b">3</div>
+            <div class="step-title">Perpendicular Remainder — Height (Y)</div>
+        </div>
+        <p class="step-desc">
+            Subtract the shadow component from $\vec{u}_2$, leaving only the part
+            <strong>perpendicular to the base</strong>. Its length is the local Y-coordinate — the triangle's height.
+        </p>
+        <div class="math-box">
+            $$\vec{u}_{2\perp} = \vec{u}_2 - x\,\hat{u}_1$$
+            $$y = \lVert\vec{u}_{2\perp}\rVert$$
+        </div>
+        <div class="live-box">
+<span class="lc"># remove the base-aligned part</span><br>
+<span class="lv">shadow</span>  = x · û1     = <span class="lo" id="lv-shadow">[0.00, 0.00, 0.00]</span><br>
+<span class="lv">u2⊥</span>     = u2 − shadow = <span class="lg" id="lv-perp">[0.00, 3.00, 0.00]</span><br>
+<span class="lc"># height = length of remainder</span><br>
+<span class="lv">y</span>        = |u2⊥|       = <span class="lr" id="lv-y">3.000</span>
+        </div>
+    </div>
+
+</div><!-- /steps-row -->
+
+<!-- ════════════════════════════ INTUITION ════════════════════════════ -->
+<div class="intuition-card">
+    <h3>Why Does the Dot Product Give Us the Shadow?</h3>
+    <p>The dot product of any vector $\vec{u}_2$ with a <em>unit</em> vector $\hat{u}_1$ returns the scalar length of $\vec{u}_2$'s shadow cast onto the line defined by $\hat{u}_1$. Formally:</p>
+    <div class="math-center">$$x = \vec{u}_2 \cdot \hat{u}_1 = \lVert\vec{u}_2\rVert \cos\theta$$</div>
+    <p>where $\theta$ is the angle between them. When $\theta = 0°$ the vectors are parallel and $x = \lVert\vec{u}_2\rVert$ (full length). When $\theta = 90°$ the vectors are perpendicular and $x = 0$ (no shadow).</p>
+    <p>Subtracting this shadow from $\vec{u}_2$ leaves a vector <em>exactly perpendicular</em> to $\hat{u}_1$ — the height component. Together, shadow and height give us a complete, orthogonal decomposition of $\vec{u}_2$ in the triangle's own frame.</p>
+</div>
+
+<!-- ════════════════════════════ RESULT ════════════════════════════ -->
+<div class="result-card">
+    <h2>Result: Canonical 2D Coordinates</h2>
+    <div class="result-coords">
+        <div class="coord-pill">
+            <div class="clabel">v0′ — always</div>
+            <div class="cval">( 0, 0 )</div>
+        </div>
+        <div class="coord-pill">
+            <div class="clabel">v1′ — base endpoint</div>
+            <div class="cval">( <span id="res-L">4.000</span>, 0 )</div>
+        </div>
+        <div class="coord-pill">
+            <div class="clabel">v2′ — (shadow, height)</div>
+            <div class="cval">( <span id="res-x">0.000</span>, <span id="res-y">3.000</span> )</div>
+        </div>
+    </div>
+    <p class="note">
+        These three 2D coordinates fully encode the triangle's geometry.
+        Two triangles with the same $v_0',\, v_1',\, v_2'$ are congruent — no matter where they were in 3D space.
+    </p>
+</div>
+
+</div><!-- /content -->
+
+<!-- ════════════════════════════ SCRIPT ════════════════════════════ -->
+<script>
+    const v0 = [1, 2, 1];
+    const v1 = [5, 2, 1];
+
+    const sub   = (a, b) => [a[0]-b[0], a[1]-b[1], a[2]-b[2]];
+    const add   = (a, b) => [a[0]+b[0], a[1]+b[1], a[2]+b[2]];
+    const dot   = (a, b) => a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+    const norm  = (a)    => Math.sqrt(dot(a, a));
+    const scale = (a, s) => [a[0]*s, a[1]*s, a[2]*s];
+    const f3    = (v)    => `[${v[0].toFixed(2)}, ${v[1].toFixed(2)}, ${v[2].toFixed(2)}]`;
+    const f1    = (n)    => n.toFixed(3);
+
+    // Precompute fixed base
+    const u1_s   = sub(v1, v0);
+    const u1_len = norm(u1_s);
+    const u1_n   = scale(u1_s, 1 / u1_len);
+
+    function update() {
+        const v2 = [
+            parseFloat(document.getElementById('slideX').value),
+            parseFloat(document.getElementById('slideY').value),
+            parseFloat(document.getElementById('slideZ').value)
+        ];
+
+        document.getElementById('valX').textContent = v2[0].toFixed(1);
+        document.getElementById('valY').textContent = v2[1].toFixed(1);
+        document.getElementById('valZ').textContent = v2[2].toFixed(1);
+
+        // ── Math ──
+        const u2_s     = sub(v2, v0);
+        const x        = dot(u2_s, u1_n);
+        const shadow_v = scale(u1_n, x);
+        const perp_v   = sub(u2_s, shadow_v);
+        const y        = norm(perp_v);
+
+        // 2D canonical points
+        const p0 = [0, 0];
+        const p1 = [u1_len, 0];
+        const p2 = [x, y];
+
+        // ── Update live panels ──
+        document.getElementById('lv-u1').textContent      = f3(u1_s);
+        document.getElementById('lv-L').textContent       = f1(u1_len);
+        document.getElementById('lv-u1n').textContent     = f3(u1_n);
+        document.getElementById('lv-v2x').textContent     = v2[0].toFixed(1);
+        document.getElementById('lv-v2y').textContent     = v2[1].toFixed(1);
+        document.getElementById('lv-v2z').textContent     = v2[2].toFixed(1);
+        document.getElementById('lv-u2').textContent      = f3(u2_s);
+        document.getElementById('lv-x').textContent       = f1(x);
+        document.getElementById('lv-shadow').textContent  = f3(shadow_v);
+        document.getElementById('lv-perp').textContent    = f3(perp_v);
+        document.getElementById('lv-y').textContent       = f1(y);
+        document.getElementById('res-L').textContent      = f1(u1_len);
+        document.getElementById('res-x').textContent      = f1(x);
+        document.getElementById('res-y').textContent      = f1(y);
+
+        // ── 3D Plot ──
+        const data3d = [
+            {
+                type: 'mesh3d',
+                x: [v0[0], v1[0], v2[0]],
+                y: [v0[1], v1[1], v2[1]],
+                z: [v0[2], v1[2], v2[2]],
+                color: 'rgba(100,149,237,0.35)', opacity: 0.85,
+                i: [0], j: [1], k: [2],
+                showlegend: false
+            },
+            {
+                type: 'scatter3d', mode: 'lines+markers+text',
+                x: [v0[0], v1[0], v2[0], v0[0]],
+                y: [v0[1], v1[1], v2[1], v0[1]],
+                z: [v0[2], v1[2], v2[2], v0[2]],
+                marker: { size: 5, color: '#2c3e50' },
+                line: { color: '#2c3e50', width: 3 },
+                text: ['v0', 'v1', 'v2', ''],
+                textposition: 'top center',
+                showlegend: false, hoverinfo: 'skip'
+            },
+            {   // Base vector u1 (orange, thick)
+                type: 'scatter3d', mode: 'lines',
+                x: [v0[0], v1[0]], y: [v0[1], v1[1]], z: [v0[2], v1[2]],
+                line: { color: '#e67e22', width: 9 },
+                name: 'Base u₁'
+            },
+            {   // Offset vector u2 (green, dashed)
+                type: 'scatter3d', mode: 'lines',
+                x: [v0[0], v2[0]], y: [v0[1], v2[1]], z: [v0[2], v2[2]],
+                line: { color: '#27ae60', width: 6, dash: 'dot' },
+                name: 'Offset u₂'
+            }
+        ];
+
+        const layout3d = {
+            margin: { t: 0, b: 0, l: 0, r: 0 },
+            showlegend: true,
+            legend: { x: 0, y: 1, font: { size: 11 }, bgcolor: 'rgba(255,255,255,0.85)' },
+            scene: {
+                aspectmode: 'cube',
+                camera: { eye: { x: 1.5, y: 1.5, z: 1.2 } },
+                xaxis: { range: [-2, 7], title: 'X' },
+                yaxis: { range: [-2, 7], title: 'Y' },
+                zaxis: { range: [-2, 7], title: 'Z' }
+            }
+        };
+
+        Plotly.react('plot3d', data3d, layout3d, { responsive: true });
+
+        // ── 2D Plot ──
+        // Build trace list dynamically to avoid zero-length lines
+        const traces2d = [
+            {   // Triangle fill
+                type: 'scatter', mode: 'none',
+                x: [p0[0], p1[0], p2[0]],
+                y: [p0[1], p1[1], p2[1]],
+                fill: 'toself', fillcolor: 'rgba(100,149,237,0.15)',
+                showlegend: false, hoverinfo: 'skip'
+            },
+            {   // Triangle edges + vertex labels
+                type: 'scatter', mode: 'lines+markers+text',
+                x: [p0[0], p1[0], p2[0], p0[0]],
+                y: [p0[1], p1[1], p2[1], p0[1]],
+                line: { color: '#2c3e50', width: 2 },
+                marker: { size: 8, color: '#2c3e50' },
+                text: ["v0'", "v1'", "v2'", ''],
+                textposition: ['bottom left', 'bottom right', 'top center', 'top center'],
+                showlegend: false, hoverinfo: 'skip'
+            },
+            {   // Full base (orange, thick)
+                type: 'scatter', mode: 'lines',
+                x: [0, p1[0]], y: [0, 0],
+                line: { color: '#e67e22', width: 7 },
+                name: 'Base L = ' + f1(u1_len)
+            },
+            {   // u2 vector from origin to v2' (green dotted)
+                type: 'scatter', mode: 'lines',
+                x: [0, p2[0]], y: [0, p2[1]],
+                line: { color: '#27ae60', width: 2.5, dash: 'dot' },
+                name: 'u₂ vector'
+            }
+        ];
+
+        // Shadow line (orange dashed) — only if meaningful
+        if (Math.abs(x) > 0.02) {
+            traces2d.push({
+                type: 'scatter', mode: 'lines',
+                x: [0, p2[0]], y: [0, 0],
+                line: { color: '#e67e22', width: 3, dash: 'dash' },
+                name: 'Shadow x = ' + f1(x)
+            });
+        }
+
+        // Height line (red dotted vertical) — only if meaningful
+        if (y > 0.02) {
+            traces2d.push({
+                type: 'scatter', mode: 'lines',
+                x: [p2[0], p2[0]], y: [0, p2[1]],
+                line: { color: '#c0392b', width: 3, dash: 'dot' },
+                name: 'Height y = ' + f1(y)
+            });
+        }
+
+        const annotations2d = [];
+        if (y > 0.1) {
+            annotations2d.push({
+                x: p2[0] + 0.18, y: p2[1] / 2,
+                text: '<b>y = ' + f1(y) + '</b>',
+                showarrow: false, xanchor: 'left',
+                font: { color: '#c0392b', size: 12 }
+            });
+        }
+        if (Math.abs(x) > 0.1) {
+            annotations2d.push({
+                x: p2[0] / 2, y: -0.4,
+                text: '<b>x = ' + f1(x) + '</b>',
+                showarrow: false,
+                font: { color: '#e67e22', size: 12 }
+            });
+        }
+
+        const layout2d = {
+            margin: { t: 30, b: 60, l: 60, r: 20 },
+            showlegend: true,
+            legend: { x: 0, y: 1, font: { size: 10 }, bgcolor: 'rgba(255,255,255,0.88)' },
+            xaxis: {
+                range: [-2.5, 7.5],
+                title: 'Local X  (shadow = u₂ · û₁)',
+                zeroline: true, zerolinecolor: '#bbb', zerolinewidth: 1.5
+            },
+            yaxis: {
+                range: [-1.2, 6.8],
+                title: 'Local Y  (height = |u₂⊥|)',
+                zeroline: true, zerolinecolor: '#bbb', zerolinewidth: 1.5
+            },
+            annotations: annotations2d
+        };
+
+        Plotly.react('plot2d', traces2d, layout2d, { responsive: true });
+    }
+
+    ['slideX', 'slideY', 'slideZ'].forEach(id =>
+        document.getElementById(id).addEventListener('input', update)
+    );
+    update();
+</script>
+
+</body>
+</html>
