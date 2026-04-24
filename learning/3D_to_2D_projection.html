@@ -645,23 +645,9 @@
 </div>
 
 <!-- ════════════════════════════════════════════════════════════════════
-     PART 3 — ARAP AND ACAP LOSS FUNCTIONS
+     PART 3 — ARAP AND ACAP
 ════════════════════════════════════════════════════════════════════ -->
-<div class="section-header" style="margin-top:52px">Part 3 — ARAP &amp; ACAP: Loss Functions from the Paper</div>
-
-<!-- Intro / citation card -->
-<div class="card" style="border-left:5px solid #6c3483">
-    <h2 style="color:#6c3483">Two Ways to Penalize Shape Distortion</h2>
-    <p>Given the per-face Jacobian $J_f$, both ARAP and ACAP define a <strong>loss function as the sum of per-face deformation energies</strong>. They differ only in what the ideal map is: a rigid rotation (ARAP) or a conformal scaled rotation (ACAP). Both energies reduce to simple expressions in the singular values $\sigma_{\max}, \sigma_{\min}$ of $J$.</p>
-    <div style="margin-top:14px;padding:12px 16px;background:#f4f6ff;border-radius:8px;border:1px solid #d0d8f0;font-size:0.85em;color:#555">
-        <strong style="color:#1a1a5e">Paper source:</strong>
-        Huang, Q.-X., Wicke, M., Adams, B., &amp; Guibas, L.
-        <em>Shape Decomposition using Modal Analysis.</em>
-        <strong>Eurographics 2009</strong>, Vol. 28, No. 2.
-        <a href="https://www.cs.utexas.edu/~huangqx/eg09_seg.pdf" target="_blank" style="color:#0d3b8e;font-weight:700">[PDF]</a>
-        — adopts the ARAP deformation energy (their Eq. 1, credited to Sorkine &amp; Alexa, SGP 2007) as the foundation for modal analysis of shape deformations.
-    </div>
-</div>
+<div class="section-header" style="margin-top:52px">Part 3 — ARAP &amp; ACAP Basics</div>
 
 <!-- ARAP + ACAP side by side -->
 <div class="steps-row">
@@ -672,20 +658,20 @@
             <div class="step-num" style="background:#27ae60; font-size:0.78em; letter-spacing:-0.5px">ARAP</div>
             <div class="step-title">As-Rigid-As-Possible</div>
         </div>
-        <p class="step-desc">Find the deformation where each face Jacobian is as close as possible to a <strong>rotation matrix R ∈ SO(2)</strong>. Rotations preserve all lengths and angles: both singular values equal 1.</p>
+        <p class="step-desc">Find the deformation where each face Jacobian is as close as possible to a <strong>rotation R ∈ SO(2)</strong>. A rotation preserves all distances and angles — both singular values equal 1.</p>
         <div class="math-box">
-            $$\mathcal{L}_\text{ARAP} = \sum_{f} A_f \underbrace{\min_{R_f \in SO(2)} \|J_f - R_f\|_F^2}_{\text{per-face rigidity loss}}$$
+            $$\mathcal{L}_\text{ARAP} = \sum_{f} A_f \min_{R_f \in SO(2)} \|J_f - R_f\|_F^2$$
             $$= \sum_{f} A_f \bigl[(\sigma_{\max} - 1)^2 + (\sigma_{\min} - 1)^2\bigr]$$
         </div>
-        <p class="step-desc" style="margin-top:6px">Closed-form optimal rotation: $R_f^* = UV^T$ from $J_f = U\Sigma V^T$. Zero iff $\sigma_{\max} = \sigma_{\min} = 1$ (isometry).</p>
+        <p class="step-desc" style="margin-top:8px">The closest rotation to $J$ is $R^* = UV^T$ (from $J = U\Sigma V^T$). Energy is <strong>zero</strong> iff both singular values equal 1.</p>
         <div style="display:flex;gap:8px;margin-top:10px">
             <div class="mpill" style="flex:1">
                 <div class="mlabel">Live ARAP energy</div>
                 <div class="mval" id="p3-eA" style="color:#27ae60">—</div>
             </div>
             <div class="mpill" style="flex:1">
-                <div class="mlabel">Zero when</div>
-                <div class="mval" style="font-size:0.85em;color:#444">σ_max = σ_min = 1</div>
+                <div class="mlabel">Ideal</div>
+                <div class="mval" style="font-size:0.82em;color:#444">σ_max = σ_min = 1</div>
             </div>
         </div>
     </div>
@@ -696,86 +682,62 @@
             <div class="step-num" style="background:#8e44ad; font-size:0.78em; letter-spacing:-0.5px">ACAP</div>
             <div class="step-title">As-Conformal-As-Possible</div>
         </div>
-        <p class="step-desc">Find the deformation where each face Jacobian is as close as possible to a <strong>scaled rotation sR</strong>. Scaled rotations preserve angles but allow uniform area change: $\sigma_{\max} = \sigma_{\min}$.</p>
+        <p class="step-desc">Find the deformation where each face Jacobian is as close as possible to a <strong>scaled rotation sR</strong>. Scaled rotations preserve angles but allow uniform area change — $\sigma_{\max} = \sigma_{\min}$.</p>
         <div class="math-box">
-            $$\mathcal{L}_\text{ACAP} = \sum_{f} A_f \underbrace{\min_{\substack{s_f > 0 \\ R_f \in SO(2)}} \|J_f - s_f R_f\|_F^2}_{\text{per-face conformal loss}}$$
+            $$\mathcal{L}_\text{ACAP} = \sum_{f} A_f \min_{\substack{s_f > 0,\; R_f \in SO(2)}} \|J_f - s_f R_f\|_F^2$$
             $$= \sum_{f} A_f \cdot \dfrac{(\sigma_{\max} - \sigma_{\min})^2}{2}$$
         </div>
-        <p class="step-desc" style="margin-top:6px">Optimal scale: $s_f^* = \tfrac{\sigma_{\max}+\sigma_{\min}}{2}$. Same optimal rotation $R_f^* = UV^T$. Zero iff $\sigma_{\max} = \sigma_{\min}$ (conformal map).</p>
+        <p class="step-desc" style="margin-top:8px">Optimal scale: $s^* = \tfrac{\sigma_{\max}+\sigma_{\min}}{2}$. Energy is <strong>zero</strong> iff $\sigma_{\max} = \sigma_{\min}$ — angles are perfectly preserved.</p>
         <div style="display:flex;gap:8px;margin-top:10px">
             <div class="mpill" style="flex:1">
                 <div class="mlabel">Live ACAP energy</div>
                 <div class="mval" id="p3-eS" style="color:#8e44ad">—</div>
             </div>
             <div class="mpill" style="flex:1">
-                <div class="mlabel">Zero when</div>
-                <div class="mval" style="font-size:0.85em;color:#444">σ_max = σ_min</div>
+                <div class="mlabel">Ideal</div>
+                <div class="mval" style="font-size:0.82em;color:#444">σ_max = σ_min</div>
             </div>
         </div>
     </div>
 
 </div><!-- /steps-row -->
 
-<!-- Paper's vertex-based ARAP energy -->
-<div class="card accent">
-    <h2>The Paper's Vertex-Based ARAP Energy — Eq. (1)</h2>
-    <p>Huang et al. formulate ARAP over vertex neighborhoods, not individual faces. For a set of points $P = \{p_1 \ldots p_N\}$ with displacements $u_i = p_i' - p_i$:</p>
-    <div class="math-box">
-        $$E_P(u) = \sum_{p_i \in P} \min_{c_i} \sum_{j \in \mathcal{N}_i} w_{ij} \,\bigl\|c_i \times (p_i - p_j) - u_i + u_j\bigr\|^2 \tag{Eq. 1, [Huang et al. 2009]}$$
-    </div>
-    <p style="font-size:0.88em; color:#555; margin-top:6px">
-        Here $\mathcal{N}_i = \{j : \|p_j - p_i\| < \varepsilon\}$ is the vertex neighborhood, $c_i \in \mathbb{R}^3$ is the optimal linearized rotation axis (so $c_i \times (p_i - p_j)$ approximates $(R_i - I)(p_i - p_j)$), and $w_{ij} = (|\mathcal{N}_i| + |\mathcal{N}_j|)^{-1}$ are symmetrized weights. The minimization over each $c_i$ finds the best-fit local rotation for that vertex's neighborhood.
-    </p>
-    <p style="font-size:0.88em; color:#555; margin-top:8px">
-        <strong>Connection to the Jacobian:</strong> For a single triangular face, this vertex sum collapses to $\mathcal{L}_\text{ARAP}(J_f) = \min_{R \in SO(2)} \|J_f - R\|_F^2 = (\sigma_{\max}-1)^2 + (\sigma_{\min}-1)^2$, where $J_f$ is the per-face 2×2 deformation gradient from Part 2.
-    </p>
-    <p style="font-size:0.88em;color:#555;margin-top:8px">
-        The paper uses $E_P$ to build the Hessian $H_P = L \otimes I_3 - BC^{-1}B^T$ (their Eq. 7), whose eigenvectors define the space of typical deformations $\mathcal{U}_{N_t}$ used for shape decomposition.
-    </p>
-</div>
-
 <!-- σ-space interactive diagram -->
 <div class="card" style="border-left:5px solid #c0392b">
-    <h2 style="color:#c0392b;margin-bottom:14px">Interactive: (σ_min, σ_max) Energy Landscape</h2>
-    <p style="font-size:0.88em;color:#555;margin-bottom:16px">Every triangle deformation maps to a point in the (σ_min, σ_max) plane. The green star marks the ARAP optimum; the purple diagonal marks the ACAP optimum. Move the Part 2 sliders to watch the red dot (current J) travel across this space.</p>
+    <h2 style="color:#c0392b;margin-bottom:6px">Interactive: (σ_min, σ_max) Energy Landscape</h2>
+    <p style="font-size:0.88em;color:#555;margin-bottom:16px">Every triangle deformation maps to a single point in the $(\sigma_{\min}, \sigma_{\max})$ plane. Adjust the Part 2 sliders and watch the red dot move — its distance to the green star is the ARAP cost, its distance to the purple diagonal is the ACAP cost.</p>
     <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">
         <div style="flex:1;min-width:260px">
             <div id="plotSigma" style="height:340px"></div>
         </div>
         <div style="flex:1;min-width:210px;display:flex;flex-direction:column;gap:14px">
-            <div style="font-size:0.78em;color:#888;font-weight:700">LIVE ENERGIES (linked to Part 2 sliders)</div>
+            <div style="font-size:0.78em;color:#888;font-weight:700;letter-spacing:0.5px">LIVE — LINKED TO PART 2 SLIDERS</div>
 
             <div>
-                <div style="font-weight:700;color:#27ae60;font-size:0.88em;margin-bottom:4px">ARAP: $\min_{R} \|J - R\|_F^2$</div>
-                <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
-                    <span style="font-family:monospace;font-size:1.5em;font-weight:bold;color:#27ae60" id="p3-eA2">—</span>
-                    <span style="font-size:0.79em;color:#888">= (σ_max−1)² + (σ_min−1)²</span>
-                </div>
+                <div style="font-weight:700;color:#27ae60;font-size:0.88em;margin-bottom:5px">ARAP &nbsp; $(\sigma_{\max}{-}1)^2 + (\sigma_{\min}{-}1)^2$</div>
+                <span style="font-family:monospace;font-size:1.8em;font-weight:bold;color:#27ae60" id="p3-eA2">—</span>
             </div>
 
             <div>
-                <div style="font-weight:700;color:#8e44ad;font-size:0.88em;margin-bottom:4px">ACAP: $\min_{s,R} \|J - sR\|_F^2$</div>
-                <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
-                    <span style="font-family:monospace;font-size:1.5em;font-weight:bold;color:#8e44ad" id="p3-eS2">—</span>
-                    <span style="font-size:0.79em;color:#888">= (σ_max − σ_min)² / 2</span>
-                </div>
+                <div style="font-weight:700;color:#8e44ad;font-size:0.88em;margin-bottom:5px">ACAP &nbsp; $(\sigma_{\max} - \sigma_{\min})^2 / 2$</div>
+                <span style="font-family:monospace;font-size:1.8em;font-weight:bold;color:#8e44ad" id="p3-eS2">—</span>
             </div>
 
-            <div style="background:#f4f6ff;border-radius:8px;padding:12px 14px;font-size:0.82em;color:#555">
+            <div style="background:#f4f6ff;border-radius:8px;padding:12px 14px;font-size:0.82em;color:#555;line-height:1.8">
                 σ_max = <span id="p3-smax" style="font-weight:bold;font-family:monospace">—</span><br>
                 σ_min = <span id="p3-smin" style="font-weight:bold;font-family:monospace">—</span><br>
-                s* (ACAP scale) = <span id="p3-sstar" style="font-weight:bold;font-family:monospace">—</span>
+                s* = <span id="p3-sstar" style="font-weight:bold;font-family:monospace">—</span>
             </div>
 
-            <div id="p3-interp" style="font-size:0.82em;padding:10px 12px;border-radius:8px;background:#fffbea;border:1px solid #ffe082;color:#555"></div>
+            <div id="p3-interp" style="font-size:0.82em;padding:10px 12px;border-radius:8px;background:#fffbea;border:1px solid #ffe082;color:#555;line-height:1.5"></div>
 
-            <div style="font-size:0.78em;color:#666;background:#f0faf4;border:1px solid #b8e0c8;border-radius:8px;padding:10px 12px">
-                <strong>Reading the chart:</strong><br>
-                ★ green at (1,1) = ARAP perfect<br>
-                purple diagonal = ACAP perfect<br>
-                green circle = equal ARAP energy<br>
-                purple ┄ = ACAP distance to diagonal<br>
-                red ● = current J from Part 2
+            <div style="font-size:0.77em;color:#666;background:#f0faf4;border:1px solid #b8e0c8;border-radius:8px;padding:10px 12px;line-height:1.7">
+                <strong>Chart legend:</strong><br>
+                ★ green (1,1) = ARAP ideal<br>
+                purple line = ACAP ideal (σ_max = σ_min)<br>
+                green circle = ARAP energy level<br>
+                purple ┄ = ACAP distance<br>
+                red ● = current J
             </div>
         </div>
     </div>
@@ -783,22 +745,16 @@
 
 <!-- SVD bridge intuition -->
 <div class="intuition-card">
-    <h3>SVD: The Bridge from J to Both Losses</h3>
-    <p>Every 2×2 Jacobian decomposes as $J = U \Sigma V^T$ where $U, V \in SO(2)$ and $\Sigma = \mathrm{diag}(\sigma_{\max}, \sigma_{\min})$. The same optimal rotation $R^* = UV^T$ solves <em>both</em> inner minimizations; only the scaling differs:</p>
+    <h3>Why Both Energies Depend Only on Singular Values</h3>
+    <p>Every 2×2 Jacobian decomposes as $J = U\Sigma V^T$ with $U,V \in SO(2)$ and $\Sigma = \mathrm{diag}(\sigma_{\max}, \sigma_{\min})$. Because orthogonal matrices are isometries of the Frobenius norm:</p>
     <div class="math-center">
-        $$\underbrace{\min_{R} \|J - R\|_F^2}_{\text{ARAP}} = \|{\Sigma} - I\|_F^2 = (\sigma_{\max}{-}1)^2 + (\sigma_{\min}{-}1)^2$$
-        $$\underbrace{\min_{s,R} \|J - sR\|_F^2}_{\text{ACAP}} = \|\Sigma - s^*I\|_F^2 = \frac{(\sigma_{\max}-\sigma_{\min})^2}{2}, \qquad s^* = \frac{\sigma_{\max}+\sigma_{\min}}{2}$$
+        $$\|J - sR\|_F^2 = \|U\Sigma V^T - sR\|_F^2 = \|\Sigma - s\underbrace{U^T R V}_{\in SO(2)}\|_F^2$$
     </div>
-    <p>Geometrically: <strong>ARAP</strong> penalizes any deviation of either singular value from 1 — it wants the deformation ellipse to be a unit circle. <strong>ACAP</strong> only penalizes the difference between singular values — it wants the ellipse to be a circle (of any radius). Every isometry is also conformal, so $\mathcal{L}_\text{ARAP} = 0 \Rightarrow \mathcal{L}_\text{ACAP} = 0$, but not vice versa.</p>
-</div>
-
-<!-- References -->
-<div style="background:#f4f6ff;border:1px solid #d0d8f0;border-radius:10px;padding:16px 20px;margin:24px 0;font-size:0.84em;color:#555">
-    <div style="font-weight:700;color:#1a1a5e;margin-bottom:10px;font-size:0.95em">References</div>
-    <p style="margin:5px 0 0">[1] Huang, Q.-X., Wicke, M., Adams, B., &amp; Guibas, L. (2009). <em>Shape decomposition using modal analysis.</em> <em>Computer Graphics Forum (Eurographics 2009)</em>, <strong>28</strong>(2). <a href="https://www.cs.utexas.edu/~huangqx/eg09_seg.pdf" target="_blank" style="color:#0d3b8e">[PDF]</a> — Eq. (1): ARAP deformation energy; Eq. (7): Hessian $H_P = L \otimes I_3 - BC^{-1}B^T$.</p>
-    <p style="margin:5px 0 0">[2] Sorkine, O., &amp; Alexa, M. (2007). <em>As-rigid-as-possible surface modeling.</em> <em>Symposium on Geometry Processing (SGP 2007)</em>, pp. 109–116. [Original ARAP energy; referenced as [SA07] in [1]]</p>
-    <p style="margin:5px 0 0">[3] Lévy, B., Petitjean, S., Ray, N., &amp; Maillot, J. (2002). <em>Least squares conformal maps for automatic texture atlas generation.</em> <em>ACM SIGGRAPH 2002</em>, pp. 362–371. [LSCM: the standard ACAP/conformal parameterization]</p>
-    <p style="margin:5px 0 0">[4] Liu, L., Zhang, L., Xu, Y., Gotsman, C., &amp; Gortler, S. J. (2008). <em>A local/global approach to mesh parameterization.</em> <em>SGP 2008</em>. [Alternating ARAP/ACAP solver used in mesh processing pipelines]</p>
+    <p>Minimizing over all rotations sets $U^T R V = I$, so $R^* = UV^T$ for both problems. Minimizing over $s$ gives $s^* = (\sigma_{\max}+\sigma_{\min})/2$ for ACAP. The energies simplify to:</p>
+    <div class="math-center">
+        $$\mathcal{L}_\text{ARAP}(J) = (\sigma_{\max}{-}1)^2 + (\sigma_{\min}{-}1)^2 \qquad \mathcal{L}_\text{ACAP}(J) = \frac{(\sigma_{\max}-\sigma_{\min})^2}{2}$$
+    </div>
+    <p><strong>ARAP ⊂ ACAP:</strong> any isometry ($\sigma_{\max}=\sigma_{\min}=1$) is automatically conformal ($\sigma_{\max}=\sigma_{\min}$), but a conformal map can freely scale — the deformation ellipse stays circular but its size changes. ACAP is therefore a strictly weaker constraint than ARAP.</p>
 </div>
 
 </div><!-- /content -->
