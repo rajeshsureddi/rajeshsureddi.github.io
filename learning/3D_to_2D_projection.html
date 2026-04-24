@@ -645,14 +645,14 @@
 </div>
 
 <!-- ════════════════════════════════════════════════════════════════════
-     PART 3 — ARAP AND ASAP LOSS FUNCTIONS
+     PART 3 — ARAP AND ACAP LOSS FUNCTIONS
 ════════════════════════════════════════════════════════════════════ -->
-<div class="section-header" style="margin-top:52px">Part 3 — ARAP &amp; ASAP: Loss Functions from the Paper</div>
+<div class="section-header" style="margin-top:52px">Part 3 — ARAP &amp; ACAP: Loss Functions from the Paper</div>
 
 <!-- Intro / citation card -->
 <div class="card" style="border-left:5px solid #6c3483">
     <h2 style="color:#6c3483">Two Ways to Penalize Shape Distortion</h2>
-    <p>Given the per-face Jacobian $J_f$, both ARAP and ASAP define a <strong>loss function as the sum of per-face deformation energies</strong>. They differ only in what the ideal map is: a rigid rotation (ARAP) or a conformal scaled rotation (ASAP). Both energies reduce to simple expressions in the singular values $\sigma_{\max}, \sigma_{\min}$ of $J$.</p>
+    <p>Given the per-face Jacobian $J_f$, both ARAP and ACAP define a <strong>loss function as the sum of per-face deformation energies</strong>. They differ only in what the ideal map is: a rigid rotation (ARAP) or a conformal scaled rotation (ACAP). Both energies reduce to simple expressions in the singular values $\sigma_{\max}, \sigma_{\min}$ of $J$.</p>
     <div style="margin-top:14px;padding:12px 16px;background:#f4f6ff;border-radius:8px;border:1px solid #d0d8f0;font-size:0.85em;color:#555">
         <strong style="color:#1a1a5e">Paper source:</strong>
         Huang, Q.-X., Wicke, M., Adams, B., &amp; Guibas, L.
@@ -663,7 +663,7 @@
     </div>
 </div>
 
-<!-- ARAP + ASAP side by side -->
+<!-- ARAP + ACAP side by side -->
 <div class="steps-row">
 
     <!-- ─── ARAP ─── -->
@@ -690,21 +690,21 @@
         </div>
     </div>
 
-    <!-- ─── ASAP ─── -->
+    <!-- ─── ACAP ─── -->
     <div class="step-card" style="border-top:4px solid #8e44ad">
         <div class="step-head">
-            <div class="step-num" style="background:#8e44ad; font-size:0.78em; letter-spacing:-0.5px">ASAP</div>
-            <div class="step-title">As-Similar-As-Possible</div>
+            <div class="step-num" style="background:#8e44ad; font-size:0.78em; letter-spacing:-0.5px">ACAP</div>
+            <div class="step-title">As-Conformal-As-Possible</div>
         </div>
         <p class="step-desc">Find the deformation where each face Jacobian is as close as possible to a <strong>scaled rotation sR</strong>. Scaled rotations preserve angles but allow uniform area change: $\sigma_{\max} = \sigma_{\min}$.</p>
         <div class="math-box">
-            $$\mathcal{L}_\text{ASAP} = \sum_{f} A_f \underbrace{\min_{\substack{s_f > 0 \\ R_f \in SO(2)}} \|J_f - s_f R_f\|_F^2}_{\text{per-face conformal loss}}$$
+            $$\mathcal{L}_\text{ACAP} = \sum_{f} A_f \underbrace{\min_{\substack{s_f > 0 \\ R_f \in SO(2)}} \|J_f - s_f R_f\|_F^2}_{\text{per-face conformal loss}}$$
             $$= \sum_{f} A_f \cdot \dfrac{(\sigma_{\max} - \sigma_{\min})^2}{2}$$
         </div>
         <p class="step-desc" style="margin-top:6px">Optimal scale: $s_f^* = \tfrac{\sigma_{\max}+\sigma_{\min}}{2}$. Same optimal rotation $R_f^* = UV^T$. Zero iff $\sigma_{\max} = \sigma_{\min}$ (conformal map).</p>
         <div style="display:flex;gap:8px;margin-top:10px">
             <div class="mpill" style="flex:1">
-                <div class="mlabel">Live ASAP energy</div>
+                <div class="mlabel">Live ACAP energy</div>
                 <div class="mval" id="p3-eS" style="color:#8e44ad">—</div>
             </div>
             <div class="mpill" style="flex:1">
@@ -737,7 +737,7 @@
 <!-- σ-space interactive diagram -->
 <div class="card" style="border-left:5px solid #c0392b">
     <h2 style="color:#c0392b;margin-bottom:14px">Interactive: (σ_min, σ_max) Energy Landscape</h2>
-    <p style="font-size:0.88em;color:#555;margin-bottom:16px">Every triangle deformation maps to a point in the (σ_min, σ_max) plane. The green star marks the ARAP optimum; the purple diagonal marks the ASAP optimum. Move the Part 2 sliders to watch the red dot (current J) travel across this space.</p>
+    <p style="font-size:0.88em;color:#555;margin-bottom:16px">Every triangle deformation maps to a point in the (σ_min, σ_max) plane. The green star marks the ARAP optimum; the purple diagonal marks the ACAP optimum. Move the Part 2 sliders to watch the red dot (current J) travel across this space.</p>
     <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">
         <div style="flex:1;min-width:260px">
             <div id="plotSigma" style="height:340px"></div>
@@ -754,7 +754,7 @@
             </div>
 
             <div>
-                <div style="font-weight:700;color:#8e44ad;font-size:0.88em;margin-bottom:4px">ASAP: $\min_{s,R} \|J - sR\|_F^2$</div>
+                <div style="font-weight:700;color:#8e44ad;font-size:0.88em;margin-bottom:4px">ACAP: $\min_{s,R} \|J - sR\|_F^2$</div>
                 <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
                     <span style="font-family:monospace;font-size:1.5em;font-weight:bold;color:#8e44ad" id="p3-eS2">—</span>
                     <span style="font-size:0.79em;color:#888">= (σ_max − σ_min)² / 2</span>
@@ -764,7 +764,7 @@
             <div style="background:#f4f6ff;border-radius:8px;padding:12px 14px;font-size:0.82em;color:#555">
                 σ_max = <span id="p3-smax" style="font-weight:bold;font-family:monospace">—</span><br>
                 σ_min = <span id="p3-smin" style="font-weight:bold;font-family:monospace">—</span><br>
-                s* (ASAP scale) = <span id="p3-sstar" style="font-weight:bold;font-family:monospace">—</span>
+                s* (ACAP scale) = <span id="p3-sstar" style="font-weight:bold;font-family:monospace">—</span>
             </div>
 
             <div id="p3-interp" style="font-size:0.82em;padding:10px 12px;border-radius:8px;background:#fffbea;border:1px solid #ffe082;color:#555"></div>
@@ -772,9 +772,9 @@
             <div style="font-size:0.78em;color:#666;background:#f0faf4;border:1px solid #b8e0c8;border-radius:8px;padding:10px 12px">
                 <strong>Reading the chart:</strong><br>
                 ★ green at (1,1) = ARAP perfect<br>
-                purple diagonal = ASAP perfect<br>
+                purple diagonal = ACAP perfect<br>
                 green circle = equal ARAP energy<br>
-                purple ┄ = ASAP distance to diagonal<br>
+                purple ┄ = ACAP distance to diagonal<br>
                 red ● = current J from Part 2
             </div>
         </div>
@@ -787,9 +787,9 @@
     <p>Every 2×2 Jacobian decomposes as $J = U \Sigma V^T$ where $U, V \in SO(2)$ and $\Sigma = \mathrm{diag}(\sigma_{\max}, \sigma_{\min})$. The same optimal rotation $R^* = UV^T$ solves <em>both</em> inner minimizations; only the scaling differs:</p>
     <div class="math-center">
         $$\underbrace{\min_{R} \|J - R\|_F^2}_{\text{ARAP}} = \|{\Sigma} - I\|_F^2 = (\sigma_{\max}{-}1)^2 + (\sigma_{\min}{-}1)^2$$
-        $$\underbrace{\min_{s,R} \|J - sR\|_F^2}_{\text{ASAP}} = \|\Sigma - s^*I\|_F^2 = \frac{(\sigma_{\max}-\sigma_{\min})^2}{2}, \qquad s^* = \frac{\sigma_{\max}+\sigma_{\min}}{2}$$
+        $$\underbrace{\min_{s,R} \|J - sR\|_F^2}_{\text{ACAP}} = \|\Sigma - s^*I\|_F^2 = \frac{(\sigma_{\max}-\sigma_{\min})^2}{2}, \qquad s^* = \frac{\sigma_{\max}+\sigma_{\min}}{2}$$
     </div>
-    <p>Geometrically: <strong>ARAP</strong> penalizes any deviation of either singular value from 1 — it wants the deformation ellipse to be a unit circle. <strong>ASAP</strong> only penalizes the difference between singular values — it wants the ellipse to be a circle (of any radius). Every isometry is also conformal, so $\mathcal{L}_\text{ARAP} = 0 \Rightarrow \mathcal{L}_\text{ASAP} = 0$, but not vice versa.</p>
+    <p>Geometrically: <strong>ARAP</strong> penalizes any deviation of either singular value from 1 — it wants the deformation ellipse to be a unit circle. <strong>ACAP</strong> only penalizes the difference between singular values — it wants the ellipse to be a circle (of any radius). Every isometry is also conformal, so $\mathcal{L}_\text{ARAP} = 0 \Rightarrow \mathcal{L}_\text{ACAP} = 0$, but not vice versa.</p>
 </div>
 
 <!-- References -->
@@ -797,8 +797,8 @@
     <div style="font-weight:700;color:#1a1a5e;margin-bottom:10px;font-size:0.95em">References</div>
     <p style="margin:5px 0 0">[1] Huang, Q.-X., Wicke, M., Adams, B., &amp; Guibas, L. (2009). <em>Shape decomposition using modal analysis.</em> <em>Computer Graphics Forum (Eurographics 2009)</em>, <strong>28</strong>(2). <a href="https://www.cs.utexas.edu/~huangqx/eg09_seg.pdf" target="_blank" style="color:#0d3b8e">[PDF]</a> — Eq. (1): ARAP deformation energy; Eq. (7): Hessian $H_P = L \otimes I_3 - BC^{-1}B^T$.</p>
     <p style="margin:5px 0 0">[2] Sorkine, O., &amp; Alexa, M. (2007). <em>As-rigid-as-possible surface modeling.</em> <em>Symposium on Geometry Processing (SGP 2007)</em>, pp. 109–116. [Original ARAP energy; referenced as [SA07] in [1]]</p>
-    <p style="margin:5px 0 0">[3] Lévy, B., Petitjean, S., Ray, N., &amp; Maillot, J. (2002). <em>Least squares conformal maps for automatic texture atlas generation.</em> <em>ACM SIGGRAPH 2002</em>, pp. 362–371. [LSCM: the standard ASAP/conformal parameterization]</p>
-    <p style="margin:5px 0 0">[4] Liu, L., Zhang, L., Xu, Y., Gotsman, C., &amp; Gortler, S. J. (2008). <em>A local/global approach to mesh parameterization.</em> <em>SGP 2008</em>. [Alternating ARAP/ASAP solver used in mesh processing pipelines]</p>
+    <p style="margin:5px 0 0">[3] Lévy, B., Petitjean, S., Ray, N., &amp; Maillot, J. (2002). <em>Least squares conformal maps for automatic texture atlas generation.</em> <em>ACM SIGGRAPH 2002</em>, pp. 362–371. [LSCM: the standard ACAP/conformal parameterization]</p>
+    <p style="margin:5px 0 0">[4] Liu, L., Zhang, L., Xu, Y., Gotsman, C., &amp; Gortler, S. J. (2008). <em>A local/global approach to mesh parameterization.</em> <em>SGP 2008</em>. [Alternating ARAP/ACAP solver used in mesh processing pipelines]</p>
 </div>
 
 </div><!-- /content -->
@@ -1132,9 +1132,9 @@ function updatePart3(smax, smin) {
     // Interpretation
     const interpEl = document.getElementById('p3-interp');
     if (e_arap < 0.01)
-        interpEl.textContent = 'J ≈ rotation — ARAP perfect (isometry). ASAP trivially zero too.';
+        interpEl.textContent = 'J ≈ rotation — ARAP perfect (isometry). ACAP trivially zero too.';
     else if (e_asap < 0.01)
-        interpEl.textContent = 'J ≈ scaled rotation — ASAP perfect (conformal). ARAP energy still non-zero (area changed).';
+        interpEl.textContent = 'J ≈ scaled rotation — ACAP perfect (conformal). ARAP energy still non-zero (area changed).';
     else if (e_arap < e_asap * 3)
         interpEl.textContent = 'Mild stretch/compression: mostly rigid with some area change.';
     else
@@ -1156,25 +1156,25 @@ function updatePart3(smax, smin) {
         else { arapCx.push(null); arapCy.push(null); }
     }
 
-    // ASAP optimal scale projection: (smax, smin) → (s*, s*) on diagonal
+    // ACAP optimal scale projection: (smax, smin) → (s*, s*) on diagonal
     const proj = s_star;
 
     const traces = [
-        // σ_max = σ_min diagonal (ASAP optimal)
+        // σ_max = σ_min diagonal (ACAP optimal)
         { type:'scatter', mode:'lines',
           x:[0, maxV], y:[0, maxV],
           line:{color:'#8e44ad', width:2.5},
-          name:'ASAP optimal (σ_max = σ_min)' },
+          name:'ACAP optimal (σ_max = σ_min)' },
         // ARAP energy circle
         { type:'scatter', mode:'lines',
           x:arapCx, y:arapCy,
           line:{color:'#27ae60', width:1.5, dash:'dot'},
           name:`ARAP energy = ${e_arap.toFixed(3)}` },
-        // Perpendicular from current point to diagonal (ASAP distance)
+        // Perpendicular from current point to diagonal (ACAP distance)
         { type:'scatter', mode:'lines',
           x:[smin, proj], y:[smax, proj],
           line:{color:'#8e44ad', width:2, dash:'dash'},
-          name:`ASAP energy = ${e_asap.toFixed(3)}` },
+          name:`ACAP energy = ${e_asap.toFixed(3)}` },
         // ARAP optimal (1,1)
         { type:'scatter', mode:'markers+text',
           x:[1], y:[1],
