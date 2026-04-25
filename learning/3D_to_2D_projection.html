@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D → 2D Projection &amp; Deformation Gradient</title>
+    <title>Triangle Deformation: Local Frames, Jacobians &amp; UV Parameterization</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
@@ -272,8 +272,8 @@
 <!-- ════════════════════════════ HERO ════════════════════════════ -->
 <div class="hero">
     <div class="badge">Interactive Visual Guide</div>
-    <h1>3D Triangles → 2D Frames → Deformation Gradient</h1>
-    <p>Project 3D triangles into canonical local frames, then measure how one deforms into another via the per-face Jacobian — the core computation behind ARAP, UV parameterization, and shape registration.</p>
+    <h1>Triangle Deformation: Local Frames, Jacobians &amp; UV Parameterization</h1>
+    <p>Build intuition for how 3D surface triangles are projected into canonical 2D frames, how the per-face Jacobian measures the deformation between them, and how singular values classify distortion — the machinery behind ARAP, ACAP, and UV unwrapping.</p>
 </div>
 
 <div class="content">
@@ -886,6 +886,69 @@
         <p class="step-desc">Singular values differ: $\sigma_{\max} \ne \sigma_{\min}$. Space is stretched more along one axis — angles are not preserved.</p>
         <div class="math-box">$$J = R(\theta)\,\mathrm{diag}(s_x,s_y),\quad \sigma_{\max} \ne \sigma_{\min}$$</div>
         <p class="step-desc" style="margin-top:8px">Mesh stretches differently along each axis — triangles become squashed or elongated. Both ARAP and ACAP energies are non-zero.</p>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════
+     CONCLUSION
+════════════════════════════════════════════════════════════════════ -->
+<div class="section-header" style="margin-top:52px">Conclusion — Putting It All Together</div>
+
+<div class="card" style="border-left:4px solid #0d3b8e">
+    <h2 style="color:#0d3b8e">The Full Pipeline</h2>
+    <p>Every idea in this tutorial feeds the next. Starting from raw 3D coordinates, three steps turn a pair of triangles into a single number measuring distortion:</p>
+
+    <div class="steps-row" style="margin-top:16px">
+        <div class="step-card" style="border-top:4px solid #e67e22">
+            <div class="step-head">
+                <div class="step-num" style="background:#e67e22;font-size:0.78em">P1</div>
+                <div class="step-title">Local 2D Frame</div>
+            </div>
+            <p class="step-desc">Align the base edge with the X-axis. Every 3D triangle collapses to three numbers $(L,\,x,\,y)$ — base length, apex offset, apex height. The 3D embedding becomes irrelevant.</p>
+            <div class="math-box">$$M = \begin{bmatrix}L & x \\ 0 & y\end{bmatrix}$$</div>
+        </div>
+        <div class="step-card" style="border-top:4px solid #0d3b8e">
+            <div class="step-head">
+                <div class="step-num" style="background:#0d3b8e;font-size:0.78em">P2</div>
+                <div class="step-title">Per-Face Jacobian</div>
+            </div>
+            <p class="step-desc">$J = M_t M_s^{-1}$ is the unique linear map sending source edges to target edges. Its entries directly encode base scale, height scale, and shear. Apply it to any point in the source triangle to find where it lands in the target.</p>
+            <div class="math-box">$$J = \begin{bmatrix}L_t/L_s & \cdot \\ 0 & y_t/y_s\end{bmatrix}$$</div>
+        </div>
+        <div class="step-card" style="border-top:4px solid #8e44ad">
+            <div class="step-head">
+                <div class="step-num" style="background:#8e44ad;font-size:0.78em">P3</div>
+                <div class="step-title">SVD &amp; Classification</div>
+            </div>
+            <p class="step-desc">Factor $J = R(\theta)\,\mathrm{diag}(\sigma_{\max},\sigma_{\min})$. The singular values are the semi-axes of the ellipse a unit circle maps to — they measure pure stretch independent of rotation.</p>
+            <div class="math-box">$$\text{ARAP} = (\sigma_{\max}{-}1)^2{+}(\sigma_{\min}{-}1)^2, \quad \text{ACAP} = \tfrac{(\sigma_{\max}{-}\sigma_{\min})^2}{2}$$</div>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="background:linear-gradient(135deg,#f8faff 0%,#eef1fb 100%);border:1px solid #c5cae9">
+    <h2 style="color:#3949ab;margin-bottom:14px">Key Takeaways</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
+        <div style="background:white;border-radius:8px;padding:13px 16px;border-left:3px solid #e67e22;font-size:0.88em;line-height:1.7">
+            <strong style="color:#e67e22">Local frame = coordinate-free</strong><br>
+            By projecting each triangle into its own 2D frame, the comparison between triangles is independent of their position or orientation in 3D space.
+        </div>
+        <div style="background:white;border-radius:8px;padding:13px 16px;border-left:3px solid #0d3b8e;font-size:0.88em;line-height:1.7">
+            <strong style="color:#0d3b8e">J encodes all deformation</strong><br>
+            J[0,0] = base scale, J[1,1] = height scale, J[0,1] = shear, J[1,0] = 0 always. Every distortion question reduces to reading entries of a 2×2 matrix.
+        </div>
+        <div style="background:white;border-radius:8px;padding:13px 16px;border-left:3px solid #27ae60;font-size:0.88em;line-height:1.7">
+            <strong style="color:#27ae60">σ_max, σ_min are the stretch axes</strong><br>
+            They are the semi-axes of the ellipse a unit circle maps to under J — independent of rotation θ. ARAP penalises deviation from (1,1); ACAP penalises deviation from σ_max = σ_min.
+        </div>
+        <div style="background:white;border-radius:8px;padding:13px 16px;border-left:3px solid #8e44ad;font-size:0.88em;line-height:1.7">
+            <strong style="color:#8e44ad">UV parameterization = per-face J</strong><br>
+            Unwrapping a 3D mesh assigns a J to every triangle. Minimising ARAP energy globally gives near-isometric UV maps; minimising ACAP gives angle-preserving (conformal) maps.
+        </div>
+    </div>
+
+    <div style="margin-top:18px;padding:14px 18px;background:#0d3b8e;border-radius:8px;color:white;font-size:0.88em;line-height:1.8">
+        <strong>The one-sentence summary:</strong> project each 3D triangle to a local 2D frame (Part 1), compute $J = M_t M_s^{-1}$ (Part 2), then read off $\sigma_{\max}$ and $\sigma_{\min}$ from the SVD to measure how much the triangle was stretched and sheared (Part 3) — that is the complete distortion pipeline used in ARAP, ACAP, and UV parameterization solvers.
     </div>
 </div>
 
