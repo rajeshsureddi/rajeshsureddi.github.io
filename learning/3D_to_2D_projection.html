@@ -446,12 +446,37 @@
 <div class="section-header" style="margin-top:52px">Part 2 — Deformation Gradient Between Two Triangles</div>
 
 <div class="card accent-green">
-    <h2 style="color:#1a7340">From Projection to Jacobian</h2>
-    <p>Once a source and a target triangle are each in their own canonical 2D frame, we can encode <strong>how one deforms into the other</strong> as a 2×2 matrix — the <em>deformation gradient</em> (Jacobian) $J$. This is the per-face computation at the heart of the research code:</p>
-    <div class="math-box" style="margin:14px 0 4px">
-        $$M_s = \begin{bmatrix} L_s & x_s \\ 0 & y_s \end{bmatrix}, \qquad M_t = \begin{bmatrix} L_t & x_t \\ 0 & y_t \end{bmatrix}, \qquad J = M_t \, M_s^{-1}$$
+    <h2 style="color:#1a7340">What Is J? — The Map That Takes Source Edges to Target Edges</h2>
+    <p>After projecting both triangles into their 2D frames (Part 1), each triangle has two edge vectors anchored at the origin. The Jacobian $J$ is the unique <strong>linear map that sends every source edge to the corresponding target edge</strong>:</p>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin:14px 0 10px">
+        <div style="flex:1;min-width:260px">
+            <div class="math-box" style="margin:0 0 8px">
+                $$J \cdot \underbrace{\begin{bmatrix}L_s & x_s \\ 0 & y_s\end{bmatrix}}_{M_s}= \underbrace{\begin{bmatrix}L_t & x_t \\ 0 & y_t\end{bmatrix}}_{M_t} \;\Longrightarrow\; J = M_t M_s^{-1}$$
+            </div>
+            <p style="font-size:0.84em;color:#666;margin:0">Columns of $M$ = the two 2D edge vectors: $(L,0)^\top$ (base) and $(x,y)^\top$ (offset). $M$ is upper-triangular so its inverse is cheap. Expanding gives:</p>
+            <div class="math-box" style="margin:8px 0 0">
+                $$J = \begin{bmatrix} \tfrac{L_t}{L_s} & \dfrac{x_t L_s - L_t x_s}{L_s\,y_s} \\[6pt] 0 & \tfrac{y_t}{y_s} \end{bmatrix}$$
+            </div>
+        </div>
+        <div style="flex:1;min-width:260px;display:grid;grid-template-columns:1fr 1fr;gap:9px;font-size:0.83em">
+            <div style="background:#fff8f0;border-radius:8px;padding:10px 12px;border-left:3px solid #e67e22">
+                <strong style="color:#e67e22">J[0,0] = L_t / L_s</strong><br>
+                <span style="color:#555">Base-edge scale — how much the bottom edge stretches.</span>
+            </div>
+            <div style="background:#f0faf4;border-radius:8px;padding:10px 12px;border-left:3px solid #27ae60">
+                <strong style="color:#27ae60">J[1,1] = y_t / y_s</strong><br>
+                <span style="color:#555">Height scale — how much the triangle's height changes.</span>
+            </div>
+            <div style="background:#f4f6ff;border-radius:8px;padding:10px 12px;border-left:3px solid #0d3b8e">
+                <strong style="color:#0d3b8e">J[0,1] = shear term</strong><br>
+                <span style="color:#555">Apex horizontal shift relative to base — non-zero when shapes differ in "lean".</span>
+            </div>
+            <div style="background:#f9f9f9;border-radius:8px;padding:10px 12px;border-left:3px solid #bbb">
+                <strong style="color:#999">J[1,0] = 0 (always)</strong><br>
+                <span style="color:#555">Both frames pin the base on X — no vertical shear possible.</span>
+            </div>
+        </div>
     </div>
-    <p style="font-size:0.84em; color:#666; margin-top:8px">Columns of $M$ are the 2D edge vectors from $v_0'$: first column $= (L, 0)^\top$, second $= (x, y)^\top$. Because $M$ is upper-triangular, $M^{-1}$ has a closed form and $J$ reduces to $\bigl[\tfrac{L_t}{L_s},\ \tfrac{x_t L_s - L_t x_s}{L_s y_s};\; 0,\ \tfrac{y_t}{y_s}\bigr]$.</p>
 </div>
 
 <!-- ════════════ PART 2 CONTROLS ════════════ -->
@@ -593,15 +618,16 @@
 
         <!-- Live code -->
         <div class="live-box" style="flex:1;min-width:190px;align-self:stretch">
-<span class="lc"># M matrices (columns = 2D edges)</span><br>
+<span class="lc"># columns = 2D edge vectors</span><br>
 <span class="lv">M_s</span> = [[<span id="lb-Ls">4.00</span>, <span id="lb-xs">1.00</span>], [0, <span id="lb-ys">3.00</span>]]<br>
 <span class="lv">M_t</span> = [[<span id="lb-Lt">4.00</span>, <span id="lb-xt">1.00</span>], [0, <span id="lb-yt">3.00</span>]]<br>
 <span class="lc"># J = M_t @ inv(M_s)</span><br>
-<span class="lv">J[0,0]</span> = L_t/L_s     = <span class="lo" id="lb-j00">1.000</span><br>
-<span class="lv">J[1,1]</span> = y_t/y_s     = <span class="lo" id="lb-j11">1.000</span><br>
-<span class="lv">det J</span>  = J00·J11   = <span class="lo" id="lb-det">1.000</span><br>
-<span class="lv">σ_t</span>    = max(σ_max, 1/σ_min)<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = <span class="lr" id="lb-st">1.000</span>
+<span class="lv">J[0,0]</span> = Lt/Ls &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= <span class="lo" id="lb-j00">1.000</span> <span class="lc">← base scale</span><br>
+<span class="lv">J[1,1]</span> = yt/ys &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= <span class="lo" id="lb-j11">1.000</span> <span class="lc">← height scale</span><br>
+<span class="lv">J[0,1]</span> = (xt·Ls−Lt·xs)/(Ls·ys) = <span class="lh" id="lb-j01">0.000</span> <span class="lc">← shear</span><br>
+<span class="lv">J[1,0]</span> = 0 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="lc">← always zero</span><br>
+<span class="lv">det J</span>  = J00·J11 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= <span class="lo" id="lb-det">1.000</span><br>
+<span class="lv">σ_t</span>    = max(σ_max,1/σ_min) &nbsp;= <span class="lr" id="lb-st">1.000</span>
         </div>
     </div>
 </div>
@@ -1020,6 +1046,7 @@ function updatePart2() {
     document.getElementById('lb-yt').textContent = yt.toFixed(2);
     document.getElementById('lb-j00').textContent = J[0][0].toFixed(3);
     document.getElementById('lb-j11').textContent = J[1][1].toFixed(3);
+    document.getElementById('lb-j01').textContent = J[0][1].toFixed(3);
     document.getElementById('lb-det').textContent = detJ.toFixed(3);
     document.getElementById('lb-st').textContent  = sigma_t.toFixed(3);
     document.getElementById('lb-st').style.color  = '#f38ba8';
