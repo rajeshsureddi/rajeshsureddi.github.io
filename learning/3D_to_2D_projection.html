@@ -637,15 +637,33 @@
 
 <div class="card accent">
     <h2>Classifying Jacobians: Rigid, Conformal, Non-Conformal</h2>
-    <p>Any 2×2 Jacobian $J$ can be written as $J = R(\theta)\,\mathrm{diag}(s_x,\,s_y)$ — a rotation by $\theta$ followed by independent scaling along each axis. The singular values are $\sigma_{\max} = \max(s_x,s_y)$ and $\sigma_{\min} = \min(s_x,s_y)$, independent of $\theta$.</p>
+    <p>Any 2×2 Jacobian $J$ can be factored as $J = R(\theta)\,\mathrm{diag}(s_x,\,s_y)$ — first scale each axis independently, then rotate the whole result. Three components, three geometric meanings:</p>
     <div style="display:flex;gap:12px;margin:14px 0 12px;flex-wrap:wrap">
-        <div style="flex:1;min-width:200px;background:#fff4e5;border-radius:8px;padding:12px 16px;border:1px solid #f0a030">
-            <div style="font-weight:700;color:#e67e22;font-size:0.95em;margin-bottom:4px">$s_x$ — base-direction scale</div>
-            <div style="font-size:0.85em;color:#555;line-height:1.6">How much the <em>horizontal (base) direction</em> stretches. In the 2D local frame from Part 1 this scales along $\overrightarrow{v_0 v_1}$, the edge you laid on the X-axis.</div>
+        <div style="flex:1;min-width:185px;background:#f0f4ff;border-radius:8px;padding:12px 16px;border:1px solid #7986cb">
+            <div style="font-weight:700;color:#3949ab;font-size:0.95em;margin-bottom:5px">$R(\theta)$ — pure rotation</div>
+            <div style="font-size:0.83em;color:#555;line-height:1.55;margin-bottom:7px">Spins the entire mesh by $\theta$ around the origin. No stretching — $R$ alone preserves all lengths and angles.</div>
+            <div style="background:#fff;border-radius:6px;padding:7px 10px;font-size:0.82em;color:#3949ab;text-align:center;line-height:1.9">
+                $R(\theta)=\begin{bmatrix}\cos\theta & -\sin\theta\\\sin\theta & \phantom{-}\cos\theta\end{bmatrix}$
+            </div>
+            <div style="font-size:0.77em;color:#777;margin-top:6px">θ=45° → every point orbits 45° around origin; all triangles unchanged in shape.</div>
         </div>
-        <div style="flex:1;min-width:200px;background:#eafaf1;border-radius:8px;padding:12px 16px;border:1px solid #27ae60">
-            <div style="font-weight:700;color:#27ae60;font-size:0.95em;margin-bottom:4px">$s_y$ — height-direction scale</div>
-            <div style="font-size:0.85em;color:#555;line-height:1.6">How much the <em>vertical (height) direction</em> stretches. This scales perpendicular to the base — how tall the triangle becomes after mapping.</div>
+        <div style="flex:1;min-width:185px;background:#fff4e5;border-radius:8px;padding:12px 16px;border:1px solid #f0a030">
+            <div style="font-weight:700;color:#e67e22;font-size:0.95em;margin-bottom:5px">$s_x$ — base-direction scale</div>
+            <div style="font-size:0.83em;color:#555;line-height:1.55;margin-bottom:5px">Scales the <em>horizontal direction</em> — along $\overrightarrow{v_0 v_1}$, the base edge from Part 1.</div>
+            <div style="font-size:0.78em;color:#444;background:#fff8ee;border-radius:5px;padding:6px 9px;line-height:1.75">
+                s<sub>x</sub>=<strong>2</strong>: base of every triangle doubles → mesh stretches left–right<br>
+                s<sub>x</sub>=<strong>0.5</strong>: base halves → mesh compressed horizontally<br>
+                s<sub>x</sub>=<strong>1</strong>: no horizontal change
+            </div>
+        </div>
+        <div style="flex:1;min-width:185px;background:#eafaf1;border-radius:8px;padding:12px 16px;border:1px solid #27ae60">
+            <div style="font-weight:700;color:#27ae60;font-size:0.95em;margin-bottom:5px">$s_y$ — height-direction scale</div>
+            <div style="font-size:0.83em;color:#555;line-height:1.55;margin-bottom:5px">Scales the <em>vertical direction</em> — perpendicular to the base, controlling triangle height.</div>
+            <div style="font-size:0.78em;color:#444;background:#f0fdf5;border-radius:5px;padding:6px 9px;line-height:1.75">
+                s<sub>y</sub>=<strong>2</strong>: height of every triangle doubles → mesh stretches up–down<br>
+                s<sub>y</sub>=<strong>0.5</strong>: height halves → mesh squashed toward base<br>
+                s<sub>y</sub>=<strong>1</strong>: no vertical change
+            </div>
         </div>
     </div>
     <ul style="font-size:0.92em;color:#444;line-height:2.1;padding-left:1.2em">
@@ -653,7 +671,7 @@
         <li><strong style="color:#8e44ad">Conformal (angle-preserving):</strong> $s_x = s_y \ne 1$ — angles preserved, area scales uniformly; mesh scales but triangles stay similar</li>
         <li><strong style="color:#c0392b">Non-conformal:</strong> $s_x \ne s_y$ — angles distorted; mesh triangles are squashed or stretched along one axis</li>
     </ul>
-    <p>The mesh below makes the effect of $J$ concrete: every vertex $(x, y)$ is mapped to $\bigl(J\cdot[x,y]^\top,\;z\bigr)$, so you can see the triangle mesh deform in real time as you move the sliders.</p>
+    <p>The mesh below makes $J$ concrete. <strong>Each colored triangle in the source has the same color in the target</strong> — you can see exactly where every source triangle lands after applying $J$.</p>
 </div>
 
 <!-- Part 3 Controls -->
@@ -696,12 +714,12 @@
 <div class="plots-row">
     <div class="plot-card">
         <div class="plot-card-title">Source — Triangulated Mesh</div>
-        <div class="plot-card-sub">Regular 5×5 grid of triangles &nbsp;|&nbsp; drag to rotate</div>
+        <div class="plot-card-sub">Each color = one triangle &nbsp;|&nbsp; drag to rotate</div>
         <div id="rc-plotSrc" class="plot-area"></div>
     </div>
     <div class="plot-card">
         <div class="plot-card-title">After J — Mesh Deformation</div>
-        <div class="plot-card-sub">Every vertex mapped through J &nbsp;|&nbsp; color = transformation type</div>
+        <div class="plot-card-sub">Same colors as source → find where each triangle went</div>
         <div id="rc-plotTgt" class="plot-area"></div>
     </div>
 </div>
@@ -1168,6 +1186,13 @@ function updateRC() {
     // Apply J to (x,y), preserve z from source mesh
     const tgtV = verts.map(([x,y,z]) => [J[0][0]*x+J[0][1]*y, J[1][0]*x+J[1][1]*y, z]);
 
+    // Same color per face on source AND target → direct triangle-to-triangle correspondence
+    const faceColors = faces.map((_, i) => {
+        const t = i / (faces.length - 1);
+        const h = Math.round(230 - t * 190); // blue(230) → orange(40) spatial gradient
+        return `hsl(${h},65%,60%)`;
+    });
+
     function edgeTr(v, color, width) {
         const ex=[], ey=[], ez=[];
         faces.forEach(([a,b,c]) => {
@@ -1179,13 +1204,13 @@ function updateRC() {
             line:{color, width}, hoverinfo:'skip', showlegend:false};
     }
 
-    function surfTr(v, color, opacity) {
+    function surfTr(v, opacity) {
         return {
             type:'mesh3d',
             x:v.map(p=>p[0]), y:v.map(p=>p[1]), z:v.map(p=>p[2]),
             i:faces.map(f=>f[0]), j:faces.map(f=>f[1]), k:faces.map(f=>f[2]),
-            color, opacity, flatshading:false,
-            lighting:{ambient:0.7, diffuse:0.8, specular:0.1},
+            facecolor: faceColors,
+            opacity, flatshading:true,
             showscale:false, hoverinfo:'skip', showlegend:false
         };
     }
@@ -1195,8 +1220,9 @@ function updateRC() {
         xaxis:{visible:false}, yaxis:{visible:false}, zaxis:{visible:false}};
     const lay = {margin:{t:0,b:0,l:0,r:0}, paper_bgcolor:'white', scene:scn};
 
-    Plotly.react('rc-plotSrc', [surfTr(verts,'#c5cae9',0.75), edgeTr(verts,'#5c6bc0',1.3)], lay, {responsive:true});
-    Plotly.react('rc-plotTgt', [surfTr(tgtV,info.color,0.75), edgeTr(tgtV,info.color,1.5)], lay, {responsive:true});
+    // Source: colored faces + dark wireframe; Target: same faces + type-colored wireframe
+    Plotly.react('rc-plotSrc', [surfTr(verts, 0.88), edgeTr(verts,'rgba(0,0,0,0.25)',0.8)], lay, {responsive:true});
+    Plotly.react('rc-plotTgt', [surfTr(tgtV,  0.88), edgeTr(tgtV, info.color, 1.5)],        lay, {responsive:true});
 }
 
 const RC_PRESETS = {
