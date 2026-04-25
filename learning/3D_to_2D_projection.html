@@ -666,6 +666,59 @@
             </div>
         </div>
     </div>
+
+    <!-- Worked numerical example -->
+    <div style="background:#f7f8ff;border:1px solid #c5cae9;border-radius:9px;padding:14px 18px;margin:14px 0 6px">
+        <div style="font-size:0.78em;font-weight:700;color:#3949ab;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px">Worked Example — θ = 30°, s<sub>x</sub> = 2, s<sub>y</sub> = 0.5</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:0.88em">
+
+            <!-- Step 1: R(θ) -->
+            <div style="text-align:center">
+                <div style="font-size:0.75em;color:#888;margin-bottom:4px">rotation $R(30°)$</div>
+                <div style="font-family:monospace;background:white;border:1px solid #dde;border-radius:6px;padding:7px 10px;line-height:1.9;color:#3949ab">
+                    $\begin{bmatrix}0.866 & {-0.500}\\0.500 & \phantom{-}0.866\end{bmatrix}$
+                </div>
+            </div>
+
+            <div style="font-size:1.3em;color:#aaa;padding:0 2px">·</div>
+
+            <!-- Step 2: diag(sx, sy) -->
+            <div style="text-align:center">
+                <div style="font-size:0.75em;color:#888;margin-bottom:4px">scaling $\mathrm{diag}(s_x,s_y)$</div>
+                <div style="font-family:monospace;background:white;border:1px solid #dde;border-radius:6px;padding:7px 10px;line-height:1.9;color:#e67e22">
+                    $\begin{bmatrix}2 & 0\\0 & 0.5\end{bmatrix}$
+                </div>
+            </div>
+
+            <div style="font-size:1.3em;color:#aaa;padding:0 2px">=</div>
+
+            <!-- Step 3: J -->
+            <div style="text-align:center">
+                <div style="font-size:0.75em;color:#888;margin-bottom:4px">Jacobian $J$</div>
+                <div style="font-family:monospace;background:white;border:1px solid #dde;border-radius:6px;padding:7px 10px;line-height:1.9;color:#c0392b">
+                    $\begin{bmatrix}1.732 & {-0.250}\\1.000 & \phantom{-}0.433\end{bmatrix}$
+                </div>
+            </div>
+
+            <!-- Key insight -->
+            <div style="flex:1;min-width:160px;background:#eef;border-radius:7px;padding:9px 12px;font-size:0.83em;line-height:1.7;color:#333;border:1px solid #c5cae9">
+                <strong style="color:#3949ab">Key insight:</strong><br>
+                $\sigma_{\max} = s_x = 2$<br>
+                $\sigma_{\min} = s_y = 0.5$<br>
+                <em style="color:#666">Singular values = sx, sy regardless of θ. Rotation doesn't stretch — only diag(sx, sy) does.</em>
+            </div>
+        </div>
+
+        <!-- How to compute J row-by-row -->
+        <div style="margin-top:10px;font-size:0.80em;color:#555;line-height:1.8;background:white;border-radius:6px;padding:8px 12px;border:1px solid #e0e0e0">
+            $J = R(\theta)\,\mathrm{diag}(s_x,s_y)
+            = \begin{bmatrix}\cos\theta\cdot s_x & -\sin\theta\cdot s_y\\\sin\theta\cdot s_x & \cos\theta\cdot s_y\end{bmatrix}$
+            &emsp;→&emsp;
+            row 0: $[0.866{\times}2,\;{-0.5}{\times}0.5] = [1.732,\;{-0.250}]$
+            &emsp; row 1: $[0.5{\times}2,\;0.866{\times}0.5] = [1.000,\;0.433]$
+        </div>
+    </div>
+
     <ul style="font-size:0.92em;color:#444;line-height:2.1;padding-left:1.2em">
         <li><strong style="color:#27ae60">Rigid (isometric):</strong> $s_x = s_y = 1$ — distances and angles preserved; mesh triangles keep their exact shape</li>
         <li><strong style="color:#8e44ad">Conformal (angle-preserving):</strong> $s_x = s_y \ne 1$ — angles preserved, area scales uniformly; mesh scales but triangles stay similar</li>
