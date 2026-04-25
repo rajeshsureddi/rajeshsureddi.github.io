@@ -638,12 +638,22 @@
 <div class="card accent">
     <h2>Classifying Jacobians: Rigid, Conformal, Non-Conformal</h2>
     <p>Any 2×2 Jacobian $J$ can be written as $J = R(\theta)\,\mathrm{diag}(s_x,\,s_y)$ — a rotation by $\theta$ followed by independent scaling along each axis. The singular values are $\sigma_{\max} = \max(s_x,s_y)$ and $\sigma_{\min} = \min(s_x,s_y)$, independent of $\theta$.</p>
+    <div style="display:flex;gap:12px;margin:14px 0 12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:200px;background:#fff4e5;border-radius:8px;padding:12px 16px;border:1px solid #f0a030">
+            <div style="font-weight:700;color:#e67e22;font-size:0.95em;margin-bottom:4px">$s_x$ — base-direction scale</div>
+            <div style="font-size:0.85em;color:#555;line-height:1.6">How much the <em>horizontal (base) direction</em> stretches. In the 2D local frame from Part 1 this scales along $\overrightarrow{v_0 v_1}$, the edge you laid on the X-axis.</div>
+        </div>
+        <div style="flex:1;min-width:200px;background:#eafaf1;border-radius:8px;padding:12px 16px;border:1px solid #27ae60">
+            <div style="font-weight:700;color:#27ae60;font-size:0.95em;margin-bottom:4px">$s_y$ — height-direction scale</div>
+            <div style="font-size:0.85em;color:#555;line-height:1.6">How much the <em>vertical (height) direction</em> stretches. This scales perpendicular to the base — how tall the triangle becomes after mapping.</div>
+        </div>
+    </div>
     <ul style="font-size:0.92em;color:#444;line-height:2.1;padding-left:1.2em">
-        <li><strong style="color:#27ae60">Rigid (isometric):</strong> $s_x = s_y = 1$ &nbsp;— distances and angles preserved; unit circles stay unit circles</li>
-        <li><strong style="color:#8e44ad">Conformal (angle-preserving):</strong> $s_x = s_y \ne 1$ &nbsp;— angles preserved, area scales uniformly; circles stay circular but resize</li>
-        <li><strong style="color:#c0392b">Non-conformal:</strong> $s_x \ne s_y$ &nbsp;— angles distorted; circles become ellipses</li>
+        <li><strong style="color:#27ae60">Rigid (isometric):</strong> $s_x = s_y = 1$ — distances and angles preserved; mesh triangles keep their exact shape</li>
+        <li><strong style="color:#8e44ad">Conformal (angle-preserving):</strong> $s_x = s_y \ne 1$ — angles preserved, area scales uniformly; mesh scales but triangles stay similar</li>
+        <li><strong style="color:#c0392b">Non-conformal:</strong> $s_x \ne s_y$ — angles distorted; mesh triangles are squashed or stretched along one axis</li>
     </ul>
-    <p>The <strong>Tissot indicatrix</strong> places unit circles at regular grid points; their images under $J$ reveal the transformation type at a glance.</p>
+    <p>The mesh below makes the effect of $J$ concrete: every vertex $(x, y)$ is mapped to $\bigl(J\cdot[x,y]^\top,\;z\bigr)$, so you can see the triangle mesh deform in real time as you move the sliders.</p>
 </div>
 
 <!-- Part 3 Controls -->
@@ -682,16 +692,16 @@
     </div>
 </div>
 
-<!-- Tissot indicatrix plots -->
+<!-- 3D mesh deformation plots -->
 <div class="plots-row">
     <div class="plot-card">
-        <div class="plot-card-title">Source — Unit Circles on Grid</div>
-        <div class="plot-card-sub">9 circles, radius 0.5, on a 3×3 grid</div>
+        <div class="plot-card-title">Source — Triangulated Mesh</div>
+        <div class="plot-card-sub">Regular 5×5 grid of triangles &nbsp;|&nbsp; drag to rotate</div>
         <div id="rc-plotSrc" class="plot-area"></div>
     </div>
     <div class="plot-card">
-        <div class="plot-card-title">Transformed — Tissot Indicatrix</div>
-        <div class="plot-card-sub">Each circle mapped through J &nbsp;|&nbsp; color = transformation type</div>
+        <div class="plot-card-title">After J — Mesh Deformation</div>
+        <div class="plot-card-sub">Every vertex mapped through J &nbsp;|&nbsp; color = transformation type</div>
         <div id="rc-plotTgt" class="plot-area"></div>
     </div>
 </div>
@@ -752,7 +762,7 @@
         </div>
         <p class="step-desc">Both singular values equal 1. The Jacobian is a pure rotation: $J = R(\theta)$. Distances <em>and</em> angles are preserved.</p>
         <div class="math-box">$$J = R(\theta), \quad \sigma_{\max} = \sigma_{\min} = 1$$</div>
-        <p class="step-desc" style="margin-top:8px">Tissot circles remain unit circles. Both ARAP and ACAP energies are zero.</p>
+        <p class="step-desc" style="margin-top:8px">Mesh triangles keep their shape — no stretching or shearing. Both ARAP and ACAP energies are zero.</p>
     </div>
     <div class="step-card" style="border-top:4px solid #8e44ad">
         <div class="step-head">
@@ -761,7 +771,7 @@
         </div>
         <p class="step-desc">Both singular values are equal but $\ne 1$. The Jacobian is a scaled rotation: $J = s\,R(\theta)$. Angles preserved; area scales uniformly.</p>
         <div class="math-box">$$J = s\,R(\theta), \quad \sigma_{\max} = \sigma_{\min} = s \ne 1$$</div>
-        <p class="step-desc" style="margin-top:8px">Tissot circles stay circular but scale. ACAP energy = 0; ARAP energy ≠ 0.</p>
+        <p class="step-desc" style="margin-top:8px">Mesh scales uniformly — triangles grow or shrink but stay similar. ACAP energy = 0; ARAP energy ≠ 0.</p>
     </div>
     <div class="step-card" style="border-top:4px solid #c0392b">
         <div class="step-head">
@@ -770,7 +780,7 @@
         </div>
         <p class="step-desc">Singular values differ: $\sigma_{\max} \ne \sigma_{\min}$. Space is stretched more along one axis — angles are not preserved.</p>
         <div class="math-box">$$J = R(\theta)\,\mathrm{diag}(s_x,s_y),\quad \sigma_{\max} \ne \sigma_{\min}$$</div>
-        <p class="step-desc" style="margin-top:8px">Tissot circles become ellipses. Both ARAP and ACAP energies are non-zero.</p>
+        <p class="step-desc" style="margin-top:8px">Mesh stretches differently along each axis — triangles become squashed or elongated. Both ARAP and ACAP energies are non-zero.</p>
     </div>
 </div>
 
@@ -1087,11 +1097,26 @@ function setPreset(name) {
 
 // ══════════════════ PART 3: RIGID & CONFORMAL ══════════════════
 
-const RC_GRID = [
-    [-1.5,-1.5],[-1.5,0],[-1.5,1.5],
-    [0,-1.5],[0,0],[0,1.5],
-    [1.5,-1.5],[1.5,0],[1.5,1.5]
-];
+// Pre-built 5×5 quad triangulated mesh with gentle dome z-variation
+const RC_MESH = (() => {
+    const NPTS = 6, SIZE = 1.8;
+    const step = (SIZE * 2) / (NPTS - 1);
+    const verts = [];
+    for (let j = 0; j < NPTS; j++)
+        for (let i = 0; i < NPTS; i++) {
+            const x = i*step - SIZE, y = j*step - SIZE;
+            const z = 0.4 * Math.cos(x*Math.PI/(SIZE*1.4)) * Math.cos(y*Math.PI/(SIZE*1.4));
+            verts.push([x, y, z]);
+        }
+    const faces = [];
+    for (let j = 0; j < NPTS-1; j++)
+        for (let i = 0; i < NPTS-1; i++) {
+            const a = j*NPTS+i, b=a+1, c=a+NPTS, d=c+1;
+            faces.push([a,b,d]);
+            faces.push([a,d,c]);
+        }
+    return {verts, faces};
+})();
 
 function makeRCJ(thetaDeg, sx, sy) {
     const th = thetaDeg * Math.PI / 180;
@@ -1139,56 +1164,39 @@ function updateRC() {
     badge.style.background  = info.bg;
     badge.style.borderColor = info.border;
 
-    const N = 64;
-    const t = Array.from({length: N+1}, (_, i) => 2*Math.PI*i/N);
-    const r = 0.5;
+    const {verts, faces} = RC_MESH;
+    // Apply J to (x,y), preserve z from source mesh
+    const tgtV = verts.map(([x,y,z]) => [J[0][0]*x+J[0][1]*y, J[1][0]*x+J[1][1]*y, z]);
 
-    const srcTraces = [];
-    const tgtTraces = [];
-    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-
-    RC_GRID.forEach(([gx, gy]) => {
-        // Source: unit circle
-        srcTraces.push({
-            type:'scatter', mode:'lines',
-            x: t.map(a => gx + r*Math.cos(a)),
-            y: t.map(a => gy + r*Math.sin(a)),
-            line:{color:'#0d3b8e', width:1.5},
-            fill:'toself', fillcolor:'rgba(13,59,142,0.10)',
-            showlegend:false, hoverinfo:'skip'
+    function edgeTr(v, color, width) {
+        const ex=[], ey=[], ez=[];
+        faces.forEach(([a,b,c]) => {
+            ex.push(v[a][0],v[b][0],v[c][0],v[a][0],null);
+            ey.push(v[a][1],v[b][1],v[c][1],v[a][1],null);
+            ez.push(v[a][2],v[b][2],v[c][2],v[a][2],null);
         });
+        return {type:'scatter3d', mode:'lines', x:ex, y:ey, z:ez,
+            line:{color, width}, hoverinfo:'skip', showlegend:false};
+    }
 
-        // Target: image of circle through J
-        const txArr = t.map(a => J[0][0]*(gx + r*Math.cos(a)) + J[0][1]*(gy + r*Math.sin(a)));
-        const tyArr = t.map(a => J[1][0]*(gx + r*Math.cos(a)) + J[1][1]*(gy + r*Math.sin(a)));
-        txArr.forEach(v => { if(v < minX) minX=v; if(v > maxX) maxX=v; });
-        tyArr.forEach(v => { if(v < minY) minY=v; if(v > maxY) maxY=v; });
+    function surfTr(v, color, opacity) {
+        return {
+            type:'mesh3d',
+            x:v.map(p=>p[0]), y:v.map(p=>p[1]), z:v.map(p=>p[2]),
+            i:faces.map(f=>f[0]), j:faces.map(f=>f[1]), k:faces.map(f=>f[2]),
+            color, opacity, flatshading:false,
+            lighting:{ambient:0.7, diffuse:0.8, specular:0.1},
+            showscale:false, hoverinfo:'skip', showlegend:false
+        };
+    }
 
-        tgtTraces.push({
-            type:'scatter', mode:'lines',
-            x: txArr, y: tyArr,
-            line:{color:info.color, width:2},
-            fill:'toself', fillcolor:info.bg,
-            showlegend:false, hoverinfo:'skip'
-        });
-    });
+    const cam = {eye:{x:1.2, y:-2.5, z:1.8}, up:{x:0,y:0,z:1}};
+    const scn = {camera:cam, aspectmode:'cube',
+        xaxis:{visible:false}, yaxis:{visible:false}, zaxis:{visible:false}};
+    const lay = {margin:{t:0,b:0,l:0,r:0}, paper_bgcolor:'white', scene:scn};
 
-    const pad  = 0.4;
-    const tCx  = (minX + maxX) / 2;
-    const tCy  = (minY + maxY) / 2;
-    const tH   = Math.max((maxX-minX)/2, (maxY-minY)/2) + pad;
-
-    Plotly.react('rc-plotSrc', srcTraces, {
-        margin:{t:10,b:40,l:40,r:10},
-        xaxis:{range:[-2.4,2.4], zeroline:true, zerolinecolor:'#ddd', scaleanchor:'y', scaleratio:1, title:'x'},
-        yaxis:{range:[-2.4,2.4], zeroline:true, zerolinecolor:'#ddd', title:'y'}
-    }, {responsive:true});
-
-    Plotly.react('rc-plotTgt', tgtTraces, {
-        margin:{t:10,b:40,l:40,r:10},
-        xaxis:{range:[tCx-tH, tCx+tH], zeroline:true, zerolinecolor:'#ddd', scaleanchor:'y', scaleratio:1, title:'J·x'},
-        yaxis:{range:[tCy-tH, tCy+tH], zeroline:true, zerolinecolor:'#ddd', title:'J·y'}
-    }, {responsive:true});
+    Plotly.react('rc-plotSrc', [surfTr(verts,'#c5cae9',0.75), edgeTr(verts,'#5c6bc0',1.3)], lay, {responsive:true});
+    Plotly.react('rc-plotTgt', [surfTr(tgtV,info.color,0.75), edgeTr(tgtV,info.color,1.5)], lay, {responsive:true});
 }
 
 const RC_PRESETS = {
