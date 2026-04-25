@@ -447,41 +447,42 @@
 
 <div class="card accent-green">
     <h2 style="color:#1a7340">What Is J? — The Map That Takes Source Edges to Target Edges</h2>
-    <p>After projecting both triangles into their 2D frames (Part 1), each triangle has two edge vectors anchored at the origin. The Jacobian $J$ is the unique <strong>linear map that sends every source edge to the corresponding target edge</strong>:</p>
-    <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin:14px 0 10px">
-        <div style="flex:1;min-width:260px">
-            <div class="math-box" style="margin:0 0 8px">
-                $$J \cdot \underbrace{\begin{bmatrix}L_s & x_s \\ 0 & y_s\end{bmatrix}}_{M_s}= \underbrace{\begin{bmatrix}L_t & x_t \\ 0 & y_t\end{bmatrix}}_{M_t} \;\Longrightarrow\; J = M_t M_s^{-1}$$
-            </div>
-            <p style="font-size:0.84em;color:#666;margin:0">Columns of $M$ = the two 2D edge vectors: $(L,0)^\top$ (base) and $(x,y)^\top$ (offset). $M$ is upper-triangular so its inverse is cheap. Expanding gives:</p>
-            <div class="math-box" style="margin:8px 0 0">
-                $$J = \begin{bmatrix} \tfrac{L_t}{L_s} & \dfrac{x_t L_s - L_t x_s}{L_s\,y_s} \\[6pt] 0 & \tfrac{y_t}{y_s} \end{bmatrix}$$
-            </div>
+    <p>After Part 1, both triangles live in their own 2D frames. Pack each triangle's two edge vectors as columns of a matrix $M$. Then $J$ is simply the map that makes source edges become target edges:</p>
+    <div class="math-box" style="margin:12px 0">
+        $$J \cdot \underbrace{\begin{bmatrix}L_s & x_s \\ 0 & y_s\end{bmatrix}}_{M_s} = \underbrace{\begin{bmatrix}L_t & x_t \\ 0 & y_t\end{bmatrix}}_{M_t} \quad\Longrightarrow\quad J = M_t\,M_s^{-1} = \begin{bmatrix} \tfrac{L_t}{L_s} & \dfrac{x_t L_s - L_t x_s}{L_s\,y_s} \\[6pt] 0 & \tfrac{y_t}{y_s} \end{bmatrix}$$
+    </div>
+    <p style="font-size:0.87em;color:#555;margin-bottom:10px">Because $M$ is upper-triangular, each entry of $J$ has a direct geometric meaning:</p>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;font-size:0.83em">
+        <div style="background:#fff8f0;border-radius:8px;padding:10px 12px;border-left:3px solid #e67e22">
+            <div style="font-weight:700;color:#e67e22">J[0,0] = L_t / L_s</div>
+            <div style="color:#666;margin-top:4px">Base-edge scale — bottom edge stretch factor.</div>
         </div>
-        <div style="flex:1;min-width:260px;display:grid;grid-template-columns:1fr 1fr;gap:9px;font-size:0.83em">
-            <div style="background:#fff8f0;border-radius:8px;padding:10px 12px;border-left:3px solid #e67e22">
-                <strong style="color:#e67e22">J[0,0] = L_t / L_s</strong><br>
-                <span style="color:#555">Base-edge scale — how much the bottom edge stretches.</span>
-            </div>
-            <div style="background:#f0faf4;border-radius:8px;padding:10px 12px;border-left:3px solid #27ae60">
-                <strong style="color:#27ae60">J[1,1] = y_t / y_s</strong><br>
-                <span style="color:#555">Height scale — how much the triangle's height changes.</span>
-            </div>
-            <div style="background:#f4f6ff;border-radius:8px;padding:10px 12px;border-left:3px solid #0d3b8e">
-                <strong style="color:#0d3b8e">J[0,1] = shear term</strong><br>
-                <span style="color:#555">Apex horizontal shift relative to base — non-zero when shapes differ in "lean".</span>
-            </div>
-            <div style="background:#f9f9f9;border-radius:8px;padding:10px 12px;border-left:3px solid #bbb">
-                <strong style="color:#999">J[1,0] = 0 (always)</strong><br>
-                <span style="color:#555">Both frames pin the base on X — no vertical shear possible.</span>
-            </div>
+        <div style="background:#f0faf4;border-radius:8px;padding:10px 12px;border-left:3px solid #27ae60">
+            <div style="font-weight:700;color:#27ae60">J[1,1] = y_t / y_s</div>
+            <div style="color:#666;margin-top:4px">Height scale — apex height stretch factor.</div>
+        </div>
+        <div style="background:#f4f6ff;border-radius:8px;padding:10px 12px;border-left:3px solid #0d3b8e">
+            <div style="font-weight:700;color:#0d3b8e">J[0,1] = shear</div>
+            <div style="color:#666;margin-top:4px">Apex lean — non-zero when the shapes differ in tilt.</div>
+        </div>
+        <div style="background:#f9f9f9;border-radius:8px;padding:10px 12px;border-left:3px solid #ccc">
+            <div style="font-weight:700;color:#999">J[1,0] = 0</div>
+            <div style="color:#666;margin-top:4px">Always zero — both frames pin the base on X.</div>
         </div>
     </div>
 </div>
 
 <!-- ════════════ PART 2 CONTROLS ════════════ -->
 <div class="controls-card" style="flex-direction:column; align-items:stretch; gap:14px">
-    <div class="ctrl-label" style="margin-bottom:0">Adjust source and target triangle shapes in their 2D canonical frames:</div>
+    <div class="ctrl-label" style="margin-bottom:0">Adjust source and target triangle shapes:</div>
+    <div style="background:#f4f6ff;border-radius:8px;padding:11px 16px;font-size:0.84em;color:#444;border:1px solid #d8def5;line-height:1.9">
+        <strong>Triangle in 2D frame:</strong> &nbsp; v0 = (0, 0) &nbsp;·&nbsp; v1 = (<b>L</b>, 0) &nbsp;·&nbsp; v2 = (<b>x</b>, <b>y</b>)<br>
+        <span style="color:#e67e22;font-weight:600">L</span> = base length (v0 → v1 along X) &emsp;
+        <span style="color:#0d3b8e;font-weight:600">x</span> = apex horizontal offset from v0 &emsp;
+        <span style="color:#27ae60;font-weight:600">y</span> = apex height above the base<br>
+        <em style="color:#777">Example: L<sub>s</sub>=4, x<sub>s</sub>=1, y<sub>s</sub>=3 → source v2=(1, 3): base 4 wide, apex 1 right &amp; 3 up from origin.
+        Set L<sub>t</sub>=8, x<sub>t</sub>=2, y<sub>t</sub>=6 and J ≈ 2·I — uniform 2× scale.</em>
+    </div>
     <div class="p2-ctrl-row">
 
         <!-- Source -->
@@ -600,10 +601,6 @@
                     <div class="mlabel">σ_t &nbsp;isometric</div>
                     <div class="mval" id="m-st">—</div>
                 </div>
-                <div class="mpill">
-                    <div class="mlabel">σ_t_con &nbsp;conformal</div>
-                    <div class="mval" id="m-stc">—</div>
-                </div>
             </div>
             <div class="gauge-wrap">
                 <div style="font-size:0.76em;color:#888;margin-bottom:6px">σ_t isometric distortion &nbsp;(1 = perfect, higher = worse)</div>
@@ -632,43 +629,6 @@
     </div>
 </div>
 
-<!-- ════════════ USE CASES ════════════ -->
-<div class="section-header">Use Cases in Research Practice</div>
-
-<div class="usecase-row">
-
-    <div class="uc-card" style="border-top-color:#e67e22">
-        <div class="uc-title" style="color:#e67e22">UV / Mesh Parameterization</div>
-        <p class="uc-desc">Each 3D triangle face is projected to a 2D UV atlas. J measures per-face texture stretch. Minimizing σ_t across all faces gives an isometric unwrapping — minimal texture distortion, equal texel density everywhere.</p>
-        <div class="uc-metric">Goal: σ_t ≈ 1 uniformly across faces</div>
-        <button class="uc-load" style="color:#e67e22;border-color:#e67e22" onclick="setPreset('uvparam')">Load example</button>
-    </div>
-
-    <div class="uc-card" style="border-top-color:#27ae60">
-        <div class="uc-title" style="color:#27ae60">ARAP Surface Deformation</div>
-        <p class="uc-desc">As-Rigid-As-Possible deformation (the target method in the code) tries to keep J close to a rotation matrix on every face — both singular values ≈ 1. The per-face σ_t is the energy term ARAP minimises.</p>
-        <div class="uc-metric">Ideal: σ_max ≈ σ_min ≈ 1  →  J ≈ rotation</div>
-        <button class="uc-load" style="color:#27ae60;border-color:#27ae60" onclick="setPreset('arap')">Load example</button>
-    </div>
-
-    <div class="uc-card" style="border-top-color:#8e44ad">
-        <div class="uc-title" style="color:#8e44ad">Shape Registration / Morphing</div>
-        <p class="uc-desc">When registering ShapeNet source meshes to deformed targets, per-face J reveals which regions compress or stretch most. High σ_t_con faces are "hard" regions where the shape changes character — useful for evaluating method quality.</p>
-        <div class="uc-metric">σ_t_con &gt; 2 → significant local shape change</div>
-        <button class="uc-load" style="color:#8e44ad;border-color:#8e44ad" onclick="setPreset('morph')">Load example</button>
-    </div>
-
-</div>
-
-<!-- ════════════ DISTORTION MATH ════════════ -->
-<div class="intuition-card">
-    <h3>What Do σ_t and σ_t_con Measure?</h3>
-    <p>The singular values $\sigma_{\max} \ge \sigma_{\min} > 0$ of $J$ are the principal stretch factors: $\sigma_{\max}$ is the maximum stretch direction, $\sigma_{\min}$ the minimum.</p>
-    <div class="math-center">
-        $$\sigma_t = \max\!\left(\sigma_{\max},\; \frac{1}{\sigma_{\min}}\right) \;\ge\; 1 \qquad \sigma_{t,\mathrm{con}} = \max\!\left(\frac{\sigma_{\max}}{\bar\sigma},\; \frac{\bar\sigma}{\sigma_{\min}}\right), \quad \bar\sigma = \tfrac{\sigma_{\max}+\sigma_{\min}}{2}$$
-    </div>
-    <p>$\sigma_t = 1$ iff $J$ is an isometry (rotation/reflection). $\sigma_{t,\mathrm{con}} = 1$ iff $J$ is a conformal map (angle-preserving, possibly scaled). In the research code these are averaged over all faces — weighted or unweighted — to get a global mesh quality score.</p>
-</div>
 
 <!-- ════════════════════════════════════════════════════════════════════
      PART 3 — RIGID & CONFORMAL TRANSFORMATIONS
@@ -1036,7 +996,6 @@ function updatePart2() {
     stEl.textContent = sigma_t.toFixed(3);
     stEl.style.color = stColor(sigma_t);
     document.getElementById('m-det').textContent = detJ.toFixed(3);
-    document.getElementById('m-stc').textContent = sigma_t_con.toFixed(3);
 
     document.getElementById('lb-Ls').textContent = Ls.toFixed(2);
     document.getElementById('lb-xs').textContent = xs.toFixed(2);
