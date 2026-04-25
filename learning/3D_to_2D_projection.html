@@ -645,116 +645,147 @@
 </div>
 
 <!-- ════════════════════════════════════════════════════════════════════
-     PART 3 — ARAP AND ACAP
+     PART 3 — RIGID & CONFORMAL TRANSFORMATIONS
 ════════════════════════════════════════════════════════════════════ -->
-<div class="section-header" style="margin-top:52px">Part 3 — ARAP &amp; ACAP Basics</div>
+<div class="section-header" style="margin-top:52px">Part 3 — Rigid &amp; Conformal Transformations</div>
 
-<!-- ARAP + ACAP side by side -->
-<div class="steps-row">
+<div class="card accent">
+    <h2>Classifying Jacobians: Rigid, Conformal, Non-Conformal</h2>
+    <p>Any 2×2 Jacobian $J$ can be written as $J = R(\theta)\,\mathrm{diag}(s_x,\,s_y)$ — a rotation by $\theta$ followed by independent scaling along each axis. The singular values are $\sigma_{\max} = \max(s_x,s_y)$ and $\sigma_{\min} = \min(s_x,s_y)$, independent of $\theta$.</p>
+    <ul style="font-size:0.92em;color:#444;line-height:2.1;padding-left:1.2em">
+        <li><strong style="color:#27ae60">Rigid (isometric):</strong> $s_x = s_y = 1$ &nbsp;— distances and angles preserved; unit circles stay unit circles</li>
+        <li><strong style="color:#8e44ad">Conformal (angle-preserving):</strong> $s_x = s_y \ne 1$ &nbsp;— angles preserved, area scales uniformly; circles stay circular but resize</li>
+        <li><strong style="color:#c0392b">Non-conformal:</strong> $s_x \ne s_y$ &nbsp;— angles distorted; circles become ellipses</li>
+    </ul>
+    <p>The <strong>Tissot indicatrix</strong> places unit circles at regular grid points; their images under $J$ reveal the transformation type at a glance.</p>
+</div>
 
-    <!-- ─── ARAP ─── -->
-    <div class="step-card" style="border-top:4px solid #27ae60">
-        <div class="step-head">
-            <div class="step-num" style="background:#27ae60; font-size:0.78em; letter-spacing:-0.5px">ARAP</div>
-            <div class="step-title">As-Rigid-As-Possible</div>
-        </div>
-        <p class="step-desc">Find the deformation where each face Jacobian is as close as possible to a <strong>rotation R ∈ SO(2)</strong>. A rotation preserves all distances and angles — both singular values equal 1.</p>
-        <div class="math-box">
-            $$\mathcal{L}_\text{ARAP} = \sum_{f} A_f \min_{R_f \in SO(2)} \|J_f - R_f\|_F^2$$
-            $$= \sum_{f} A_f \bigl[(\sigma_{\max} - 1)^2 + (\sigma_{\min} - 1)^2\bigr]$$
-        </div>
-        <p class="step-desc" style="margin-top:8px">The closest rotation to $J$ is $R^* = UV^T$ (from $J = U\Sigma V^T$). Energy is <strong>zero</strong> iff both singular values equal 1.</p>
-        <div style="display:flex;gap:8px;margin-top:10px">
-            <div class="mpill" style="flex:1">
-                <div class="mlabel">Live ARAP energy</div>
-                <div class="mval" id="p3-eA" style="color:#27ae60">—</div>
+<!-- Part 3 Controls -->
+<div class="controls-card" style="flex-direction:column;align-items:stretch;gap:14px">
+    <div class="ctrl-label" style="margin-bottom:0">Parameterize the Jacobian: $J = R(\theta)\,\mathrm{diag}(s_x,\,s_y)$</div>
+    <div class="p2-ctrl-row">
+        <div class="p2-ctrl-section">
+            <div class="p2-section-title">Transformation Parameters</div>
+            <div class="ctrl-group">
+                <label>θ rotation &nbsp;<span id="rc-theta-val">0°</span></label>
+                <input type="range" id="rc-theta" min="-180" max="180" step="1" value="0">
             </div>
-            <div class="mpill" style="flex:1">
-                <div class="mlabel">Ideal</div>
-                <div class="mval" style="font-size:0.82em;color:#444">σ_max = σ_min = 1</div>
+            <div class="ctrl-group">
+                <label>s<sub>x</sub> &nbsp;<span id="rc-sx-val">1.00</span></label>
+                <input type="range" id="rc-sx" min="0.25" max="3" step="0.05" value="1">
             </div>
-        </div>
-    </div>
-
-    <!-- ─── ACAP ─── -->
-    <div class="step-card" style="border-top:4px solid #8e44ad">
-        <div class="step-head">
-            <div class="step-num" style="background:#8e44ad; font-size:0.78em; letter-spacing:-0.5px">ACAP</div>
-            <div class="step-title">As-Conformal-As-Possible</div>
-        </div>
-        <p class="step-desc">Find the deformation where each face Jacobian is as close as possible to a <strong>scaled rotation sR</strong>. Scaled rotations preserve angles but allow uniform area change — $\sigma_{\max} = \sigma_{\min}$.</p>
-        <div class="math-box">
-            $$\mathcal{L}_\text{ACAP} = \sum_{f} A_f \min_{\substack{s_f > 0,\; R_f \in SO(2)}} \|J_f - s_f R_f\|_F^2$$
-            $$= \sum_{f} A_f \cdot \dfrac{(\sigma_{\max} - \sigma_{\min})^2}{2}$$
-        </div>
-        <p class="step-desc" style="margin-top:8px">Optimal scale: $s^* = \tfrac{\sigma_{\max}+\sigma_{\min}}{2}$. Energy is <strong>zero</strong> iff $\sigma_{\max} = \sigma_{\min}$ — angles are perfectly preserved.</p>
-        <div style="display:flex;gap:8px;margin-top:10px">
-            <div class="mpill" style="flex:1">
-                <div class="mlabel">Live ACAP energy</div>
-                <div class="mval" id="p3-eS" style="color:#8e44ad">—</div>
-            </div>
-            <div class="mpill" style="flex:1">
-                <div class="mlabel">Ideal</div>
-                <div class="mval" style="font-size:0.82em;color:#444">σ_max = σ_min</div>
+            <div class="ctrl-group">
+                <label>s<sub>y</sub> &nbsp;<span id="rc-sy-val">1.00</span></label>
+                <input type="range" id="rc-sy" min="0.25" max="3" step="0.05" value="1">
             </div>
         </div>
-    </div>
-
-</div><!-- /steps-row -->
-
-<!-- σ-space interactive diagram -->
-<div class="card" style="border-left:5px solid #c0392b">
-    <h2 style="color:#c0392b;margin-bottom:6px">Interactive: (σ_min, σ_max) Energy Landscape</h2>
-    <p style="font-size:0.88em;color:#555;margin-bottom:16px">Every triangle deformation maps to a single point in the $(\sigma_{\min}, \sigma_{\max})$ plane. Adjust the Part 2 sliders and watch the red dot move — its distance to the green star is the ARAP cost, its distance to the purple diagonal is the ACAP cost.</p>
-    <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">
-        <div style="flex:1;min-width:260px">
-            <div id="plotSigma" style="height:340px"></div>
-        </div>
-        <div style="flex:1;min-width:210px;display:flex;flex-direction:column;gap:14px">
-            <div style="font-size:0.78em;color:#888;font-weight:700;letter-spacing:0.5px">LIVE — LINKED TO PART 2 SLIDERS</div>
-
+        <div class="p2-ctrl-section" style="min-width:200px;max-width:300px">
+            <div class="p2-section-title">Quick presets</div>
+            <div class="presets" style="margin-bottom:14px">
+                <button class="pset-btn" onclick="rcPreset('rigid')">Rigid</button>
+                <button class="pset-btn" onclick="rcPreset('conformal')">Conformal</button>
+                <button class="pset-btn" onclick="rcPreset('stretchX')">Stretch X</button>
+                <button class="pset-btn" onclick="rcPreset('stretchY')">Stretch Y</button>
+                <button class="pset-btn" onclick="rcPreset('reset')">Reset</button>
+            </div>
             <div>
-                <div style="font-weight:700;color:#27ae60;font-size:0.88em;margin-bottom:5px">ARAP &nbsp; $(\sigma_{\max}{-}1)^2 + (\sigma_{\min}{-}1)^2$</div>
-                <span style="font-family:monospace;font-size:1.8em;font-weight:bold;color:#27ae60" id="p3-eA2">—</span>
-            </div>
-
-            <div>
-                <div style="font-weight:700;color:#8e44ad;font-size:0.88em;margin-bottom:5px">ACAP &nbsp; $(\sigma_{\max} - \sigma_{\min})^2 / 2$</div>
-                <span style="font-family:monospace;font-size:1.8em;font-weight:bold;color:#8e44ad" id="p3-eS2">—</span>
-            </div>
-
-            <div style="background:#f4f6ff;border-radius:8px;padding:12px 14px;font-size:0.82em;color:#555;line-height:1.8">
-                σ_max = <span id="p3-smax" style="font-weight:bold;font-family:monospace">—</span><br>
-                σ_min = <span id="p3-smin" style="font-weight:bold;font-family:monospace">—</span><br>
-                s* = <span id="p3-sstar" style="font-weight:bold;font-family:monospace">—</span>
-            </div>
-
-            <div id="p3-interp" style="font-size:0.82em;padding:10px 12px;border-radius:8px;background:#fffbea;border:1px solid #ffe082;color:#555;line-height:1.5"></div>
-
-            <div style="font-size:0.77em;color:#666;background:#f0faf4;border:1px solid #b8e0c8;border-radius:8px;padding:10px 12px;line-height:1.7">
-                <strong>Chart legend:</strong><br>
-                ★ green (1,1) = ARAP ideal<br>
-                purple line = ACAP ideal (σ_max = σ_min)<br>
-                green circle = ARAP energy level<br>
-                purple ┄ = ACAP distance<br>
-                red ● = current J
+                <div style="font-size:0.78em;font-weight:700;color:#666;margin-bottom:7px;text-transform:uppercase;letter-spacing:0.5px">Transform type:</div>
+                <div id="rc-type-badge" style="display:inline-block;padding:7px 20px;border-radius:20px;font-weight:800;font-size:0.9em;letter-spacing:0.8px;border:2px solid #ccc;color:#666;background:#f5f5f5">—</div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- SVD bridge intuition -->
-<div class="intuition-card">
-    <h3>Why Both Energies Depend Only on Singular Values</h3>
-    <p>Every 2×2 Jacobian decomposes as $J = U\Sigma V^T$ with $U,V \in SO(2)$ and $\Sigma = \mathrm{diag}(\sigma_{\max}, \sigma_{\min})$. Because orthogonal matrices are isometries of the Frobenius norm:</p>
-    <div class="math-center">
-        $$\|J - sR\|_F^2 = \|U\Sigma V^T - sR\|_F^2 = \|\Sigma - s\underbrace{U^T R V}_{\in SO(2)}\|_F^2$$
+<!-- Tissot indicatrix plots -->
+<div class="plots-row">
+    <div class="plot-card">
+        <div class="plot-card-title">Source — Unit Circles on Grid</div>
+        <div class="plot-card-sub">9 circles, radius 0.5, on a 3×3 grid</div>
+        <div id="rc-plotSrc" class="plot-area"></div>
     </div>
-    <p>Minimizing over all rotations sets $U^T R V = I$, so $R^* = UV^T$ for both problems. Minimizing over $s$ gives $s^* = (\sigma_{\max}+\sigma_{\min})/2$ for ACAP. The energies simplify to:</p>
-    <div class="math-center">
-        $$\mathcal{L}_\text{ARAP}(J) = (\sigma_{\max}{-}1)^2 + (\sigma_{\min}{-}1)^2 \qquad \mathcal{L}_\text{ACAP}(J) = \frac{(\sigma_{\max}-\sigma_{\min})^2}{2}$$
+    <div class="plot-card">
+        <div class="plot-card-title">Transformed — Tissot Indicatrix</div>
+        <div class="plot-card-sub">Each circle mapped through J &nbsp;|&nbsp; color = transformation type</div>
+        <div id="rc-plotTgt" class="plot-area"></div>
     </div>
-    <p><strong>ARAP ⊂ ACAP:</strong> any isometry ($\sigma_{\max}=\sigma_{\min}=1$) is automatically conformal ($\sigma_{\max}=\sigma_{\min}$), but a conformal map can freely scale — the deformation ellipse stays circular but its size changes. ACAP is therefore a strictly weaker constraint than ARAP.</p>
+</div>
+
+<!-- Jacobian metrics -->
+<div class="jac-card">
+    <h2>Live Jacobian &nbsp; $J = R(\theta)\,\mathrm{diag}(s_x,\,s_y)$</h2>
+    <div class="jac-inner">
+        <div>
+            <div style="font-size:0.78em;color:#888;font-weight:700;margin-bottom:8px">Jacobian Matrix</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+                <span style="font-family:monospace;font-size:1.1em;font-weight:700;color:#333">J&nbsp;=</span>
+                <div class="mat-wrap">
+                    <div class="mat-bracket-l"></div>
+                    <div class="mat-grid">
+                        <span id="rc-j00">1.000</span><span id="rc-j01">0.000</span>
+                        <span id="rc-j10">0.000</span><span id="rc-j11">1.000</span>
+                    </div>
+                    <div class="mat-bracket-r"></div>
+                </div>
+            </div>
+            <div style="font-size:0.78em;color:#888;font-weight:700;margin-bottom:6px">Singular Values</div>
+            <div style="font-family:'Courier New',monospace;font-size:0.97em;line-height:1.9">
+                σ<sub>max</sub> = <span id="rc-smax" style="font-weight:bold;color:#c0392b">—</span><br>
+                σ<sub>min</sub> = <span id="rc-smin" style="font-weight:bold;color:#27ae60">—</span>
+            </div>
+        </div>
+        <div style="flex:1;min-width:220px">
+            <div style="font-size:0.78em;color:#888;font-weight:700;margin-bottom:10px">Energy Metrics</div>
+            <div class="metric-pills">
+                <div class="mpill">
+                    <div class="mlabel">det(J)</div>
+                    <div class="mval" id="rc-det">—</div>
+                </div>
+                <div class="mpill">
+                    <div class="mlabel">ARAP energy</div>
+                    <div class="mval" id="rc-eARAP" style="color:#27ae60">—</div>
+                </div>
+                <div class="mpill">
+                    <div class="mlabel">ACAP energy</div>
+                    <div class="mval" id="rc-eACAP" style="color:#8e44ad">—</div>
+                </div>
+            </div>
+            <div style="margin-top:14px;font-size:0.83em;color:#555;background:#f4f6ff;border-radius:8px;padding:12px 14px;line-height:1.85">
+                <strong>ARAP</strong> = $(\sigma_{\max}{-}1)^2 + (\sigma_{\min}{-}1)^2$ → 0 iff rigid<br>
+                <strong>ACAP</strong> = $(\sigma_{\max}{-}\sigma_{\min})^2/2$ → 0 iff conformal
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Comparison cards -->
+<div class="steps-row" style="margin-top:8px">
+    <div class="step-card" style="border-top:4px solid #27ae60">
+        <div class="step-head">
+            <div class="step-num" style="background:#27ae60;font-size:0.72em;letter-spacing:-0.5px;width:44px">RIGID</div>
+            <div class="step-title">Isometric (distance-preserving)</div>
+        </div>
+        <p class="step-desc">Both singular values equal 1. The Jacobian is a pure rotation: $J = R(\theta)$. Distances <em>and</em> angles are preserved.</p>
+        <div class="math-box">$$J = R(\theta), \quad \sigma_{\max} = \sigma_{\min} = 1$$</div>
+        <p class="step-desc" style="margin-top:8px">Tissot circles remain unit circles. Both ARAP and ACAP energies are zero.</p>
+    </div>
+    <div class="step-card" style="border-top:4px solid #8e44ad">
+        <div class="step-head">
+            <div class="step-num" style="background:#8e44ad;font-size:0.72em;letter-spacing:-0.5px;width:44px">CONF</div>
+            <div class="step-title">Conformal (angle-preserving)</div>
+        </div>
+        <p class="step-desc">Both singular values are equal but $\ne 1$. The Jacobian is a scaled rotation: $J = s\,R(\theta)$. Angles preserved; area scales uniformly.</p>
+        <div class="math-box">$$J = s\,R(\theta), \quad \sigma_{\max} = \sigma_{\min} = s \ne 1$$</div>
+        <p class="step-desc" style="margin-top:8px">Tissot circles stay circular but scale. ACAP energy = 0; ARAP energy ≠ 0.</p>
+    </div>
+    <div class="step-card" style="border-top:4px solid #c0392b">
+        <div class="step-head">
+            <div class="step-num" style="background:#c0392b;font-size:0.72em;letter-spacing:-0.5px;width:44px">NON-C</div>
+            <div class="step-title">Non-conformal (angle-distorting)</div>
+        </div>
+        <p class="step-desc">Singular values differ: $\sigma_{\max} \ne \sigma_{\min}$. Space is stretched more along one axis — angles are not preserved.</p>
+        <div class="math-box">$$J = R(\theta)\,\mathrm{diag}(s_x,s_y),\quad \sigma_{\max} \ne \sigma_{\min}$$</div>
+        <p class="step-desc" style="margin-top:8px">Tissot circles become ellipses. Both ARAP and ACAP energies are non-zero.</p>
+    </div>
 </div>
 
 </div><!-- /content -->
@@ -1041,7 +1072,6 @@ function updatePart2() {
         yaxis:{range:[-maxR,maxR],zeroline:true,zerolinecolor:'#ddd'}
     }, {responsive:true});
 
-    updatePart3(smax, smin);
 }
 
 ['slide-Ls','slide-xs','slide-ys','slide-Lt','slide-xt','slide-yt'].forEach(id =>
@@ -1069,95 +1099,135 @@ function setPreset(name) {
     updatePart2();
 }
 
-// ══════════════════ PART 3 ══════════════════
+// ══════════════════ PART 3: RIGID & CONFORMAL ══════════════════
 
-function updatePart3(smax, smin) {
-    const e_arap = (smax - 1)**2 + (smin - 1)**2;
-    const s_star = (smax + smin) / 2;
-    const e_asap = (smax - smin)**2 / 2;
+const RC_GRID = [
+    [-1.5,-1.5],[-1.5,0],[-1.5,1.5],
+    [0,-1.5],[0,0],[0,1.5],
+    [1.5,-1.5],[1.5,0],[1.5,1.5]
+];
 
-    const fmt = n => isFinite(n) ? n.toFixed(4) : '—';
-    document.getElementById('p3-eA').textContent  = fmt(e_arap);
-    document.getElementById('p3-eS').textContent  = fmt(e_asap);
-    document.getElementById('p3-eA2').textContent = fmt(e_arap);
-    document.getElementById('p3-eS2').textContent = fmt(e_asap);
-    document.getElementById('p3-smax').textContent  = smax.toFixed(4);
-    document.getElementById('p3-smin').textContent  = smin.toFixed(4);
-    document.getElementById('p3-sstar').textContent = s_star.toFixed(4);
+function makeRCJ(thetaDeg, sx, sy) {
+    const th = thetaDeg * Math.PI / 180;
+    const c = Math.cos(th), s = Math.sin(th);
+    return [[c*sx, -s*sy], [s*sx, c*sy]];
+}
 
-    // Interpretation
-    const interpEl = document.getElementById('p3-interp');
-    if (e_arap < 0.01)
-        interpEl.textContent = 'J ≈ rotation — ARAP perfect (isometry). ACAP trivially zero too.';
-    else if (e_asap < 0.01)
-        interpEl.textContent = 'J ≈ scaled rotation — ACAP perfect (conformal). ARAP energy still non-zero (area changed).';
-    else if (e_arap < e_asap * 3)
-        interpEl.textContent = 'Mild stretch/compression: mostly rigid with some area change.';
-    else
-        interpEl.textContent = 'Anisotropic deformation: σ_max ≠ σ_min — angles are not preserved.';
+function detectTransformType(smax, smin) {
+    const rigid = Math.abs(smax - 1) < 0.06 && Math.abs(smin - 1) < 0.06;
+    const conf  = !rigid && Math.abs(smax - smin) < 0.06;
+    if (rigid) return { type:'RIGID',          color:'#27ae60', bg:'rgba(39,174,96,0.12)',   border:'#27ae60' };
+    if (conf)  return { type:'CONFORMAL',      color:'#8e44ad', bg:'rgba(142,68,173,0.12)',  border:'#8e44ad' };
+    return             { type:'NON-CONFORMAL', color:'#c0392b', bg:'rgba(192,57,43,0.12)',   border:'#c0392b' };
+}
 
-    // ── σ-space plot ──
-    const padded = Math.max(smax, smin, 1) * 1.3 + 0.3;
-    const maxV   = Math.max(padded, 2.2);
+function updateRC() {
+    const thetaDeg = parseFloat(document.getElementById('rc-theta').value);
+    const sx = parseFloat(document.getElementById('rc-sx').value);
+    const sy = parseFloat(document.getElementById('rc-sy').value);
 
-    // ARAP energy circle centred at (1,1) with radius √e_arap
-    const r_arap = Math.sqrt(e_arap);
-    const N = 200;
-    const theta = Array.from({length: N+1}, (_, i) => 2*Math.PI*i/N);
-    const arapCx = [], arapCy = [];
-    for (let i = 0; i <= N; i++) {
-        const cx = 1 + r_arap * Math.cos(theta[i]);
-        const cy = 1 + r_arap * Math.sin(theta[i]);
-        if (cx >= 0 && cy >= 0) { arapCx.push(cx); arapCy.push(cy); }
-        else { arapCx.push(null); arapCy.push(null); }
-    }
+    document.getElementById('rc-theta-val').textContent = thetaDeg + '°';
+    document.getElementById('rc-sx-val').textContent    = sx.toFixed(2);
+    document.getElementById('rc-sy-val').textContent    = sy.toFixed(2);
 
-    // ACAP optimal scale projection: (smax, smin) → (s*, s*) on diagonal
-    const proj = s_star;
+    const J = makeRCJ(thetaDeg, sx, sy);
+    const [smax, smin] = svd2x2(J);
+    const det    = J[0][0]*J[1][1] - J[0][1]*J[1][0];
+    const e_arap = (smax-1)**2 + (smin-1)**2;
+    const e_acap = (smax-smin)**2 / 2;
 
-    const traces = [
-        // σ_max = σ_min diagonal (ACAP optimal)
-        { type:'scatter', mode:'lines',
-          x:[0, maxV], y:[0, maxV],
-          line:{color:'#8e44ad', width:2.5},
-          name:'ACAP optimal (σ_max = σ_min)' },
-        // ARAP energy circle
-        { type:'scatter', mode:'lines',
-          x:arapCx, y:arapCy,
-          line:{color:'#27ae60', width:1.5, dash:'dot'},
-          name:`ARAP energy = ${e_arap.toFixed(3)}` },
-        // Perpendicular from current point to diagonal (ACAP distance)
-        { type:'scatter', mode:'lines',
-          x:[smin, proj], y:[smax, proj],
-          line:{color:'#8e44ad', width:2, dash:'dash'},
-          name:`ACAP energy = ${e_asap.toFixed(3)}` },
-        // ARAP optimal (1,1)
-        { type:'scatter', mode:'markers+text',
-          x:[1], y:[1],
-          marker:{size:16, color:'#27ae60', symbol:'star'},
-          text:['ARAP ideal'], textposition:'top right',
-          showlegend:false, textfont:{size:10, color:'#1a7340'} },
-        // Current J
-        { type:'scatter', mode:'markers+text',
-          x:[smin], y:[smax],
-          marker:{size:13, color:'#c0392b', symbol:'circle'},
-          text:['J'], textposition:'top right',
-          showlegend:false, textfont:{size:12, color:'#c0392b'} }
-    ];
+    document.getElementById('rc-j00').textContent   = J[0][0].toFixed(3);
+    document.getElementById('rc-j01').textContent   = J[0][1].toFixed(3);
+    document.getElementById('rc-j10').textContent   = J[1][0].toFixed(3);
+    document.getElementById('rc-j11').textContent   = J[1][1].toFixed(3);
+    document.getElementById('rc-smax').textContent  = smax.toFixed(4);
+    document.getElementById('rc-smin').textContent  = smin.toFixed(4);
+    document.getElementById('rc-det').textContent   = det.toFixed(3);
+    document.getElementById('rc-eARAP').textContent = e_arap.toFixed(4);
+    document.getElementById('rc-eACAP').textContent = e_acap.toFixed(4);
 
-    Plotly.react('plotSigma', traces, {
-        margin:{t:10,b:50,l:55,r:10},
-        showlegend:true,
-        legend:{x:0.01, y:0.99, font:{size:10}, bgcolor:'rgba(255,255,255,0.9)'},
-        xaxis:{range:[0, maxV], title:'σ_min', zeroline:true, zerolinecolor:'#ddd'},
-        yaxis:{range:[0, maxV], title:'σ_max', zeroline:true, zerolinecolor:'#ddd',
-               scaleanchor:'x', scaleratio:1}
+    const info = detectTransformType(smax, smin);
+    const badge = document.getElementById('rc-type-badge');
+    badge.textContent       = info.type;
+    badge.style.color       = info.color;
+    badge.style.background  = info.bg;
+    badge.style.borderColor = info.border;
+
+    const N = 64;
+    const t = Array.from({length: N+1}, (_, i) => 2*Math.PI*i/N);
+    const r = 0.5;
+
+    const srcTraces = [];
+    const tgtTraces = [];
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+
+    RC_GRID.forEach(([gx, gy]) => {
+        // Source: unit circle
+        srcTraces.push({
+            type:'scatter', mode:'lines',
+            x: t.map(a => gx + r*Math.cos(a)),
+            y: t.map(a => gy + r*Math.sin(a)),
+            line:{color:'#0d3b8e', width:1.5},
+            fill:'toself', fillcolor:'rgba(13,59,142,0.10)',
+            showlegend:false, hoverinfo:'skip'
+        });
+
+        // Target: image of circle through J
+        const txArr = t.map(a => J[0][0]*(gx + r*Math.cos(a)) + J[0][1]*(gy + r*Math.sin(a)));
+        const tyArr = t.map(a => J[1][0]*(gx + r*Math.cos(a)) + J[1][1]*(gy + r*Math.sin(a)));
+        txArr.forEach(v => { if(v < minX) minX=v; if(v > maxX) maxX=v; });
+        tyArr.forEach(v => { if(v < minY) minY=v; if(v > maxY) maxY=v; });
+
+        tgtTraces.push({
+            type:'scatter', mode:'lines',
+            x: txArr, y: tyArr,
+            line:{color:info.color, width:2},
+            fill:'toself', fillcolor:info.bg,
+            showlegend:false, hoverinfo:'skip'
+        });
+    });
+
+    const pad  = 0.4;
+    const tCx  = (minX + maxX) / 2;
+    const tCy  = (minY + maxY) / 2;
+    const tH   = Math.max((maxX-minX)/2, (maxY-minY)/2) + pad;
+
+    Plotly.react('rc-plotSrc', srcTraces, {
+        margin:{t:10,b:40,l:40,r:10},
+        xaxis:{range:[-2.4,2.4], zeroline:true, zerolinecolor:'#ddd', scaleanchor:'y', scaleratio:1, title:'x'},
+        yaxis:{range:[-2.4,2.4], zeroline:true, zerolinecolor:'#ddd', title:'y'}
+    }, {responsive:true});
+
+    Plotly.react('rc-plotTgt', tgtTraces, {
+        margin:{t:10,b:40,l:40,r:10},
+        xaxis:{range:[tCx-tH, tCx+tH], zeroline:true, zerolinecolor:'#ddd', scaleanchor:'y', scaleratio:1, title:'J·x'},
+        yaxis:{range:[tCy-tH, tCy+tH], zeroline:true, zerolinecolor:'#ddd', title:'J·y'}
     }, {responsive:true});
 }
+
+const RC_PRESETS = {
+    rigid:     {theta: 35,  sx: 1,    sy: 1   },
+    conformal: {theta: 20,  sx: 2,    sy: 2   },
+    stretchX:  {theta: 0,   sx: 2.5,  sy: 1   },
+    stretchY:  {theta: 0,   sx: 1,    sy: 2.5 },
+    reset:     {theta: 0,   sx: 1,    sy: 1   }
+};
+
+function rcPreset(name) {
+    const p = RC_PRESETS[name]; if (!p) return;
+    document.getElementById('rc-theta').value = p.theta;
+    document.getElementById('rc-sx').value    = p.sx;
+    document.getElementById('rc-sy').value    = p.sy;
+    updateRC();
+}
+
+['rc-theta','rc-sx','rc-sy'].forEach(id =>
+    document.getElementById(id).addEventListener('input', updateRC));
 
 // Init
 update();
 updatePart2();
+updateRC();
 </script>
 
 </body>
