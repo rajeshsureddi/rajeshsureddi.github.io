@@ -671,12 +671,46 @@
         <li><strong style="color:#8e44ad">Conformal (angle-preserving):</strong> $s_x = s_y \ne 1$ — angles preserved, area scales uniformly; mesh scales but triangles stay similar</li>
         <li><strong style="color:#c0392b">Non-conformal:</strong> $s_x \ne s_y$ — angles distorted; mesh triangles are squashed or stretched along one axis</li>
     </ul>
-    <p>The mesh below makes $J$ concrete. <strong>Each colored triangle in the source has the same color in the target</strong> — you can see exactly where every source triangle lands after applying $J$.</p>
+    <p>The 4-triangle mesh below makes $J$ concrete. Select a triangle, drag the sliders, and watch only <em>that</em> triangle deform while the others stay fixed — just like per-face Jacobians in a real UV solver.</p>
+</div>
+
+<!-- UV Parameterization Example -->
+<div class="card" style="border-left:4px solid #7986cb;padding:20px 24px">
+    <h2 style="color:#3949ab;margin-bottom:10px">Real Example: UV Parameterization</h2>
+    <p style="margin-bottom:12px">UV parameterization cuts a 3D surface and unfolds it flat. Each 3D triangle maps to a 2D triangle in the UV plane — and the Jacobian of that map is exactly what Parts 1 &amp; 2 computed.</p>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:stretch">
+        <div style="flex:1;min-width:165px;background:#f0f4ff;border-radius:8px;padding:11px 14px;font-size:0.83em;line-height:1.7">
+            <strong style="color:#3949ab">3D triangle</strong><br>
+            Project v₀,v₁,v₂ to local frame (Part 1):<br>
+            <code>M<sub>s</sub> = [[L<sub>s</sub>, x<sub>s</sub>], [0, y<sub>s</sub>]]</code>
+        </div>
+        <div style="display:flex;align-items:center;font-size:1.3em;color:#aaa;padding:0 4px">→ J →</div>
+        <div style="flex:1;min-width:165px;background:#eafaf1;border-radius:8px;padding:11px 14px;font-size:0.83em;line-height:1.7">
+            <strong style="color:#27ae60">UV triangle</strong><br>
+            Pack UV coords into (Part 2):<br>
+            <code>M<sub>t</sub> = [[L<sub>t</sub>, x<sub>t</sub>], [0, y<sub>t</sub>]]</code>
+        </div>
+        <div style="display:flex;align-items:center;font-size:1.3em;color:#aaa;padding:0 4px">→</div>
+        <div style="flex:1;min-width:165px;background:#fff4e5;border-radius:8px;padding:11px 14px;font-size:0.83em;line-height:1.7">
+            <strong style="color:#e67e22">Distortion = J = M<sub>t</sub>M<sub>s</sub><sup>−1</sup></strong><br>
+            ARAP → 0: near-isometric (no stretch)<br>
+            ACAP → 0: conformal (no shear)
+        </div>
+    </div>
 </div>
 
 <!-- Part 3 Controls -->
 <div class="controls-card" style="flex-direction:column;align-items:stretch;gap:14px">
-    <div class="ctrl-label" style="margin-bottom:0">Parameterize the Jacobian: $J = R(\theta)\,\mathrm{diag}(s_x,\,s_y)$</div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-bottom:12px;border-bottom:1px solid #eee;margin-bottom:2px">
+        <div class="ctrl-label" style="margin-bottom:0;white-space:nowrap">$J = R(\theta)\,\mathrm{diag}(s_x,\,s_y)$ &nbsp;for triangle:</div>
+        <div style="display:flex;gap:7px">
+            <button id="rc-tri-btn-0" onclick="selectTri(0)" style="padding:5px 16px;border-radius:16px;border:2px solid #5c6bc0;font-weight:700;font-size:0.85em;cursor:pointer;background:#5c6bc0;color:white;transition:all 0.15s">T1</button>
+            <button id="rc-tri-btn-1" onclick="selectTri(1)" style="padding:5px 16px;border-radius:16px;border:2px solid #ef6c00;font-weight:700;font-size:0.85em;cursor:pointer;background:#f0f0f0;color:#555;transition:all 0.15s">T2</button>
+            <button id="rc-tri-btn-2" onclick="selectTri(2)" style="padding:5px 16px;border-radius:16px;border:2px solid #2e7d32;font-weight:700;font-size:0.85em;cursor:pointer;background:#f0f0f0;color:#555;transition:all 0.15s">T3</button>
+            <button id="rc-tri-btn-3" onclick="selectTri(3)" style="padding:5px 16px;border-radius:16px;border:2px solid #c62828;font-weight:700;font-size:0.85em;cursor:pointer;background:#f0f0f0;color:#555;transition:all 0.15s">T4</button>
+        </div>
+        <span style="font-size:0.78em;color:#888">sliders update selected triangle only</span>
+    </div>
     <div class="p2-ctrl-row">
         <div class="p2-ctrl-section">
             <div class="p2-section-title">Transformation Parameters</div>
@@ -713,20 +747,20 @@
 <!-- 3D mesh deformation plots -->
 <div class="plots-row">
     <div class="plot-card">
-        <div class="plot-card-title">Source — Triangulated Mesh</div>
-        <div class="plot-card-sub">Each color = one triangle &nbsp;|&nbsp; drag to rotate</div>
+        <div class="plot-card-title">Source — 4-Triangle Mesh</div>
+        <div class="plot-card-sub">Click a triangle button above to select it</div>
         <div id="rc-plotSrc" class="plot-area"></div>
     </div>
     <div class="plot-card">
-        <div class="plot-card-title">After J — Mesh Deformation</div>
-        <div class="plot-card-sub">Same colors as source → find where each triangle went</div>
+        <div class="plot-card-title">After J — Per-Triangle Deformation</div>
+        <div class="plot-card-sub">Each triangle has its own J &nbsp;|&nbsp; matching colors = correspondence</div>
         <div id="rc-plotTgt" class="plot-area"></div>
     </div>
 </div>
 
 <!-- Jacobian metrics -->
 <div class="jac-card">
-    <h2>Live Jacobian &nbsp; $J = R(\theta)\,\mathrm{diag}(s_x,\,s_y)$</h2>
+    <h2>Live Jacobian — <span id="rc-jac-triname" style="color:#5c6bc0;font-family:monospace">T1</span> &nbsp; $J = R(\theta)\,\mathrm{diag}(s_x,\,s_y)$</h2>
     <div class="jac-inner">
         <div>
             <div style="font-size:0.78em;color:#888;font-weight:700;margin-bottom:8px">Jacobian Matrix</div>
@@ -745,6 +779,9 @@
             <div style="font-family:'Courier New',monospace;font-size:0.97em;line-height:1.9">
                 σ<sub>max</sub> = <span id="rc-smax" style="font-weight:bold;color:#c0392b">—</span><br>
                 σ<sub>min</sub> = <span id="rc-smin" style="font-weight:bold;color:#27ae60">—</span>
+            </div>
+            <div style="font-size:0.76em;color:#555;background:#f4f4f4;border-radius:6px;padding:7px 10px;margin-top:9px;line-height:1.65">
+                <strong>Yes</strong> — $\sigma_{\max}$ and $\sigma_{\min}$ are the semi-axes of the ellipse that $J$ maps a unit circle to: semi-major axis = $\sigma_{\max}$, semi-minor axis = $\sigma_{\min}$.
             </div>
         </div>
         <div style="flex:1;min-width:220px">
@@ -1115,26 +1152,69 @@ function setPreset(name) {
 
 // ══════════════════ PART 3: RIGID & CONFORMAL ══════════════════
 
-// Pre-built 5×5 quad triangulated mesh with gentle dome z-variation
-const RC_MESH = (() => {
-    const NPTS = 6, SIZE = 1.8;
-    const step = (SIZE * 2) / (NPTS - 1);
-    const verts = [];
-    for (let j = 0; j < NPTS; j++)
-        for (let i = 0; i < NPTS; i++) {
-            const x = i*step - SIZE, y = j*step - SIZE;
-            const z = 0.4 * Math.cos(x*Math.PI/(SIZE*1.4)) * Math.cos(y*Math.PI/(SIZE*1.4));
-            verts.push([x, y, z]);
-        }
-    const faces = [];
-    for (let j = 0; j < NPTS-1; j++)
-        for (let i = 0; i < NPTS-1; i++) {
-            const a = j*NPTS+i, b=a+1, c=a+NPTS, d=c+1;
-            faces.push([a,b,d]);
-            faces.push([a,d,c]);
-        }
-    return {verts, faces};
-})();
+// 4-triangle mesh: 2×1 quads, 3×2 vertices
+//   v3(0,1)---v4(1,1)---v5(2,1)
+//     | T1  \ | T3  \  |
+//     |      \|      \ |
+//   v0(0,0)---v1(1,0)---v2(2,0)
+//   T2 = upper part of left quad; T4 = upper part of right quad
+const RC_VERTS  = [[0,0],[1,0],[2,0],[0,1],[1,1],[2,1]];
+const RC_FACES  = [[0,1,3],[1,4,3],[1,2,4],[2,5,4]]; // T1 T2 T3 T4
+const RC_COLORS = ['#5c6bc0','#ef6c00','#2e7d32','#c62828'];
+const RC_NAMES  = ['T1','T2','T3','T4'];
+
+// Independent J-state per triangle
+const triState = [
+    {theta:0, sx:1, sy:1},
+    {theta:0, sx:1, sy:1},
+    {theta:0, sx:1, sy:1},
+    {theta:0, sx:1, sy:1}
+];
+let selectedTri = 0;
+
+function selectTri(i) {
+    selectedTri = i;
+    document.getElementById('rc-theta').value = triState[i].theta;
+    document.getElementById('rc-sx').value    = triState[i].sx;
+    document.getElementById('rc-sy').value    = triState[i].sy;
+    updateRC();
+}
+
+function triCentroid(face) {
+    const [a,b,c] = face;
+    return [(RC_VERTS[a][0]+RC_VERTS[b][0]+RC_VERTS[c][0])/3,
+            (RC_VERTS[a][1]+RC_VERTS[b][1]+RC_VERTS[c][1])/3];
+}
+
+// Apply J around each face's centroid so the triangle stays anchored in place
+function applyJToFace(J, face) {
+    const [cx,cy] = triCentroid(face);
+    return face.map(vi => {
+        const dx = RC_VERTS[vi][0]-cx, dy = RC_VERTS[vi][1]-cy;
+        return [cx + J[0][0]*dx + J[0][1]*dy,
+                cy + J[1][0]*dx + J[1][1]*dy];
+    });
+}
+
+function makeFaceTr(verts2d, color, isSelected) {
+    const xs = [...verts2d.map(v=>v[0]), verts2d[0][0]];
+    const ys = [...verts2d.map(v=>v[1]), verts2d[0][1]];
+    return {
+        type:'scatter', mode:'lines', x:xs, y:ys,
+        fill:'toself',
+        fillcolor: color + (isSelected ? '44' : '18'),
+        line:{color, width: isSelected ? 3.5 : 1.5},
+        showlegend:false, hoverinfo:'skip'
+    };
+}
+
+function makeLabelTr(cx, cy, name, color) {
+    return {
+        type:'scatter', mode:'text', x:[cx], y:[cy], text:[name],
+        textfont:{color, size:13, family:'monospace'},
+        showlegend:false, hoverinfo:'skip'
+    };
+}
 
 function makeRCJ(thetaDeg, sx, sy) {
     const th = thetaDeg * Math.PI / 180;
@@ -1152,18 +1232,23 @@ function detectTransformType(smax, smin) {
 
 function updateRC() {
     const thetaDeg = parseFloat(document.getElementById('rc-theta').value);
-    const sx = parseFloat(document.getElementById('rc-sx').value);
-    const sy = parseFloat(document.getElementById('rc-sy').value);
+    const sx       = parseFloat(document.getElementById('rc-sx').value);
+    const sy       = parseFloat(document.getElementById('rc-sy').value);
 
-    document.getElementById('rc-theta-val').textContent = thetaDeg + '°';
+    // Store selected triangle's current state
+    triState[selectedTri] = {theta:thetaDeg, sx, sy};
+
+    document.getElementById('rc-theta-val').textContent = thetaDeg+'°';
     document.getElementById('rc-sx-val').textContent    = sx.toFixed(2);
     document.getElementById('rc-sy-val').textContent    = sy.toFixed(2);
 
-    const J = makeRCJ(thetaDeg, sx, sy);
-    const [smax, smin] = svd2x2(J);
+    // Compute metrics for selected triangle only
+    const J      = makeRCJ(thetaDeg, sx, sy);
+    const [smax,smin] = svd2x2(J);
     const det    = J[0][0]*J[1][1] - J[0][1]*J[1][0];
     const e_arap = (smax-1)**2 + (smin-1)**2;
     const e_acap = (smax-smin)**2 / 2;
+    const info   = detectTransformType(smax, smin);
 
     document.getElementById('rc-j00').textContent   = J[0][0].toFixed(3);
     document.getElementById('rc-j01').textContent   = J[0][1].toFixed(3);
@@ -1175,54 +1260,61 @@ function updateRC() {
     document.getElementById('rc-eARAP').textContent = e_arap.toFixed(4);
     document.getElementById('rc-eACAP').textContent = e_acap.toFixed(4);
 
-    const info = detectTransformType(smax, smin);
     const badge = document.getElementById('rc-type-badge');
-    badge.textContent       = info.type;
-    badge.style.color       = info.color;
-    badge.style.background  = info.bg;
-    badge.style.borderColor = info.border;
+    badge.textContent = info.type; badge.style.color = info.color;
+    badge.style.background = info.bg; badge.style.borderColor = info.border;
 
-    const {verts, faces} = RC_MESH;
-    // Apply J to (x,y), preserve z from source mesh
-    const tgtV = verts.map(([x,y,z]) => [J[0][0]*x+J[0][1]*y, J[1][0]*x+J[1][1]*y, z]);
+    // Jac-card heading shows which triangle is active
+    const tn = document.getElementById('rc-jac-triname');
+    tn.textContent = RC_NAMES[selectedTri];
+    tn.style.color = RC_COLORS[selectedTri];
 
-    // Same color per face on source AND target → direct triangle-to-triangle correspondence
-    const faceColors = faces.map((_, i) => {
-        const t = i / (faces.length - 1);
-        const h = Math.round(230 - t * 190); // blue(230) → orange(40) spatial gradient
-        return `hsl(${h},65%,60%)`;
+    // Triangle selector button highlight
+    RC_FACES.forEach((_, fi) => {
+        const btn = document.getElementById(`rc-tri-btn-${fi}`);
+        btn.style.background = fi===selectedTri ? RC_COLORS[fi] : '#f0f0f0';
+        btn.style.color      = fi===selectedTri ? 'white'       : '#555';
     });
 
-    function edgeTr(v, color, width) {
-        const ex=[], ey=[], ez=[];
-        faces.forEach(([a,b,c]) => {
-            ex.push(v[a][0],v[b][0],v[c][0],v[a][0],null);
-            ey.push(v[a][1],v[b][1],v[c][1],v[a][1],null);
-            ez.push(v[a][2],v[b][2],v[c][2],v[a][2],null);
-        });
-        return {type:'scatter3d', mode:'lines', x:ex, y:ey, z:ez,
-            line:{color, width}, hoverinfo:'skip', showlegend:false};
-    }
+    // Source traces — all 4 triangles, selected one bold
+    const srcTraces = [];
+    RC_FACES.forEach((face, fi) => {
+        const vs = face.map(vi => RC_VERTS[vi]);
+        srcTraces.push(makeFaceTr(vs, RC_COLORS[fi], fi===selectedTri));
+        const [cx,cy] = triCentroid(face);
+        srcTraces.push(makeLabelTr(cx, cy, RC_NAMES[fi], RC_COLORS[fi]));
+    });
 
-    function surfTr(v, opacity) {
-        return {
-            type:'mesh3d',
-            x:v.map(p=>p[0]), y:v.map(p=>p[1]), z:v.map(p=>p[2]),
-            i:faces.map(f=>f[0]), j:faces.map(f=>f[1]), k:faces.map(f=>f[2]),
-            facecolor: faceColors,
-            opacity, flatshading:true,
-            showscale:false, hoverinfo:'skip', showlegend:false
-        };
-    }
+    // Target traces — each triangle deformed by its own J, centroid stays fixed
+    const tgtTraces = [];
+    const allX=[], allY=[];
+    RC_FACES.forEach((face, fi) => {
+        const Jfi  = makeRCJ(triState[fi].theta, triState[fi].sx, triState[fi].sy);
+        const tgtV = applyJToFace(Jfi, face);
+        tgtTraces.push(makeFaceTr(tgtV, RC_COLORS[fi], fi===selectedTri));
+        const tcx = (tgtV[0][0]+tgtV[1][0]+tgtV[2][0])/3;
+        const tcy = (tgtV[0][1]+tgtV[1][1]+tgtV[2][1])/3;
+        tgtTraces.push(makeLabelTr(tcx, tcy, RC_NAMES[fi], RC_COLORS[fi]));
+        tgtV.forEach(([x,y]) => { allX.push(x); allY.push(y); });
+    });
 
-    const cam = {eye:{x:1.2, y:-2.5, z:1.8}, up:{x:0,y:0,z:1}};
-    const scn = {camera:cam, aspectmode:'cube',
-        xaxis:{visible:false}, yaxis:{visible:false}, zaxis:{visible:false}};
-    const lay = {margin:{t:0,b:0,l:0,r:0}, paper_bgcolor:'white', scene:scn};
+    const pad = 0.55;
+    const txMin = Math.min(...allX)-pad, txMax = Math.max(...allX)+pad;
+    const tyMin = Math.min(...allY)-pad, tyMax = Math.max(...allY)+pad;
 
-    // Source: colored faces + dark wireframe; Target: same faces + type-colored wireframe
-    Plotly.react('rc-plotSrc', [surfTr(verts, 0.88), edgeTr(verts,'rgba(0,0,0,0.25)',0.8)], lay, {responsive:true});
-    Plotly.react('rc-plotTgt', [surfTr(tgtV,  0.88), edgeTr(tgtV, info.color, 1.5)],        lay, {responsive:true});
+    const baseAx  = {zeroline:false, showgrid:true, gridcolor:'#eeeeee'};
+    const baseLay = {margin:{t:10,b:30,l:30,r:10}, paper_bgcolor:'white', plot_bgcolor:'#fafafa'};
+
+    Plotly.react('rc-plotSrc', srcTraces,
+        {...baseLay,
+         xaxis:{...baseAx, range:[-0.55,2.55], scaleanchor:'y', scaleratio:1},
+         yaxis:{...baseAx, range:[-0.55,1.55]}},
+        {responsive:true});
+    Plotly.react('rc-plotTgt', tgtTraces,
+        {...baseLay,
+         xaxis:{...baseAx, range:[txMin,txMax], scaleanchor:'y', scaleratio:1},
+         yaxis:{...baseAx, range:[tyMin,tyMax]}},
+        {responsive:true});
 }
 
 const RC_PRESETS = {
