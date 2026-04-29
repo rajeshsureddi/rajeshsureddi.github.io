@@ -292,42 +292,58 @@ $$\text{SDF}(x)=\begin{cases}-d(x,\mathcal{S})&x\text{ inside}\\\phantom{-}d(x,\
      SECTION 3 — DISTANCES
 ══════════════════════════════════════════════════ -->
 <h2>3. Measuring Distance Between Two Shapes</h2>
-<p>Training any 3D generative or reconstruction model requires a loss that measures how different two shapes are. Chamfer and Hausdorff are the two most widely used metrics. They capture different geometric properties — and their difference becomes clear in the interactive below.</p>
+<p>Training any 3D generative or reconstruction model requires a loss that measures how different two point sets are. Three metrics dominate: <strong>Chamfer</strong> (differentiable average), <strong>Hausdorff</strong> (worst-case coverage), and <strong>Earth Mover's Distance</strong> (optimal transport). Each captures a fundamentally different geometric property.</p>
 
 <h3>3.1 Chamfer Distance</h3>
 <div class="math-box">$$\text{CD}(P,Q)=\frac{1}{|P|}\sum_{p\in P}\min_{q\in Q}\|p-q\|^2+\frac{1}{|Q|}\sum_{q\in Q}\min_{p\in P}\|p-q\|^2$$</div>
-<p>Every point in $P$ finds its nearest neighbor in $Q$, and vice versa. The Chamfer Distance is the <strong>average</strong> of all these squared nearest-neighbor distances. It is differentiable almost everywhere — the standard training loss for point cloud reconstruction.</p>
+<p>Every point in $P$ finds its nearest neighbor in $Q$, and vice versa. The Chamfer Distance averages all these squared distances. Differentiable almost everywhere — the standard training loss. <strong>Key flaw:</strong> multiple points in $P$ can match the same point in $Q$ (many-to-one), so local clumping is rewarded.</p>
 
 <h3>3.2 Hausdorff Distance</h3>
 <div class="math-box">$$d_H(P,Q)=\max\!\left(\max_{p\in P}\min_{q\in Q}\|p-q\|,\;\max_{q\in Q}\min_{p\in P}\|q-p\|\right)$$</div>
-<p>The Hausdorff Distance is the <strong>worst-case</strong> nearest-neighbor distance. Even if 99% of points match perfectly, one outlier drives it up. The thick highlighted line in Hausdorff mode shows the determining pair.</p>
+<p>The <strong>worst-case</strong> nearest-neighbor distance. One outlier dominates — 99% perfect coverage does not help. The scenarios below show exactly when this matters: try the "One outlier" preset to see Chamfer stay flat while Hausdorff jumps dramatically.</p>
+
+<div style="display:flex;gap:7px;flex-wrap:wrap;margin:1rem 0;">
+  <button class="tab-btn active" data-preset="custom">Custom (drag)</button>
+  <button class="tab-btn" data-preset="similar">Similar shapes</button>
+  <button class="tab-btn" data-preset="outlier">One outlier</button>
+  <button class="tab-btn" data-preset="partial">Partial coverage</button>
+  <button class="tab-btn" data-preset="concentric">Offset circles</button>
+</div>
+
+<h3>3.3 Earth Mover's Distance (EMD)</h3>
+<div class="math-box">$$\text{EMD}(P,Q)=\min_{\phi:P\xrightarrow{\sim}Q}\frac{1}{|P|}\sum_{i=1}^{|P|}\|p_i-\phi(p_i)\|$$</div>
+<p>EMD enforces a <strong>bijection</strong> $\phi$ — each point in $P$ matches to a <em>unique</em> point in $Q$ (one-to-one). This is the minimum-cost way to "transport" mass from $P$ to $Q$, solved exactly with the <a href="https://en.wikipedia.org/wiki/Hungarian_algorithm" target="_blank">Hungarian algorithm</a>. Requires $|P|=|Q|$. EMD $\geq$ Chamfer always, because Chamfer's many-to-one matching is a relaxation of the bijection constraint.</p>
+
+<div class="callout blue">
+  <div class="ct">Chamfer vs EMD — the key difference</div>
+  <p>In Chamfer mode, many blue P-points may all draw their line to the <em>same</em> orange Q-point (the shared nearest neighbor). In EMD mode, each Q-point is matched to exactly one P-point. The optimal bijection "spreads" assignments more evenly — watch how the lines change when you switch modes.</p>
+</div>
 
 <div class="graphic-container">
   <div class="tab-row">
-    <button class="tab-btn active" data-dist="chamfer">Chamfer Distance</button>
-    <button class="tab-btn" data-dist="hausdorff">Hausdorff Distance</button>
+    <button class="tab-btn active" data-dist="chamfer">Chamfer</button>
+    <button class="tab-btn" data-dist="hausdorff">Hausdorff</button>
+    <button class="tab-btn" data-dist="emd">Earth Mover's (EMD)</button>
   </div>
   <div style="position:relative;background:#09090f;">
-    <canvas id="dist-canvas" style="display:block;width:100%;height:420px;cursor:move;"></canvas>
-    <div class="hud" style="top:12px;right:12px;min-width:190px;">
+    <canvas id="dist-canvas" style="display:block;width:100%;height:440px;cursor:move;"></canvas>
+    <div class="hud" style="top:12px;right:12px;min-width:205px;">
       <div class="hud-title" id="dist-hud-title">Chamfer Distance</div>
-      <div class="hud-row"><span>Value</span><span class="val" id="dist-val">—</span></div>
-      <div class="hud-row"><span>|P|</span><span class="val" id="dist-np">—</span></div>
-      <div class="hud-row"><span>|Q|</span><span class="val" id="dist-nq">—</span></div>
-      <div style="margin-top:8px;font-size:.71rem;color:#404060;line-height:1.7;" id="dist-legend">
-        <span style="color:#3b82f6;">●</span> Set P — drag any point<br>
-        <span style="color:#f97316;">●</span> Set Q — drag any point<br>
-        <span style="color:#6b7280;">—</span> P→Q correspondences<br>
-        <span style="color:#a78bfa;">—</span> Q→P correspondences
-      </div>
+      <div class="hud-row"><span>CD</span><span class="val" id="dist-cd">—</span></div>
+      <div class="hud-row"><span>Hausdorff</span><span class="val" id="dist-hd">—</span></div>
+      <div class="hud-row"><span>EMD</span><span class="val" id="dist-em">—</span></div>
+      <div class="hud-row"><span>|P| = |Q|</span><span class="val" id="dist-np">—</span></div>
+      <div style="margin-top:8px;font-size:.71rem;color:#404060;line-height:1.7;" id="dist-legend"></div>
     </div>
   </div>
-  <div class="controls"><p style="margin:0;font-size:.77rem;color:#6060a0;">Drag any point to reshape the sets. The metric updates live.</p></div>
+  <div class="controls"><p style="margin:0;font-size:.77rem;color:#6060a0;">Drag any point. Switch metrics or try a preset scenario to see how each metric responds differently.</p></div>
 </div>
 
 <div class="info-grid">
-  <div class="info-card"><h4>Use Chamfer for training</h4><p>Differentiable, robust to small outliers, efficient with KD-trees. Standard in PointNet, FoldingNet, occupancy networks.</p></div>
-  <div class="info-card"><h4>Use Hausdorff for evaluation</h4><p>Worst-case coverage matters in safety-critical apps (medical, autonomous driving). Too sensitive to noise for training losses.</p></div>
+  <div class="info-card"><h4>Chamfer — training losses</h4><p>Differentiable, KD-tree efficient, robust to small outliers. Standard in PointNet, FoldingNet, occupancy networks. Many-to-one bias can cause "collapsed" reconstructions.</p></div>
+  <div class="info-card"><h4>Hausdorff — worst-case coverage</h4><p>One large gap dominates. Critical for safety (autonomous driving, medical). Never used as a training loss — non-differentiable and noise-sensitive.</p></div>
+  <div class="info-card"><h4>EMD — balanced transport</h4><p>Bijection prevents collapse; measures the true cost of rearranging $P$ into $Q$. More meaningful for generative models. $O(n^3)$ Hungarian algorithm — expensive for large sets.</p></div>
+  <div class="info-card"><h4>EMD ≥ Chamfer always</h4><p>Chamfer relaxes the bijection. If nearest-neighbor matching is already bijective, $\text{EMD}=\text{CD}$. Otherwise the forced bijection in EMD forces some assignments to worse matches.</p></div>
 </div>
 
 <!-- ══════════════════════════════════════════════════
@@ -339,7 +355,45 @@ $$\text{SDF}(x)=\begin{cases}-d(x,\mathcal{S})&x\text{ inside}\\\phantom{-}d(x,\
 <div class="callout green"><div class="ct">Explicit</div><p>Mesh, point cloud, NURBS — every element directly describes part of the surface. Hand to GPU rasterizer, done.</p></div>
 <div class="callout green"><div class="ct">Implicit</div><p>SDF, occupancy network, NeRF — the surface is $\{x:f(x)=0\}$. Must ray-march or run Marching Cubes to get geometry. But topology changes, interior queries, and blending are free.</p></div>
 
-<p>The right panel uses <strong>sphere tracing</strong> (ray marching with SDF step sizes) in a live GLSL shader — the torus is never stored as triangles, it is computed from its distance function on every pixel.</p>
+<h3>Ray Marching — How Implicit Surfaces Are Rendered</h3>
+<p>Since an implicit surface has no triangles to rasterize, the GPU must <em>search</em> for where a ray intersects the zero level set. <strong>Sphere tracing</strong> is the canonical algorithm: at each position along the ray, evaluate the SDF. Because the SDF tells you the exact distance to the nearest surface point, you can safely advance the ray by exactly that amount without overshooting — each step takes the <em>largest possible safe jump</em>.</p>
+
+<div class="math-box">
+$$x_{t+1}=x_t+f(x_t)\cdot\hat{d},\qquad\hat{d}=\text{ray direction}$$
+$$\text{Stop when }|f(x_t)|<\varepsilon\text{ (hit) or }t>t_{\max}\text{ (miss)}$$
+</div>
+
+<p>The key insight: when you are far from the surface, $f$ is large and you take big steps. Near the surface, $f\to 0$ and you take tiny, precise steps. This converges much faster than any fixed-step ray marching. Click anywhere on the scene below to fire a ray and watch sphere tracing step by step.</p>
+
+<div class="graphic-container">
+  <div style="padding:10px 16px;background:#0f0f1e;border-bottom:1px solid #1a1a28;display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
+    <span style="font-size:.75rem;color:#6060a0;font-weight:700;text-transform:uppercase;letter-spacing:.08em;flex:1;">Sphere Tracing — 2D Step-by-step</span>
+    <button class="tab-btn active" data-rm="circle" style="padding:4px 10px;font-size:.74rem;">Circle</button>
+    <button class="tab-btn" data-rm="box" style="padding:4px 10px;font-size:.74rem;">Box</button>
+    <button class="tab-btn" data-rm="blobs" style="padding:4px 10px;font-size:.74rem;">Two blobs</button>
+    <button id="rm-play" class="tab-btn" style="padding:4px 10px;font-size:.74rem;margin-left:8px;">▶ Play</button>
+    <button id="rm-all" class="tab-btn" style="padding:4px 10px;font-size:.74rem;">Show all</button>
+    <button id="rm-reset" class="tab-btn" style="padding:4px 10px;font-size:.74rem;">Reset</button>
+  </div>
+  <div style="position:relative;background:#09090f;">
+    <canvas id="rm-canvas" style="display:block;width:100%;height:380px;cursor:crosshair;"></canvas>
+    <div class="hud" style="top:12px;right:12px;min-width:185px;">
+      <div class="hud-title">Sphere Tracing</div>
+      <div class="hud-row"><span>Steps taken</span><span class="val" id="rm-steps">—</span></div>
+      <div class="hud-row"><span>SDF at pos</span><span class="val" id="rm-sdf">—</span></div>
+      <div class="hud-row"><span>Status</span><span class="val" id="rm-status">click to start</span></div>
+      <div style="margin-top:8px;font-size:.71rem;color:#404060;line-height:1.7;">
+        <span style="color:#fbbf24;">○</span> sphere of radius = SDF<br>
+        <span style="color:#fbbf24;">→</span> step forward by SDF<br>
+        <span style="color:#22c55e;">●</span> hit (SDF &lt; ε)<br>
+        <span style="color:#f87171;">●</span> miss (t &gt; t_max)
+      </div>
+    </div>
+  </div>
+  <div class="controls"><p style="margin:0;font-size:.77rem;color:#6060a0;">Click anywhere to aim a ray from the eye (white dot, left). Each yellow circle has radius = SDF at that point — the ray can safely step by that amount. Background heatmap: blue = inside, red = outside.</p></div>
+</div>
+
+<p>The right 3D panel below uses exactly this algorithm in a GLSL fragment shader — every pixel fires a ray and sphere-traces the torus SDF. The torus is never stored as triangles; it is defined by a single mathematical function evaluated per pixel.</p>
 
 <div class="graphic-container">
   <div style="padding:10px 16px;background:#0f0f1e;border-bottom:1px solid #1a1a28;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -371,81 +425,26 @@ $$\text{SDF}(x)=\begin{cases}-d(x,\mathcal{S})&x\text{ inside}\\\phantom{-}d(x,\
 </table>
 
 <!-- ══════════════════════════════════════════════════
-     SECTION 5 — EIKONAL
-══════════════════════════════════════════════════ -->
-<h2>5. Eikonal Regularization</h2>
-<p>Neural implicit representations parameterize the implicit function with an MLP: $f_\theta(x)$. Nothing forces it to be a <em>proper</em> SDF — the network can find any zero-crossing that fits the training data. An arbitrary function may have wildly wrong gradient magnitudes, ruining ray-marching and distance queries.</p>
-
-<h3>The Eikonal Equation</h3>
-<p>A function $f$ is a true SDF if and only if it satisfies the <strong>Eikonal equation</strong> everywhere:</p>
-<div class="math-box">$$|\nabla f(x)|=1\quad\forall\,x\in\mathbb{R}^3$$</div>
-
-<h3>The Eikonal Loss (Gropp et al., IGR 2020)</h3>
-<div class="math-box">$$\mathcal{L}_{\text{total}}=\mathcal{L}_{\text{data}}+\lambda\underbrace{\,\mathbb{E}_{x}\!\left[(|\nabla_x f_\theta(x)|-1)^2\right]}_{\mathcal{L}_{\text{eikonal}}}$$</div>
-
-<p>The expectation samples points both on and off the surface. The $\lambda$ controls how strongly we penalize non-unit gradients. Without it, sphere tracing either <strong>undershoots</strong> ($|\nabla f|<1$, tiny steps, slow) or <strong>overshoots</strong> ($|\nabla f|>1$, misses surface entirely).</p>
-
-<p>The 3D visualization below samples points on concentric shells around a sphere. Each point is colored by its gradient magnitude $|\nabla f|$. <span style="color:#34d399;font-weight:600;">Green</span> = eikonal satisfied ($|\nabla f|\approx1$). <span style="color:#f87171;font-weight:600;">Red</span> = gradient too steep. <span style="color:#60a5fa;font-weight:600;">Blue</span> = gradient too shallow. Increase $\lambda$ to watch everything turn green.</p>
-
-<div class="graphic-container">
-  <div class="tab-row">
-    <button class="tab-btn active" data-eik="gradmag">|∇f| magnitude</button>
-    <button class="tab-btn" data-eik="violation">Eikonal violation</button>
-    <button class="tab-btn" data-eik="raymarch">Sphere-trace steps</button>
-  </div>
-  <div class="canvas-wrapper" id="eik-wrap" style="height:440px;background:radial-gradient(ellipse at center,#16182a,#06060f);">
-    <canvas id="eik-canvas" style="width:100%;height:100%;display:block;"></canvas>
-    <div class="hud" style="top:12px;right:12px;min-width:205px;">
-      <div class="hud-title" id="eik-hud-title">|∇f| Magnitude</div>
-      <div id="eik-hud-body" style="font-size:.76rem;color:#8080a8;line-height:1.85;"></div>
-    </div>
-  </div>
-  <div class="controls">
-    <div class="ctrl-grid">
-      <div class="ctrl-group">
-        <label>Eikonal weight λ <span class="val" id="eik-lam-val">0.00</span></label>
-        <input type="range" id="eik-lam" min="0" max="1" step="0.01" value="0">
-      </div>
-      <div class="ctrl-group">
-        <label>Network roughness <span class="val" id="eik-rough-val">0.60</span></label>
-        <input type="range" id="eik-rough" min="0" max="1" step="0.01" value="0.6">
-      </div>
-    </div>
-    <p style="margin-top:10px;margin-bottom:0;font-size:.77rem;color:#6060a0;">Increase λ to enforce eikonal. Watch the sample points turn green as |∇f| → 1 everywhere.</p>
-  </div>
-</div>
-
-<div class="info-grid">
-  <div class="info-card"><h4>Without eikonal (λ=0)</h4><p>Network finds any zero-crossing. Gradients vary wildly. Sphere tracing either misses the surface or needs hundreds of steps. "SDF" unusable for distance queries.</p></div>
-  <div class="info-card"><h4>With eikonal (λ&gt;0)</h4><p>Gradients pulled toward unit magnitude. Function becomes a proper SDF. Sphere tracing converges in O(depth) steps. Normals accurate everywhere off training points.</p></div>
-</div>
-
-<div class="callout amber">
-  <div class="ct">Used in</div>
-  <p>NeuS, VolSDF, IGR, instant-NGP all incorporate eikonal or similar constraints. Without it, neural SDFs look plausible on training views but fail completely when used as proper distance functions for physics, collision, or novel-view synthesis.</p>
-</div>
-
-<!-- ══════════════════════════════════════════════════
      CONCLUSION
 ══════════════════════════════════════════════════ -->
 <h2>Conclusion</h2>
-<p>We have traveled from the simplest possible 3D representation — an unordered set of points — to implicit neural fields constrained by PDEs. The thread connecting them:</p>
+<p>We have traveled from the simplest possible 3D representation — an unordered set of points — to live ray-marched implicit surfaces. The connecting thread:</p>
 <ol>
   <li><strong>Point clouds</strong> are what sensors give you. Everything else adds structure: connectivity (mesh), spatial index (KD-tree, voxel), or compactness (tri-plane).</li>
-  <li><strong>Normals</strong> are the bridge from geometry to shading. Face normals give faceted appearance; vertex normals give smooth appearance from the same coarse mesh. The normal map encoding $(\mathbf{n}+1)/2\to\text{RGB}$ is universal in graphics and neural rendering.</li>
-  <li><strong>Chamfer and Hausdorff</strong> give two complementary views: Chamfer sees average coverage, Hausdorff sees the worst gap. Use both in evaluation; only Chamfer in training.</li>
-  <li><strong>Explicit vs. implicit</strong> is not binary. 3DGS is explicitly positioned but implicitly optimized. NeRF is implicitly defined but explicitly ray-marched. The side-by-side above shows they produce visually identical results through fundamentally different pipelines.</li>
-  <li><strong>Eikonal regularization</strong> is the mathematical glue that turns an arbitrary scalar network into a proper SDF. Without it, implicit representations are geometrically meaningless even when they look visually plausible.</li>
+  <li><strong>Normals</strong> bridge geometry and shading. Face normals (one per triangle, flat look) vs. vertex normals (averaged at shared vertices, smooth look) are the same geometry rendered differently. The normal map encoding $(\mathbf{n}+1)/2\to\text{RGB}$ is universal in graphics and neural rendering.</li>
+  <li><strong>Chamfer, Hausdorff, and EMD</strong> are three lenses on shape similarity. Chamfer sees average coverage (use for training). Hausdorff sees worst-case gaps (use for evaluation). EMD enforces a fair bijection (use for generative model quality).</li>
+  <li><strong>Sphere tracing</strong> is what makes implicit surfaces renderable: step by the SDF value, converging faster far from the surface and slowing near it. The right panel above renders an entire torus this way — no triangles, pure math.</li>
+  <li><strong>Explicit vs. implicit</strong> is not binary. 3DGS is explicitly positioned but implicitly optimized. NeRF is implicitly defined but explicitly ray-marched.</li>
 </ol>
 
 <div class="callout blue">
   <div class="ct">Further Reading</div>
   <p>
     <a href="https://arxiv.org/abs/1901.05103" target="_blank">DeepSDF (Park et al., 2019)</a> ·
-    <a href="https://arxiv.org/abs/2003.08934" target="_blank">IGR / Eikonal (Gropp et al., 2020)</a> ·
     <a href="https://arxiv.org/abs/2112.07945" target="_blank">EG3D Tri-plane (Chan et al., 2022)</a> ·
     <a href="https://arxiv.org/abs/2004.01177" target="_blank">NeRF (Mildenhall et al., 2020)</a> ·
-    <a href="https://arxiv.org/abs/2308.04079" target="_blank">3D Gaussian Splatting (Kerbl et al., 2023)</a>
+    <a href="https://arxiv.org/abs/2308.04079" target="_blank">3D Gaussian Splatting (Kerbl et al., 2023)</a> ·
+    <a href="https://arxiv.org/abs/1612.00593" target="_blank">PointNet (Qi et al., 2017)</a>
   </p>
 </div>
 
@@ -840,9 +839,13 @@ function initCanvas(canvas, wrapper) {
       const sMat=new THREE.MeshPhongMaterial({color:0x2563eb,shininess:80});
       meshGrp.add(new THREE.Mesh(geo,sMat));
       const pos=geo.attributes.position, nrm=geo.attributes.normal;
+      const seen=new Set();
       const step=Math.max(1,Math.floor(pos.count/80));
       for(let i=0;i<pos.count;i+=step){
-        const orig=new THREE.Vector3(pos.getX(i),pos.getY(i),pos.getZ(i));
+        const vx=pos.getX(i),vy=pos.getY(i),vz=pos.getZ(i);
+        const key=`${vx.toFixed(4)},${vy.toFixed(4)},${vz.toFixed(4)}`;
+        if(seen.has(key)) continue; seen.add(key);
+        const orig=new THREE.Vector3(vx,vy,vz);
         const dir=new THREE.Vector3(nrm.getX(i),nrm.getY(i),nrm.getZ(i)).normalize();
         const arr=new THREE.ArrowHelper(dir,orig,arrowLen,0xf59e0b,arrowLen*0.4,arrowLen*0.25);
         meshGrp.add(arr);
@@ -983,15 +986,23 @@ function initCanvas(canvas, wrapper) {
   let W,H,distMode='chamfer',dragPt=null;
 
   function resize(){
-    W=canvas.parentElement.clientWidth; H=420;
+    W=canvas.parentElement.clientWidth; H=440;
     canvas.width=W*dpr; canvas.height=H*dpr;
     canvas.style.width=W+'px'; canvas.style.height=H+'px';
     ctx.scale(dpr,dpr); draw();
   }
 
   function ring(cx,cy,r,n){return Array.from({length:n},(_,i)=>({x:cx+r*Math.cos(i/n*Math.PI*2),y:cy+r*Math.sin(i/n*Math.PI*2),set:'P'}));}
-  let setP=ring(0.3,0.5,0.18,10);
-  let setQ=ring(0.7,0.5,0.13,8).map(p=>({...p,y:p.y+0.05,set:'Q'}));
+
+  function makePreset(name){
+    if(name==='custom') return{P:ring(0.3,0.5,0.18,10),Q:ring(0.7,0.5,0.14,10).map(p=>({...p,y:p.y+0.04,set:'Q'}))};
+    if(name==='similar') return{P:ring(0.35,0.5,0.17,10),Q:ring(0.62,0.5,0.17,10).map(p=>({...p,set:'Q'}))};
+    if(name==='outlier'){const Pp=ring(0.4,0.5,0.17,10);const Qp=ring(0.6,0.5,0.13,9).map(p=>({...p,set:'Q'}));Qp.push({x:0.87,y:0.13,set:'Q'});return{P:Pp,Q:Qp};}
+    if(name==='partial'){const Pp=ring(0.33,0.5,0.18,10);const Qp=Array.from({length:10},(_,i)=>{const a=i/10*Math.PI;return{x:0.65+0.17*Math.cos(a),y:0.5+0.17*Math.sin(a),set:'Q'};});return{P:Pp,Q:Qp};}
+    return{P:ring(0.5,0.5,0.22,10),Q:ring(0.5,0.5,0.10,10).map(p=>({...p,set:'Q'}))};
+  }
+
+  let {P:setP,Q:setQ}=makePreset('custom');
 
   function d2(a,b){return(a.x-b.x)**2+(a.y-b.y)**2;}
   function nearest(pt,set){return set.reduce((b,q)=>d2(pt,q)<d2(pt,b)?q:b,set[0]);}
@@ -1008,78 +1019,102 @@ function initCanvas(canvas, wrapper) {
     const mB=bwd.reduce((m,x)=>x.d>m.d?x:m,bwd[0]);
     return mF.d>=mB.d?mF:mB;
   }
+  function hungarian(cost){
+    const n=cost.length; if(!n) return [];
+    const INF=1e18;
+    const u=new Float64Array(n+1),v=new Float64Array(n+1);
+    const p=new Int32Array(n+1),way=new Int32Array(n+1);
+    for(let i=1;i<=n;i++){
+      p[0]=i; let j0=0;
+      const minv=new Float64Array(n+1).fill(INF);
+      const used=new Uint8Array(n+1);
+      do{
+        used[j0]=1; const i0=p[j0]; let delta=INF,j1=1;
+        for(let j=1;j<=n;j++){
+          if(!used[j]){const cur=cost[i0-1][j-1]-u[i0]-v[j];if(cur<minv[j]){minv[j]=cur;way[j]=j0;}if(minv[j]<delta){delta=minv[j];j1=j;}}
+        }
+        for(let j=0;j<=n;j++){if(used[j]){u[p[j]]+=delta;v[j]-=delta;}else{minv[j]-=delta;}}
+        j0=j1;
+      }while(p[j0]!==0);
+      do{const j1=way[j0];p[j0]=p[j1];j0=j1;}while(j0);
+    }
+    const match=new Array(n);
+    for(let j=1;j<=n;j++) if(p[j]!==0) match[p[j]-1]=j-1;
+    return match;
+  }
+  function emd(P,Q){
+    const n=Math.min(P.length,Q.length);
+    const Ps=P.slice(0,n),Qs=Q.slice(0,n);
+    const cost=Ps.map(p=>Qs.map(q=>Math.sqrt(d2(p,q))));
+    const match=hungarian(cost);
+    return{value:match.reduce((s,qi,pi)=>s+Math.sqrt(d2(Ps[pi],Qs[qi])),0)/n,
+           pairs:match.map((qi,pi)=>({from:Ps[pi],to:Qs[qi]}))};
+  }
 
   function draw(){
     if(!W)return;
     ctx.clearRect(0,0,W,H); ctx.fillStyle='#09090f'; ctx.fillRect(0,0,W,H);
 
     if(distMode==='chamfer'){
-      // P→Q lines (blue tones)
       ctx.globalAlpha=0.3; ctx.strokeStyle='#3b82f6'; ctx.lineWidth=1;
       setP.forEach(p=>{const q=nearest(p,setQ);ctx.beginPath();ctx.moveTo(p.x*W,p.y*H);ctx.lineTo(q.x*W,q.y*H);ctx.stroke();});
-      // Q→P lines (orange tones)
       ctx.strokeStyle='#f97316';
       setQ.forEach(q=>{const p=nearest(q,setP);ctx.beginPath();ctx.moveTo(q.x*W,q.y*H);ctx.lineTo(p.x*W,p.y*H);ctx.stroke();});
       ctx.globalAlpha=1;
       document.getElementById('dist-legend').innerHTML=
         '<span style="color:#3b82f6;">●</span> Set P — drag any point<br>'+
         '<span style="color:#f97316;">●</span> Set Q — drag any point<br>'+
-        '<span style="color:#3b82f6;">—</span> P→Q nearest lines<br>'+
-        '<span style="color:#f97316;">—</span> Q→P nearest lines';
-    } else {
-      // All correspondences faint
-      ctx.globalAlpha=0.15; ctx.strokeStyle='#9ca3af'; ctx.lineWidth=1;
+        '<span style="color:#3b82f6;">—</span> P→Q nearest<br>'+
+        '<span style="color:#f97316;">—</span> Q→P nearest';
+    } else if(distMode==='hausdorff'){
+      ctx.globalAlpha=0.12; ctx.strokeStyle='#9ca3af'; ctx.lineWidth=1;
       setP.forEach(p=>{const q=nearest(p,setQ);ctx.beginPath();ctx.moveTo(p.x*W,p.y*H);ctx.lineTo(q.x*W,q.y*H);ctx.stroke();});
       setQ.forEach(q=>{const p=nearest(q,setP);ctx.beginPath();ctx.moveTo(q.x*W,q.y*H);ctx.lineTo(p.x*W,p.y*H);ctx.stroke();});
       ctx.globalAlpha=1;
-      // Hausdorff pair — bright red, thick
       const h=hausdorff(setP,setQ);
-      // Glow
       ctx.shadowColor='#ef4444'; ctx.shadowBlur=14;
       ctx.strokeStyle='#ef4444'; ctx.lineWidth=3;
       ctx.beginPath(); ctx.moveTo(h.from.x*W,h.from.y*H); ctx.lineTo(h.to.x*W,h.to.y*H); ctx.stroke();
       ctx.shadowBlur=0;
-      // Distance label at midpoint
       const mx=(h.from.x+h.to.x)/2*W, my=(h.from.y+h.to.y)/2*H;
+      const label='d='+h.d.toFixed(3);
+      ctx.font='bold 12px monospace'; const tw=ctx.measureText(label).width;
       ctx.fillStyle='rgba(6,6,18,.88)'; ctx.strokeStyle='#ef4444'; ctx.lineWidth=1;
-      const label=`d = ${h.d.toFixed(3)}`;
-      ctx.font='bold 12px monospace';
-      const tw=ctx.measureText(label).width;
-      ctx.fillRect(mx-tw/2-6,my-10,tw+12,22);
-      ctx.strokeRect(mx-tw/2-6,my-10,tw+12,22);
+      ctx.fillRect(mx-tw/2-6,my-10,tw+12,22); ctx.strokeRect(mx-tw/2-6,my-10,tw+12,22);
       ctx.fillStyle='#ef4444'; ctx.textAlign='center'; ctx.fillText(label,mx,my+5); ctx.textAlign='left';
-      // Highlight Hausdorff endpoints
-      [h.from,h.to].forEach(pt=>{
-        ctx.beginPath(); ctx.arc(pt.x*W,pt.y*H,11,0,Math.PI*2);
-        ctx.strokeStyle='#ef4444'; ctx.lineWidth=2.5; ctx.stroke();
-      });
+      [h.from,h.to].forEach(pt=>{ctx.beginPath();ctx.arc(pt.x*W,pt.y*H,11,0,Math.PI*2);ctx.strokeStyle='#ef4444';ctx.lineWidth=2.5;ctx.stroke();});
       document.getElementById('dist-legend').innerHTML=
         '<span style="color:#3b82f6;">●</span> Set P<br>'+
         '<span style="color:#f97316;">●</span> Set Q<br>'+
-        '<span style="color:#9ca3af;">—</span> all correspondences (faint)<br>'+
+        '<span style="color:#9ca3af;">—</span> all (faint)<br>'+
         '<span style="color:#ef4444;font-weight:700;">—</span> Hausdorff pair (worst-case)';
+    } else {
+      const res=emd(setP,setQ);
+      ctx.globalAlpha=0.55; ctx.strokeStyle='#a78bfa'; ctx.lineWidth=1.5;
+      res.pairs.forEach(({from,to})=>{ctx.beginPath();ctx.moveTo(from.x*W,from.y*H);ctx.lineTo(to.x*W,to.y*H);ctx.stroke();});
+      ctx.globalAlpha=1;
+      document.getElementById('dist-legend').innerHTML=
+        '<span style="color:#3b82f6;">●</span> Set P<br>'+
+        '<span style="color:#f97316;">●</span> Set Q<br>'+
+        '<span style="color:#a78bfa;">—</span> optimal bijection (1-to-1)<br>'+
+        '<span style="color:#6060a0;font-size:.7rem;">each point matched exactly once</span>';
     }
 
-    // Draw points
-    setP.forEach(p=>{
-      ctx.beginPath();ctx.arc(p.x*W,p.y*H,7,0,Math.PI*2);
-      ctx.fillStyle='#3b82f6';ctx.fill();
-      ctx.strokeStyle='#1d4ed8';ctx.lineWidth=1.5;ctx.stroke();
-    });
-    setQ.forEach(q=>{
-      ctx.beginPath();ctx.arc(q.x*W,q.y*H,7,0,Math.PI*2);
-      ctx.fillStyle='#f97316';ctx.fill();
-      ctx.strokeStyle='#9a3412';ctx.lineWidth=1.5;ctx.stroke();
-    });
-    // Labels
+    setP.forEach(p=>{ctx.beginPath();ctx.arc(p.x*W,p.y*H,7,0,Math.PI*2);ctx.fillStyle='#3b82f6';ctx.fill();ctx.strokeStyle='#1d4ed8';ctx.lineWidth=1.5;ctx.stroke();});
+    setQ.forEach(q=>{ctx.beginPath();ctx.arc(q.x*W,q.y*H,7,0,Math.PI*2);ctx.fillStyle='#f97316';ctx.fill();ctx.strokeStyle='#9a3412';ctx.lineWidth=1.5;ctx.stroke();});
     ctx.font='bold 13px monospace';
     ctx.fillStyle='#60a5fa'; ctx.fillText('P',setP[0].x*W+10,setP[0].y*H-8);
     ctx.fillStyle='#fb923c'; ctx.fillText('Q',setQ[0].x*W+10,setQ[0].y*H-8);
 
-    const val=distMode==='chamfer'?chamfer(setP,setQ).toFixed(4):hausdorff(setP,setQ).d.toFixed(4);
-    document.getElementById('dist-val').textContent=val;
-    document.getElementById('dist-np').textContent=setP.length;
-    document.getElementById('dist-nq').textContent=setQ.length;
+    // HUD — always show all three metrics
+    const cdV=chamfer(setP,setQ).toFixed(4);
+    const hdV=hausdorff(setP,setQ).d.toFixed(4);
+    const n=Math.min(setP.length,setQ.length);
+    const emV=emd(setP.slice(0,n),setQ.slice(0,n)).value.toFixed(4);
+    document.getElementById('dist-cd').textContent=cdV;
+    document.getElementById('dist-hd').textContent=hdV;
+    document.getElementById('dist-em').textContent=emV;
+    document.getElementById('dist-np').textContent=setP.length+' / '+setQ.length;
   }
 
   document.querySelectorAll('.tab-btn[data-dist]').forEach(btn=>{
@@ -1087,6 +1122,14 @@ function initCanvas(canvas, wrapper) {
       document.querySelectorAll('.tab-btn[data-dist]').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active'); distMode=btn.dataset.dist;
       document.getElementById('dist-hud-title').textContent=btn.textContent; draw();
+    });
+  });
+  document.querySelectorAll('.tab-btn[data-preset]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.tab-btn[data-preset]').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      ({P:setP,Q:setQ}=makePreset(btn.dataset.preset));
+      draw();
     });
   });
 
@@ -1103,6 +1146,150 @@ function initCanvas(canvas, wrapper) {
     draw();
   });
   canvas.addEventListener('mouseup',()=>dragPt=null);
+
+  resize(); window.addEventListener('resize',resize);
+})();
+
+/* ═══════════════════════════════════════════
+   RAY MARCHING — 2D INTERACTIVE
+═══════════════════════════════════════════ */
+(function(){
+  const canvas=document.getElementById('rm-canvas');
+  if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  let W,H,rmShape='circle',rayTarget=null,allSteps=[],shownIdx=0,playing=false,playTimer=null;
+
+  function resize(){
+    W=canvas.parentElement.clientWidth||800; H=380;
+    canvas.width=W*dpr; canvas.height=H*dpr;
+    canvas.style.width=W+'px'; canvas.style.height=H+'px';
+    ctx.scale(dpr,dpr);
+    rayTarget=null; allSteps=[]; shownIdx=0;
+    drawScene(); updateHUD();
+  }
+
+  const eyePt=()=>({x:W*0.07,y:H*0.5});
+  const EPS=3;
+
+  function sdfCircle(x,y){return Math.hypot(x-W*0.55,y-H*0.5)-H*0.22;}
+  function sdfBox(x,y){const dx=Math.abs(x-W*0.55)-W*0.18,dy=Math.abs(y-H*0.5)-H*0.15;return Math.sqrt(Math.max(dx,0)**2+Math.max(dy,0)**2)+Math.min(Math.max(dx,dy),0);}
+  function sdfBlobs(x,y){return Math.min(Math.hypot(x-W*0.43,y-H*0.38)-H*0.12,Math.hypot(x-W*0.65,y-H*0.60)-H*0.14);}
+  function getSDF(x,y){return rmShape==='circle'?sdfCircle(x,y):rmShape==='box'?sdfBox(x,y):sdfBlobs(x,y);}
+
+  function drawHeatmap(){
+    const pw=(W*dpr)|0, ph=(H*dpr)|0;
+    const imgData=ctx.createImageData(pw,ph);
+    const data=imgData.data;
+    for(let py=0;py<ph;py++){
+      for(let px=0;px<pw;px++){
+        const d=getSDF(px/dpr,py/dpr);
+        const idx=(py*pw+px)*4;
+        if(d<0){const t=Math.min(-d/(H*0.28),1);data[idx]=(5+t*10)|0;data[idx+1]=(8+t*25)|0;data[idx+2]=(30+t*80)|0;}
+        else{const t=Math.min(d/(H*0.4),1);data[idx]=(25+t*60)|0;data[idx+1]=(4+t*8)|0;data[idx+2]=(4+t*6)|0;}
+        if(Math.abs(d)<3){data[idx]=150;data[idx+1]=150;data[idx+2]=170;}
+        data[idx+3]=255;
+      }
+    }
+    ctx.save(); ctx.setTransform(1,0,0,1,0,0); ctx.putImageData(imgData,0,0); ctx.restore();
+  }
+
+  function computeSteps(tx,ty){
+    const e=eyePt(); const dx=tx-e.x, dy=ty-e.y; const len=Math.hypot(dx,dy);
+    if(len<1) return [];
+    const rdx=dx/len, rdy=dy/len;
+    const steps=[]; let cx=e.x, cy=e.y, t=0, maxT=Math.max(W,H)*1.1;
+    for(let i=0;i<60;i++){
+      const d=getSDF(cx,cy); const absd=Math.abs(d);
+      steps.push({x:cx,y:cy,sdf:d,radius:absd});
+      if(absd<EPS){steps[steps.length-1].hit=true;break;}
+      if(t>maxT||cx<-20||cx>W+20||cy<-20||cy>H+20){steps[steps.length-1].miss=true;break;}
+      const step=Math.max(absd*0.9,2);
+      t+=step; cx+=rdx*step; cy+=rdy*step;
+    }
+    return steps;
+  }
+
+  function drawScene(){
+    ctx.clearRect(0,0,W,H);
+    drawHeatmap();
+    const e=eyePt();
+    ctx.beginPath(); ctx.arc(e.x,e.y,7,0,Math.PI*2);
+    ctx.fillStyle='#f0f0f0'; ctx.fill();
+    ctx.strokeStyle='#38bdf8'; ctx.lineWidth=2; ctx.stroke();
+    ctx.fillStyle='#8080a0'; ctx.font='bold 10px monospace'; ctx.fillText('EYE',e.x+10,e.y-8);
+
+    if(!rayTarget||allSteps.length===0) return;
+    const visible=allSteps.slice(0,shownIdx);
+    if(!visible.length) return;
+    const last=visible[visible.length-1];
+
+    ctx.save(); ctx.globalAlpha=0.22; ctx.setLineDash([5,4]);
+    ctx.strokeStyle='#fbbf24'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(e.x,e.y); ctx.lineTo(last.x,last.y); ctx.stroke();
+    ctx.restore(); ctx.setLineDash([]);
+
+    visible.forEach((s,i)=>{
+      const isLast=i===visible.length-1;
+      if(s.radius>1){
+        ctx.save(); ctx.globalAlpha=isLast?0.5:0.18;
+        ctx.strokeStyle='#fbbf24'; ctx.lineWidth=isLast?1.8:1;
+        ctx.beginPath(); ctx.arc(s.x,s.y,s.radius,0,Math.PI*2); ctx.stroke();
+        ctx.restore();
+      }
+      ctx.beginPath(); ctx.arc(s.x,s.y,isLast?5:3,0,Math.PI*2);
+      ctx.fillStyle=s.hit?'#22c55e':s.miss?'#f87171':'#fbbf24'; ctx.fill();
+    });
+  }
+
+  function updateHUD(){
+    const stEl=document.getElementById('rm-steps');
+    const sfEl=document.getElementById('rm-sdf');
+    const stStatus=document.getElementById('rm-status');
+    if(!stEl) return;
+    if(shownIdx===0||!allSteps.length){stEl.textContent='—';sfEl.textContent='—';stStatus.textContent='click to start';return;}
+    const last=allSteps[Math.min(shownIdx,allSteps.length)-1];
+    stEl.textContent=shownIdx;
+    sfEl.textContent=last.sdf.toFixed(1)+'px';
+    stStatus.textContent=last.hit?'HIT (SDF < eps)':last.miss?'MISS (t_max)':'marching…';
+  }
+
+  canvas.addEventListener('click',e=>{
+    const r=canvas.getBoundingClientRect();
+    clearInterval(playTimer); playing=false;
+    rayTarget={x:e.clientX-r.left,y:e.clientY-r.top};
+    allSteps=computeSteps(rayTarget.x,rayTarget.y);
+    shownIdx=1; drawScene(); updateHUD();
+  });
+
+  const playBtn=document.getElementById('rm-play');
+  const allBtn=document.getElementById('rm-all');
+  const resetBtn=document.getElementById('rm-reset');
+  if(playBtn) playBtn.addEventListener('click',()=>{
+    if(!rayTarget||!allSteps.length) return;
+    if(playing){clearInterval(playTimer);playing=false;return;}
+    if(shownIdx>=allSteps.length) shownIdx=1;
+    playing=true;
+    playTimer=setInterval(()=>{
+      if(shownIdx<allSteps.length){shownIdx++;drawScene();updateHUD();}
+      else{clearInterval(playTimer);playing=false;}
+    },320);
+  });
+  if(allBtn) allBtn.addEventListener('click',()=>{
+    if(!rayTarget) return;
+    clearInterval(playTimer); playing=false;
+    shownIdx=allSteps.length; drawScene(); updateHUD();
+  });
+  if(resetBtn) resetBtn.addEventListener('click',()=>{
+    clearInterval(playTimer); playing=false;
+    rayTarget=null; allSteps=[]; shownIdx=0; drawScene(); updateHUD();
+  });
+  document.querySelectorAll('.tab-btn[data-rm]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.tab-btn[data-rm]').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active'); rmShape=btn.dataset.rm;
+      rayTarget=null; allSteps=[]; shownIdx=0; drawScene(); updateHUD();
+    });
+  });
 
   resize(); window.addEventListener('resize',resize);
 })();
@@ -1243,12 +1430,7 @@ void main(){
   }
 })();
 
-/* ═══════════════════════════════════════════
-   EIKONAL — 3D
-═══════════════════════════════════════════ */
-(function(){
-  const wrap=document.getElementById('eik-wrap');
-  const canvas=document.getElementById('eik-canvas');
+/* REMOVED_EIKONAL_START
   const {renderer,W,H}=initCanvas(canvas,wrap);
   const scene=new THREE.Scene();
   const cam=new THREE.PerspectiveCamera(45,W/H,0.01,100);
@@ -1361,9 +1543,7 @@ void main(){
     buildPointCloud();
   });
 
-  buildPointCloud();
-  (function animate(){requestAnimationFrame(animate);renderer.render(scene,cam);})();
-})();
+REMOVED_EIKONAL_END */
 </script>
 </body>
 </html>
