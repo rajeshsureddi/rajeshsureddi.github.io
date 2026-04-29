@@ -21,99 +21,84 @@ p{margin-bottom:1.3rem;color:#a0a0b8;}
 ul,ol{padding-left:1.6rem;margin-bottom:1.3rem;}
 li{margin-bottom:.45rem;color:#a0a0b8;}
 strong{color:#d4d4e8;}
-
+.article-body > p:first-of-type{margin-top:0;}
 .graphic-container{background:#09090f;border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5);margin:2rem 0;border:1px solid #1a1a28;}
-.canvas-wrapper{position:relative;width:100%;background:radial-gradient(ellipse at center,#16182a 0%,#06060f 100%);cursor:grab;user-select:none;}
+.canvas-wrapper{position:relative;width:100%;cursor:grab;user-select:none;}
 .canvas-wrapper:active{cursor:grabbing;}
-.canvas-wrapper canvas{display:block;width:100%;height:100%;}
-
-.controls{background:#0f0f1e;border-top:1px solid #1a1a28;padding:18px 22px;}
-.ctrl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px 22px;}
+.controls{background:#0f0f1e;border-top:1px solid #1a1a28;padding:16px 20px;}
+.ctrl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:11px 20px;}
 .ctrl-group{display:flex;flex-direction:column;gap:4px;}
-.ctrl-group label{font-size:.8rem;font-weight:600;color:#7070a0;display:flex;justify-content:space-between;}
+.ctrl-group label{font-size:.79rem;font-weight:600;color:#7070a0;display:flex;justify-content:space-between;}
 .ctrl-group label span.val{color:#38bdf8;font-family:monospace;}
 input[type=range]{-webkit-appearance:none;width:100%;background:transparent;cursor:pointer;}
 input[type=range]::-webkit-slider-runnable-track{height:4px;background:#1e1e38;border-radius:2px;}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:#38bdf8;margin-top:-5.5px;box-shadow:0 0 8px rgba(56,189,248,.5);}
-
-.math-box{background:#0f0f1e;border:1px solid #1e1e38;border-radius:10px;padding:1.3rem;margin:1.3rem 0;text-align:center;overflow-x:auto;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#38bdf8;margin-top:-5px;box-shadow:0 0 6px rgba(56,189,248,.5);}
+.math-box{background:#0f0f1e;border:1px solid #1e1e38;border-radius:10px;padding:1.2rem 1.4rem;margin:1.2rem 0;text-align:center;overflow-x:auto;}
 .math-box .katex{color:#d4d4f0;}
-
-.tab-row{display:flex;gap:7px;flex-wrap:wrap;padding:14px 18px;background:#0f0f1e;border-bottom:1px solid #1a1a28;}
-.tab-btn{background:#111128;border:1.5px solid #252545;color:#9090b0;padding:6px 14px;border-radius:7px;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .15s;}
+.tab-row{display:flex;gap:6px;flex-wrap:wrap;padding:12px 16px;background:#0f0f1e;border-bottom:1px solid #1a1a28;}
+.tab-btn{background:#111128;border:1.5px solid #252545;color:#9090b0;padding:5px 13px;border-radius:7px;font-size:.79rem;font-weight:600;cursor:pointer;transition:all .15s;}
 .tab-btn:hover{border-color:#38bdf8;color:#38bdf8;}
 .tab-btn.active{background:#0d1a2e;border-color:#38bdf8;color:#38bdf8;box-shadow:0 0 8px rgba(56,189,248,.2);}
-
-.hud{position:absolute;background:rgba(6,6,18,.9);backdrop-filter:blur(10px);border:1px solid #252540;border-radius:9px;padding:11px 13px;pointer-events:none;z-index:10;}
-.hud-title{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#38bdf8;border-bottom:1px solid #252540;padding-bottom:6px;margin-bottom:8px;}
-.hud-row{display:flex;justify-content:space-between;gap:10px;font-size:.76rem;margin-bottom:4px;color:#8080a8;}
+.hud{position:absolute;background:rgba(6,6,18,.92);backdrop-filter:blur(10px);border:1px solid #252540;border-radius:9px;padding:10px 12px;pointer-events:none;z-index:10;}
+.hud-title{font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#38bdf8;border-bottom:1px solid #252540;padding-bottom:6px;margin-bottom:7px;}
+.hud-row{display:flex;justify-content:space-between;gap:10px;font-size:.75rem;margin-bottom:3px;color:#8080a8;}
 .hud-row span.val{color:#f0f0f8;font-family:monospace;}
-
-.rep-table{width:100%;border-collapse:collapse;margin:1.5rem 0;font-size:.83rem;}
-.rep-table th{background:#111128;color:#6060a0;font-size:.73rem;text-transform:uppercase;letter-spacing:.08em;padding:9px 13px;border:1px solid #1e1e38;text-align:left;}
-.rep-table td{padding:8px 13px;border:1px solid #1e1e38;color:#9090b0;}
+.hud-row span.val.inside{color:#60a5fa;}
+.hud-row span.val.outside{color:#f87171;}
+.hud-row span.val.onsurf{color:#34d399;}
+.rep-table{width:100%;border-collapse:collapse;margin:1.4rem 0;font-size:.82rem;}
+.rep-table th{background:#111128;color:#6060a0;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;padding:8px 12px;border:1px solid #1e1e38;text-align:left;}
+.rep-table td{padding:7px 12px;border:1px solid #1e1e38;color:#9090b0;}
 .rep-table tr:nth-child(2n){background:#0a0a16;}
-.rep-table .good{color:#34d399;}
-.rep-table .bad{color:#f87171;}
-.rep-table .mid{color:#facc15;}
-
-.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:1.3rem 0;}
+.rep-table .good{color:#34d399;}.rep-table .bad{color:#f87171;}.rep-table .mid{color:#facc15;}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:1.2rem 0;}
 @media(max-width:640px){.info-grid{grid-template-columns:1fr;}}
-.info-card{background:#0f0f1e;border:1px solid #1a1a28;border-radius:10px;padding:14px 16px;}
-.info-card h4{font-size:.86rem;font-weight:700;color:#c0c0d8;margin-bottom:7px;}
-.info-card p{font-size:.81rem;color:#7070a0;margin:0;}
-
-.callout{border-radius:10px;padding:14px 18px;margin:1.3rem 0;}
+.info-card{background:#0f0f1e;border:1px solid #1a1a28;border-radius:10px;padding:13px 15px;}
+.info-card h4{font-size:.85rem;font-weight:700;color:#c0c0d8;margin-bottom:6px;}
+.info-card p{font-size:.8rem;color:#7070a0;margin:0;}
+.callout{border-radius:10px;padding:13px 17px;margin:1.2rem 0;}
 .callout.green{background:#061410;border:1.5px solid #1a4a28;}
 .callout.blue{background:#04101a;border:1.5px solid #1a3a58;}
 .callout.amber{background:#140e04;border:1.5px solid #4a3810;}
-.callout .ct{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px;}
-.callout.green .ct{color:#34d399;}
-.callout.blue .ct{color:#38bdf8;}
-.callout.amber .ct{color:#facc15;}
-.callout p{font-size:.84rem;color:#8080a8;margin:0;}
-
-.split-canvas-row{display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px solid #1a1a28;}
-@media(max-width:640px){.split-canvas-row{grid-template-columns:1fr;}}
-.split-panel{position:relative;background:radial-gradient(ellipse at center,#16182a,#06060f);}
-.split-panel+.split-panel{border-left:1px solid #1a1a28;}
-.split-label{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;background:rgba(6,6,18,.85);border:1px solid #252540;border-radius:5px;padding:3px 10px;z-index:5;pointer-events:none;}
-
-canvas.canvas2d{display:block;width:100%;cursor:crosshair;}
+.callout .ct{font-size:.69rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;}
+.callout.green .ct{color:#34d399;}.callout.blue .ct{color:#38bdf8;}.callout.amber .ct{color:#facc15;}
+.callout p{font-size:.83rem;color:#8080a8;margin:0;}
+.split-row{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #1a1a28;}
+@media(max-width:600px){.split-row{grid-template-columns:1fr;}}
+.split-pane{position:relative;}
+.split-pane+.split-pane{border-left:1px solid #1a1a28;}
+.split-label{position:absolute;top:9px;left:50%;transform:translateX(-50%);font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;background:rgba(6,6,18,.88);border:1px solid #252540;border-radius:5px;padding:2px 9px;z-index:6;pointer-events:none;white-space:nowrap;}
 </style>
 </head>
 <body>
 <main class="article-body">
 
-<!-- ══ HERO ══ -->
-<header style="margin-bottom:3rem;">
-  <p style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#6060a0;margin-bottom:.5rem;">3D Computer Vision · Geometry</p>
+<header style="margin-bottom:2.8rem;">
+  <p style="font-size:.77rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#6060a0;margin-bottom:.4rem;">3D Computer Vision · Geometry</p>
   <h1>Understanding 3D Shape Representations</h1>
-  <p style="font-size:1.05rem;color:#7070a0;max-width:580px;margin-bottom:0;">From raw point clouds to neural implicit fields — a guided tour of every major way computers describe 3D geometry, with interactive visualizations for every concept.</p>
+  <p style="font-size:1.05rem;color:#7070a0;max-width:580px;margin-bottom:0;">From raw point clouds to neural implicit fields — every major way computers describe 3D geometry, with interactive 3D visualizations throughout.</p>
 </header>
 
-<p>Before a computer can reason about a 3D object — render it, reconstruct it, measure it, or learn from it — it needs a way to <em>represent</em> that object in memory. There is no single perfect representation. Every format makes trade-offs: memory versus detail, rendering speed versus editability, discrete versus continuous. This article builds your intuition for each major representation from the ground up, then shows you the math for comparing and regularizing them.</p>
+<p>Before a computer can reason about a 3D object — render it, reconstruct it, measure it, or learn from it — it needs a way to <em>represent</em> that object in memory. There is no single perfect representation. Every format makes trade-offs: memory versus detail, rendering speed versus editability, discrete versus continuous. This article builds your intuition for each from the ground up, then shows you the math for comparing and regularizing them.</p>
 
 <!-- ══════════════════════════════════════════════════
-     SECTION 1: REPRESENTATIONS
+     SECTION 1 — REPRESENTATIONS
 ══════════════════════════════════════════════════ -->
 <h2>1. How Computers Describe 3D Shapes</h2>
+<p>We cover five representations. Switch between them below — all show the same underlying shape.</p>
 
-<p>We will cover five representations. Each one answers the question "what is the shape?" in a fundamentally different way. The interactive scene below lets you switch between them in real time — all showing the same underlying shape (a torus).</p>
-
-<!-- Representation scene -->
 <div class="graphic-container">
   <div class="tab-row">
-    <button class="tab-btn active" data-rep="pointcloud">Point Cloud</button>
+    <button class="tab-btn active" data-rep="pc">Point Cloud</button>
     <button class="tab-btn" data-rep="mesh">Mesh</button>
     <button class="tab-btn" data-rep="voxel">Voxel Grid</button>
     <button class="tab-btn" data-rep="triplane">Tri-plane</button>
   </div>
-  <div class="canvas-wrapper" id="rep-wrapper" style="height:420px;">
-    <canvas id="rep-canvas"></canvas>
-    <div class="hud" style="top:12px;left:12px;min-width:190px;" id="rep-hud">
+  <div class="canvas-wrapper" id="rep-wrap" style="height:440px;background:radial-gradient(ellipse at center,#16182a,#06060f);">
+    <canvas id="rep-canvas" style="width:100%;height:100%;display:block;"></canvas>
+    <div class="hud" style="top:12px;left:12px;min-width:195px;" id="rep-hud">
       <div class="hud-title" id="rep-hud-title">Point Cloud</div>
-      <div id="rep-hud-body" style="font-size:.77rem;color:#8080a8;line-height:1.8;"></div>
+      <div id="rep-hud-body" style="font-size:.76rem;color:#8080a8;line-height:1.85;"></div>
     </div>
   </div>
   <div class="controls">
@@ -126,6 +111,18 @@ canvas.canvas2d{display:block;width:100%;cursor:crosshair;}
         <label>Resolution <span class="val" id="vx-res-val">8</span></label>
         <input type="range" id="vx-res" min="4" max="16" step="2" value="8">
       </div>
+      <div class="ctrl-group" id="tp-qx-ctrl" style="display:none;">
+        <label>Query X <span class="val" id="tp-qx-val">0.50</span></label>
+        <input type="range" id="tp-qx" min="-1.3" max="1.3" step="0.01" value="0.5">
+      </div>
+      <div class="ctrl-group" id="tp-qy-ctrl" style="display:none;">
+        <label>Query Y <span class="val" id="tp-qy-val">0.40</span></label>
+        <input type="range" id="tp-qy" min="-1.3" max="1.3" step="0.01" value="0.4">
+      </div>
+      <div class="ctrl-group" id="tp-qz-ctrl" style="display:none;">
+        <label>Query Z <span class="val" id="tp-qz-val">0.60</span></label>
+        <input type="range" id="tp-qz" min="-1.3" max="1.3" step="0.01" value="0.6">
+      </div>
       <div class="ctrl-group">
         <label>Auto-rotate <span class="val" id="rot-val">on</span></label>
         <input type="range" id="rot-speed" min="0" max="2" step="0.1" value="0.5">
@@ -135,415 +132,272 @@ canvas.canvas2d{display:block;width:100%;cursor:crosshair;}
 </div>
 
 <h3>1.1 Point Cloud</h3>
-<p>A <strong>point cloud</strong> is the simplest possible representation: an unordered set of 3D points $\mathcal{P} = \{p_i \in \mathbb{R}^3\}_{i=1}^N$. Each point samples the surface (or volume) of an object. LiDAR scanners, depth cameras, and photogrammetry pipelines all produce point clouds natively.</p>
-
-<div class="math-box">
-$$\mathcal{P} = \{p_1, p_2, \ldots, p_N\} \subset \mathbb{R}^3, \quad p_i = (x_i,\, y_i,\, z_i)$$
-</div>
-
+<p>A <strong>point cloud</strong> is the simplest representation: an unordered set $\mathcal{P}=\{p_i\in\mathbb{R}^3\}_{i=1}^N$. LiDAR scanners, depth cameras, and photogrammetry all produce point clouds natively.</p>
+<div class="math-box">$$\mathcal{P}=\{(x_i,y_i,z_i)\}_{i=1}^N\subset\mathbb{R}^3$$</div>
 <div class="info-grid">
-  <div class="info-card">
-    <h4 style="color:#34d399;">Advantages</h4>
-    <p>Directly produced by sensors (LiDAR, RGBD). No connectivity or topology needed. Easy to concatenate and transform. Compact for sparse scenes.</p>
-  </div>
-  <div class="info-card">
-    <h4 style="color:#f87171;">Disadvantages</h4>
-    <p>No surface connectivity — you cannot compute normals, edges, or interiors without extra work. Density is non-uniform. Hard to render without splatting.</p>
-  </div>
+  <div class="info-card"><h4 style="color:#34d399;">Advantages</h4><p>Sensor-native (LiDAR, RGBD). No topology needed. Easy to concatenate and transform. $O(N)$ memory.</p></div>
+  <div class="info-card"><h4 style="color:#f87171;">Disadvantages</h4><p>No surface connectivity — normals, edges, and interiors require extra work. Non-uniform density. Hard to render directly.</p></div>
 </div>
 
 <h3>1.2 Mesh</h3>
-<p>A <strong>polygonal mesh</strong> represents a surface as a set of vertices $V$ connected by edges and faces. Almost exclusively triangle meshes are used in practice because triangles are always planar and GPUs are optimized for them.</p>
-
-<div class="math-box">
-$$\text{Mesh} = (V, F), \quad V \subset \mathbb{R}^3,\; F \subset \binom{[|V|]}{3}$$
-</div>
-
-<p>The face set $F$ encodes which triples of vertex indices form triangles. This connectivity is what makes meshes powerful: you can walk the surface, compute normals analytically, UV-parameterize, and render in real time.</p>
-
+<p>A <strong>polygon mesh</strong> pairs a vertex set $V\subset\mathbb{R}^3$ with a face set $F$ of vertex-index triples. Almost exclusively triangles are used because GPUs are optimized for them. The wireframe overlay and vertex dots in the scene above make the triangle structure explicit.</p>
+<div class="math-box">$$\text{Mesh}=(V,F),\quad V\subset\mathbb{R}^3,\quad F\subset\binom{[|V|]}{3}$$</div>
 <div class="info-grid">
-  <div class="info-card">
-    <h4 style="color:#34d399;">Advantages</h4>
-    <p>GPU-native: the entire rendering pipeline is built for triangle meshes. Explicit surface — normals, curvature, and UV coordinates come for free. Memory-efficient for smooth surfaces.</p>
-  </div>
-  <div class="info-card">
-    <h4 style="color:#f87171;">Disadvantages</h4>
-    <p>Topology changes (merging surfaces, holes) are very hard. Fixed connectivity is brittle for learning-based methods. Quality depends heavily on mesh resolution and regularity.</p>
-  </div>
+  <div class="info-card"><h4 style="color:#34d399;">Advantages</h4><p>GPU-native rasterization. Explicit surface — normals, UV coords, and curvature are analytic. Memory-efficient for smooth shapes.</p></div>
+  <div class="info-card"><h4 style="color:#f87171;">Disadvantages</h4><p>Topology changes (holes, merges) are hard. Fixed connectivity is brittle for learning. Quality depends on mesh regularity.</p></div>
 </div>
 
 <h3>1.3 Voxel Grid</h3>
-<p>A <strong>voxel grid</strong> discretizes 3D space into a regular cubic lattice. Each cell (voxel) stores whether it is occupied (binary) or a continuous density / SDF value.</p>
-
-<div class="math-box">
-$$V[i,j,k] \in \{0,1\} \text{ (occupancy)}, \quad \text{or} \quad V[i,j,k] \in \mathbb{R} \text{ (feature)}$$
-$$\text{Memory: } O(N^3), \quad \text{for grid resolution } N$$
-</div>
-
-<p>The cubic memory growth is the critical limitation. A $256^3$ grid at 32-bit float takes 64 MB per channel. The resolution slider above lets you feel how coarse a low-resolution grid looks.</p>
-
+<p>A <strong>voxel grid</strong> divides 3D space into a cubic lattice where each cell stores occupancy or a scalar. The resolution slider above shows the $O(N^3)$ memory problem directly.</p>
+<div class="math-box">$$V[i,j,k]\in\{0,1\}\text{ (occupancy)},\quad\text{Memory: }O(N^3)$$</div>
 <div class="info-grid">
-  <div class="info-card">
-    <h4 style="color:#34d399;">Advantages</h4>
-    <p>Regular structure enables 3D convolutions directly. Trivial to check occupancy. Easy to combine multiple shapes with boolean operations.</p>
-  </div>
-  <div class="info-card">
-    <h4 style="color:#f87171;">Disadvantages</h4>
-    <p>$O(N^3)$ memory — most voxels are empty for surface models. Discretization artifacts at low resolution. Not differentiable for surface location.</p>
-  </div>
+  <div class="info-card"><h4 style="color:#34d399;">Advantages</h4><p>Regular structure enables 3D convolutions. Boolean operations trivial. Simple occupancy queries.</p></div>
+  <div class="info-card"><h4 style="color:#f87171;">Disadvantages</h4><p>$O(N^3)$ memory — most voxels empty. Discretization artifacts. $256^3$ grid at float32 = 64 MB per channel.</p></div>
 </div>
 
 <h3>1.4 KD-Tree</h3>
-<p>A <strong>KD-Tree</strong> (k-dimensional tree) is not a shape representation per se — it is a spatial data structure built <em>on top of</em> a point cloud or mesh to accelerate nearest-neighbor queries. It recursively splits space with axis-aligned hyperplanes, alternating axis at each depth level.</p>
+<p>A <strong>KD-Tree</strong> is a spatial index built on a point cloud. It recursively splits space with axis-aligned hyperplanes, enabling $O(\log N)$ nearest-neighbor queries. The interactive 2D demo below lets you click to query the nearest point — the search visits only the highlighted cells.</p>
 
-<div class="math-box">
-$$\text{Query time: } O(\log N) \text{ average}, \quad \text{Build time: } O(N \log N)$$
-</div>
-
-<p>The visualization below shows a 2D KD-tree. Each split line is colored by depth. Click anywhere to find the nearest point — the search path is highlighted.</p>
-
-<!-- KD-Tree 2D canvas -->
 <div class="graphic-container">
-  <div style="padding:12px 18px;background:#0f0f1e;border-bottom:1px solid #1a1a28;font-size:.78rem;color:#6060a0;font-weight:700;text-transform:uppercase;letter-spacing:.08em;">KD-Tree — 2D Interactive</div>
+  <div style="padding:10px 16px;background:#0f0f1e;border-bottom:1px solid #1a1a28;font-size:.76rem;color:#6060a0;font-weight:700;text-transform:uppercase;letter-spacing:.08em;">KD-Tree — 2D Interactive (click to query)</div>
   <div style="position:relative;background:#09090f;">
-    <canvas id="kd-canvas" class="canvas2d" style="height:400px;cursor:crosshair;"></canvas>
+    <canvas id="kd-canvas" style="display:block;width:100%;height:360px;cursor:crosshair;"></canvas>
   </div>
   <div class="controls">
     <div class="ctrl-grid">
       <div class="ctrl-group">
-        <label>Max depth shown <span class="val" id="kd-depth-val">6</span></label>
+        <label>Max depth <span class="val" id="kd-depth-val">6</span></label>
         <input type="range" id="kd-depth" min="1" max="6" step="1" value="6">
       </div>
       <div class="ctrl-group">
-        <label>Num points <span class="val" id="kd-n-val">24</span></label>
+        <label>Points <span class="val" id="kd-n-val">24</span></label>
         <input type="range" id="kd-n" min="8" max="48" step="4" value="24">
       </div>
     </div>
-    <p style="margin-top:10px;margin-bottom:0;font-size:.78rem;color:#6060a0;">Click anywhere on the canvas to query the nearest neighbor. The visited cells are highlighted.</p>
-  </div>
-</div>
-
-<div class="info-grid">
-  <div class="info-card">
-    <h4 style="color:#34d399;">Advantages</h4>
-    <p>$O(\log N)$ nearest-neighbor search. Essential for computing Chamfer distance efficiently. Memory scales with number of points, not space.</p>
-  </div>
-  <div class="info-card">
-    <h4 style="color:#f87171;">Disadvantages</h4>
-    <p>Not differentiable. Degrades to $O(N)$ in high dimensions (curse of dimensionality). Rebuild needed after point positions change.</p>
   </div>
 </div>
 
 <h3>1.5 Tri-plane Representation</h3>
-<p>The <strong>tri-plane</strong> representation (introduced in EG3D, Chan et al. 2022) is a hybrid explicit–implicit format. A 3D point $p = (x,y,z)$ is projected onto three axis-aligned feature planes (XY, XZ, YZ). The projected features are bilinearly interpolated and then summed or concatenated to give a compact descriptor for any point in space.</p>
-
-<div class="math-box">
-$$F(p) = f_{XY}(\pi_{XY}(p)) + f_{XZ}(\pi_{XZ}(p)) + f_{YZ}(\pi_{YZ}(p))$$
-$$\text{Memory: } O(3 \cdot H \cdot W \cdot C) \text{ instead of } O(N^3)$$
-</div>
-
-<p>This collapses a $128^3$ volume grid to just three $128\times128$ feature maps — a $128\times$ memory reduction, with the tradeoff that features along each axis are entangled.</p>
-
+<p>The <strong>tri-plane</strong> (Chan et al., EG3D 2022) projects a 3D query point $p=(x,y,z)$ onto three axis-aligned feature planes and bilinearly interpolates a feature from each. Drag the sliders above (switch to the Tri-plane tab) to move the query point and watch the projections update live.</p>
+<div class="math-box">$$F(p)=f_{XY}(\pi_{XY}(p))+f_{XZ}(\pi_{XZ}(p))+f_{YZ}(\pi_{YZ}(p))$$
+$$\pi_{XY}(p)=(x,y),\quad\pi_{XZ}(p)=(x,z),\quad\pi_{YZ}(p)=(y,z)$$</div>
 <div class="info-grid">
-  <div class="info-card">
-    <h4 style="color:#34d399;">Advantages</h4>
-    <p>Dramatically cheaper than voxel grids. GPU-friendly (just 2D bilinear interpolation). Compatible with neural rendering pipelines. Differentiable end-to-end.</p>
-  </div>
-  <div class="info-card">
-    <h4 style="color:#f87171;">Disadvantages</h4>
-    <p>Cannot represent features that are truly uncorrelated along all three axes. Axis-aligned bias can cause artifacts on diagonal structures. Not as expressive as full 3D grids.</p>
-  </div>
+  <div class="info-card"><h4 style="color:#34d399;">Advantages</h4><p>$128\times$ cheaper than a $128^3$ voxel grid. GPU-native bilinear sampling. Differentiable end-to-end.</p></div>
+  <div class="info-card"><h4 style="color:#f87171;">Disadvantages</h4><p>Axis-aligned bias. Cannot represent features uncorrelated across all three axes. Slightly less expressive than full 3D grids.</p></div>
 </div>
 
-<!-- Comparison table -->
-<h3>At a Glance</h3>
 <table class="rep-table">
-  <thead>
-    <tr><th>Representation</th><th>Memory</th><th>Differentiable</th><th>Renderable</th><th>Neural-friendly</th><th>Connectivity</th></tr>
-  </thead>
+  <thead><tr><th>Representation</th><th>Memory</th><th>Differentiable</th><th>Renderable</th><th>Connectivity</th></tr></thead>
   <tbody>
-    <tr><td><strong>Point Cloud</strong></td><td class="good">O(N)</td><td class="good">Yes</td><td class="mid">Splatting</td><td class="good">Yes</td><td class="bad">None</td></tr>
-    <tr><td><strong>Mesh</strong></td><td class="good">O(V+F)</td><td class="mid">Partial</td><td class="good">GPU native</td><td class="mid">Tricky</td><td class="good">Explicit</td></tr>
-    <tr><td><strong>Voxel Grid</strong></td><td class="bad">O(N³)</td><td class="good">Yes</td><td class="mid">Raycasting</td><td class="good">Yes (3D conv)</td><td class="mid">Implicit</td></tr>
-    <tr><td><strong>KD-Tree</strong></td><td class="good">O(N)</td><td class="bad">No</td><td class="bad">Indirect</td><td class="bad">No</td><td class="mid">Spatial</td></tr>
-    <tr><td><strong>Tri-plane</strong></td><td class="good">O(3HWC)</td><td class="good">Yes</td><td class="good">Via MLP</td><td class="good">Yes</td><td class="mid">Implicit</td></tr>
+    <tr><td><strong>Point Cloud</strong></td><td class="good">O(N)</td><td class="good">Yes</td><td class="mid">Splatting</td><td class="bad">None</td></tr>
+    <tr><td><strong>Mesh</strong></td><td class="good">O(V+F)</td><td class="mid">Partial</td><td class="good">GPU native</td><td class="good">Explicit</td></tr>
+    <tr><td><strong>Voxel Grid</strong></td><td class="bad">O(N³)</td><td class="good">Yes</td><td class="mid">Raycasting</td><td class="mid">Implicit</td></tr>
+    <tr><td><strong>KD-Tree</strong></td><td class="good">O(N)</td><td class="bad">No</td><td class="bad">Indirect</td><td class="mid">Spatial</td></tr>
+    <tr><td><strong>Tri-plane</strong></td><td class="good">O(3HWC)</td><td class="good">Yes</td><td class="good">Via MLP</td><td class="mid">Implicit</td></tr>
   </tbody>
 </table>
 
 <!-- ══════════════════════════════════════════════════
-     SECTION 2: NORMALS & SDF
+     SECTION 2 — NORMALS & SDF
 ══════════════════════════════════════════════════ -->
 <h2>2. Surface Normals and the Signed Distance Function</h2>
 
-<p>Two of the most fundamental geometric quantities for any 3D shape are <em>normals</em> — which direction is "outward"? — and the <em>signed distance function</em> — how far am I from the surface, and am I inside or outside?</p>
-
 <h3>Surface Normals</h3>
-<p>At any smooth point on a surface, the <strong>normal vector</strong> $\mathbf{n}$ is the unit vector perpendicular to the tangent plane. For a triangle mesh, normals can be defined per-face (flat shading) or per-vertex (smooth shading, by averaging adjacent face normals).</p>
+<p>At any smooth point on a surface the <strong>normal vector</strong> $\mathbf{n}$ is the unit vector perpendicular to the tangent plane. The three tabs below show three fundamentally different normal modes — switch between them to see the visual difference directly.</p>
 
-<div class="math-box">
-$$\mathbf{n}_{\text{face}} = \frac{(v_1-v_0) \times (v_2-v_0)}{|(v_1-v_0) \times (v_2-v_0)|}, \qquad \mathbf{n}_{\text{vertex}} = \frac{\sum_{f \ni v} \mathbf{n}_f}{|\sum_{f \ni v} \mathbf{n}_f|}$$
-</div>
+<div class="math-box">$$\mathbf{n}_{\text{face}}=\frac{(v_1-v_0)\times(v_2-v_0)}{|(v_1-v_0)\times(v_2-v_0)|},\qquad\mathbf{n}_{\text{vertex}}=\frac{\textstyle\sum_{f\ni v}\mathbf{n}_f}{|\textstyle\sum_{f\ni v}\mathbf{n}_f|}$$</div>
 
-<p>In the scene below, toggle between face and vertex normals. Notice how vertex normals interpolate across faces, producing the illusion of smooth curvature even on a coarse mesh.</p>
-
-<!-- Normals scene -->
 <div class="graphic-container">
   <div class="tab-row">
-    <button class="tab-btn active" data-norm="vertex">Vertex Normals</button>
-    <button class="tab-btn" data-norm="face">Face Normals</button>
-    <button class="tab-btn" data-norm="colored">Color by Normal</button>
+    <button class="tab-btn active" data-norm="face">Face Normals</button>
+    <button class="tab-btn" data-norm="vertex">Vertex Normals</button>
+    <button class="tab-btn" data-norm="colored">Color-coded Normals</button>
   </div>
-  <div class="canvas-wrapper" id="norm-wrapper" style="height:400px;">
-    <canvas id="norm-canvas"></canvas>
-    <div class="hud" style="top:12px;right:12px;min-width:180px;">
-      <div class="hud-title">Normal Mode</div>
-      <div id="norm-hud" style="font-size:.77rem;color:#8080a8;line-height:1.8;"></div>
+  <div class="canvas-wrapper" id="norm-wrap" style="height:420px;background:radial-gradient(ellipse at center,#16182a,#06060f);">
+    <canvas id="norm-canvas" style="width:100%;height:100%;display:block;"></canvas>
+    <div class="hud" style="top:12px;right:12px;min-width:200px;">
+      <div class="hud-title" id="norm-hud-title">Face Normals</div>
+      <div id="norm-hud-body" style="font-size:.76rem;color:#8080a8;line-height:1.85;"></div>
+    </div>
+    <div id="norm-legend" style="display:none;position:absolute;bottom:14px;left:14px;background:rgba(6,6,18,.92);border:1px solid #252540;border-radius:9px;padding:10px 14px;font-size:.74rem;line-height:1.9;color:#9090b0;"></div>
+  </div>
+  <div class="controls">
+    <div class="ctrl-grid">
+      <div class="ctrl-group">
+        <label>Arrow length <span class="val" id="norm-len-val">0.30</span></label>
+        <input type="range" id="norm-len" min="0.05" max="0.6" step="0.05" value="0.30">
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="info-grid">
+  <div class="info-card">
+    <h4>Face normals — flat shading</h4>
+    <p>Every point within a triangle shares the <em>same</em> normal — perpendicular to the face plane. This gives the angular, faceted look you see above. You can literally count the triangles from the lighting breaks.</p>
+  </div>
+  <div class="info-card">
+    <h4>Vertex normals — smooth shading</h4>
+    <p>Adjacent face normals are averaged at each vertex. The GPU interpolates (Phong interpolation) across the face. The surface appears smooth even though the geometry is identical — just coarser arrows, smoother shading.</p>
+  </div>
+</div>
+<div class="callout blue">
+  <div class="ct">Color-coded Normals (Normal Map)</div>
+  <p>The standard encoding maps each normal component from $[-1,1]$ to $[0,1]$: $\text{RGB}=\tfrac{\mathbf{n}+1}{2}$. So pointing right $(+X)$ = <span style="color:#f87171;">red</span>, pointing up $(+Y)$ = <span style="color:#34d399;">green</span>, pointing toward you $(+Z)$ = <span style="color:#60a5fa;">blue</span>. Normals pointing away from an axis appear dark. This encoding is universal in normal-mapping and neural rendering pipelines.</p>
+</div>
+
+<h3>Signed Distance Function (SDF)</h3>
+<p>The SDF encodes the signed distance from any point in space to the nearest surface point. Move the query point (yellow sphere) with the sliders — watch the SDF value and the yellow line (shortest path to surface) update in real time.</p>
+<div class="math-box">
+$$\text{SDF}(x)=\begin{cases}-d(x,\mathcal{S})&x\text{ inside}\\\phantom{-}d(x,\mathcal{S})&x\text{ outside}\end{cases},\qquad d(x,\mathcal{S})=\min_{s\in\mathcal{S}}\|x-s\|_2$$
+</div>
+
+<div class="graphic-container">
+  <div style="padding:10px 16px;background:#0f0f1e;border-bottom:1px solid #1a1a28;font-size:.76rem;color:#6060a0;font-weight:700;text-transform:uppercase;letter-spacing:.08em;">SDF — 3D Interactive (drag to orbit, sliders to move query point)</div>
+  <div class="canvas-wrapper" id="sdf-wrap" style="height:420px;background:radial-gradient(ellipse at center,#16182a,#06060f);">
+    <canvas id="sdf-canvas" style="width:100%;height:100%;display:block;"></canvas>
+    <div class="hud" style="top:12px;right:12px;min-width:205px;">
+      <div class="hud-title">SDF Query</div>
+      <div class="hud-row"><span>Query point</span><span class="val" id="sdf-qpos">—</span></div>
+      <div class="hud-row"><span>SDF value</span><span class="val" id="sdf-val">—</span></div>
+      <div class="hud-row"><span>Status</span><span class="val" id="sdf-sign">—</span></div>
+      <div class="hud-row"><span>|distance|</span><span class="val" id="sdf-dist">—</span></div>
+      <div style="margin-top:8px;font-size:.71rem;color:#404060;line-height:1.7;">
+        <span style="color:#3b82f6;">●</span> query inside (SDF &lt; 0)<br>
+        <span style="color:#ef4444;">●</span> query outside (SDF &gt; 0)<br>
+        <span style="color:#22c55e;">●</span> on surface (SDF ≈ 0)<br>
+        <span style="color:#fbbf24;">—</span> nearest-surface line
+      </div>
     </div>
   </div>
   <div class="controls">
     <div class="ctrl-grid">
       <div class="ctrl-group">
-        <label>Arrow density <span class="val" id="norm-dens-val">20</span></label>
-        <input type="range" id="norm-dens" min="5" max="40" step="5" value="20">
+        <label>Query X <span class="val" id="sdf-qx-val">0.00</span></label>
+        <input type="range" id="sdf-qx" min="-2" max="2" step="0.02" value="0">
       </div>
       <div class="ctrl-group">
-        <label>Arrow length <span class="val" id="norm-len-val">0.25</span></label>
-        <input type="range" id="norm-len" min="0.05" max="0.5" step="0.05" value="0.25">
+        <label>Query Y <span class="val" id="sdf-qy-val">0.00</span></label>
+        <input type="range" id="sdf-qy" min="-2" max="2" step="0.02" value="0">
+      </div>
+      <div class="ctrl-group">
+        <label>Query Z <span class="val" id="sdf-qz-val">1.80</span></label>
+        <input type="range" id="sdf-qz" min="-2" max="2" step="0.02" value="1.8">
       </div>
     </div>
   </div>
-</div>
-
-<h3>Signed Distance Function (SDF)</h3>
-<p>The <strong>signed distance function</strong> of a closed surface $\mathcal{S}$ is defined at every point $x \in \mathbb{R}^3$:</p>
-
-<div class="math-box">
-$$\text{SDF}(x) = \begin{cases} -d(x, \mathcal{S}) & \text{if } x \text{ is inside } \mathcal{S} \\ \phantom{-}d(x, \mathcal{S}) & \text{if } x \text{ is outside } \mathcal{S} \end{cases}$$
-$$\text{where } d(x, \mathcal{S}) = \min_{s \in \mathcal{S}} \|x - s\|_2$$
-</div>
-
-<p>The surface itself is the <strong>zero level set</strong>: $\mathcal{S} = \{x : \text{SDF}(x) = 0\}$. The gradient of a true SDF satisfies $|\nabla \,\text{SDF}| = 1$ almost everywhere — a constraint we will exploit in Section 5. Drag the shapes below, and watch the SDF field update live.</p>
-
-<!-- SDF 2D canvas -->
-<div class="graphic-container">
-  <div style="padding:12px 18px;background:#0f0f1e;border-bottom:1px solid #1a1a28;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-    <span style="font-size:.78rem;color:#6060a0;font-weight:700;text-transform:uppercase;letter-spacing:.08em;">Signed Distance Function — 2D Interactive</span>
-    <div style="display:flex;gap:7px;">
-      <button class="tab-btn active" data-sdf="sphere" style="padding:4px 12px;font-size:.75rem;">Sphere</button>
-      <button class="tab-btn" data-sdf="box" style="padding:4px 12px;font-size:.75rem;">Box</button>
-      <button class="tab-btn" data-sdf="union" style="padding:4px 12px;font-size:.75rem;">Union</button>
-    </div>
-  </div>
-  <div style="position:relative;">
-    <canvas id="sdf-canvas" class="canvas2d" style="height:400px;cursor:move;"></canvas>
-    <div class="hud" style="top:12px;right:12px;min-width:175px;" id="sdf-hud">
-      <div class="hud-title">SDF Value</div>
-      <div class="hud-row"><span>at cursor</span><span class="val" id="sdf-val">—</span></div>
-      <div class="hud-row"><span>inside?</span><span class="val" id="sdf-inside">—</span></div>
-      <div style="margin-top:8px;font-size:.72rem;color:#404060;line-height:1.6;">
-        <span style="color:#3b82f6;">■</span> inside (SDF &lt; 0)<br>
-        <span style="color:#ef4444;">■</span> outside (SDF &gt; 0)<br>
-        <span style="color:#f0f0f0;">─</span> zero level set
-      </div>
-    </div>
-  </div>
-  <div class="controls">
-    <p style="margin:0;font-size:.78rem;color:#6060a0;">Drag the shape to move it. Move your mouse over the field to see the SDF value at that point.</p>
-  </div>
-</div>
-
-<div class="callout blue">
-  <div class="ct">Key Insight</div>
-  <p>The zero level set (white contour) is the surface. SDFs store <em>how far</em> you are from it, which is incredibly useful for ray marching, collision detection, and neural implicit surfaces. The gradient $\nabla\,\text{SDF}(x)$ always points toward the nearest surface point.</p>
 </div>
 
 <!-- ══════════════════════════════════════════════════
-     SECTION 3: DISTANCE BETWEEN SHAPES
+     SECTION 3 — DISTANCES
 ══════════════════════════════════════════════════ -->
 <h2>3. Measuring Distance Between Two Shapes</h2>
-
-<p>Training any 3D generative or reconstruction model requires a loss function that measures how different two shapes are. The two most widely used metrics are <strong>Chamfer Distance</strong> and <strong>Hausdorff Distance</strong>. Both compare point sets, but they capture different geometric properties.</p>
+<p>Training any 3D generative or reconstruction model requires a loss that measures how different two shapes are. Chamfer and Hausdorff are the two most widely used metrics. They capture different geometric properties — and their difference becomes clear in the interactive below.</p>
 
 <h3>3.1 Chamfer Distance</h3>
-<p>Given two point sets $P$ and $Q$, the Chamfer Distance is:</p>
-
-<div class="math-box">
-$$\text{CD}(P,Q) = \frac{1}{|P|}\sum_{p \in P}\min_{q \in Q}\|p-q\|^2 + \frac{1}{|Q|}\sum_{q \in Q}\min_{p \in P}\|p-q\|^2$$
-</div>
-
-<p>Each point in $P$ finds its nearest neighbor in $Q$, and vice versa. The Chamfer Distance is the <strong>average</strong> of all these nearest-neighbor distances (squared). It is differentiable almost everywhere and is the default loss for point cloud reconstruction.</p>
+<div class="math-box">$$\text{CD}(P,Q)=\frac{1}{|P|}\sum_{p\in P}\min_{q\in Q}\|p-q\|^2+\frac{1}{|Q|}\sum_{q\in Q}\min_{p\in P}\|p-q\|^2$$</div>
+<p>Every point in $P$ finds its nearest neighbor in $Q$, and vice versa. The Chamfer Distance is the <strong>average</strong> of all these squared nearest-neighbor distances. It is differentiable almost everywhere — the standard training loss for point cloud reconstruction.</p>
 
 <h3>3.2 Hausdorff Distance</h3>
-<p>The Hausdorff Distance is the <strong>worst-case</strong> nearest-neighbor distance:</p>
+<div class="math-box">$$d_H(P,Q)=\max\!\left(\max_{p\in P}\min_{q\in Q}\|p-q\|,\;\max_{q\in Q}\min_{p\in P}\|q-p\|\right)$$</div>
+<p>The Hausdorff Distance is the <strong>worst-case</strong> nearest-neighbor distance. Even if 99% of points match perfectly, one outlier drives it up. The thick highlighted line in Hausdorff mode shows the determining pair.</p>
 
-<div class="math-box">
-$$d_H(P,Q) = \max\!\left(\;\max_{p \in P}\min_{q \in Q}\|p-q\|,\;\; \max_{q \in Q}\min_{p \in P}\|q-p\|\;\right)$$
-</div>
-
-<p>Even if 99% of points match perfectly, one outlier drives the Hausdorff distance up. This sensitivity makes it robust to completeness failures but fragile to noise. In the visualization below, the <span style="color:#ef4444;font-weight:600;">red pair</span> highlights the Hausdorff-determining point pair.</p>
-
-<!-- Chamfer/Hausdorff 2D canvas -->
 <div class="graphic-container">
   <div class="tab-row">
     <button class="tab-btn active" data-dist="chamfer">Chamfer Distance</button>
     <button class="tab-btn" data-dist="hausdorff">Hausdorff Distance</button>
   </div>
   <div style="position:relative;background:#09090f;">
-    <canvas id="dist-canvas" class="canvas2d" style="height:420px;cursor:move;"></canvas>
-    <div class="hud" style="top:12px;right:12px;min-width:185px;">
+    <canvas id="dist-canvas" style="display:block;width:100%;height:420px;cursor:move;"></canvas>
+    <div class="hud" style="top:12px;right:12px;min-width:190px;">
       <div class="hud-title" id="dist-hud-title">Chamfer Distance</div>
-      <div class="hud-row"><span>Distance</span><span class="val" id="dist-val">—</span></div>
+      <div class="hud-row"><span>Value</span><span class="val" id="dist-val">—</span></div>
       <div class="hud-row"><span>|P|</span><span class="val" id="dist-np">—</span></div>
       <div class="hud-row"><span>|Q|</span><span class="val" id="dist-nq">—</span></div>
-      <div style="margin-top:8px;font-size:.72rem;color:#404060;line-height:1.6;">
-        <span style="color:#60a5fa;">●</span> Set P (drag points)<br>
-        <span style="color:#f472b6;">●</span> Set Q (drag points)<br>
-        <span style="color:#9ca3af;">—</span> Nearest-neighbor lines
+      <div style="margin-top:8px;font-size:.71rem;color:#404060;line-height:1.7;" id="dist-legend">
+        <span style="color:#3b82f6;">●</span> Set P — drag any point<br>
+        <span style="color:#f97316;">●</span> Set Q — drag any point<br>
+        <span style="color:#6b7280;">—</span> P→Q correspondences<br>
+        <span style="color:#a78bfa;">—</span> Q→P correspondences
       </div>
     </div>
   </div>
-  <div class="controls">
-    <p style="margin:0;font-size:.78rem;color:#6060a0;">Drag any point to reshape the sets. Switch between Chamfer and Hausdorff to see which correspondences dominate.</p>
-  </div>
+  <div class="controls"><p style="margin:0;font-size:.77rem;color:#6060a0;">Drag any point to reshape the sets. The metric updates live.</p></div>
 </div>
 
 <div class="info-grid">
-  <div class="info-card">
-    <h4>When to use Chamfer</h4>
-    <p>Training losses for reconstruction, generation, and completion. Fast to compute with KD-trees. Robust to small outliers. Standard in PointNet, FoldingNet, etc.</p>
-  </div>
-  <div class="info-card">
-    <h4>When to use Hausdorff</h4>
-    <p>Evaluation where worst-case coverage matters (e.g., medical segmentation, autonomous driving safety). Not suitable as a training loss — non-differentiable and sensitive to noise.</p>
-  </div>
-</div>
-
-<div class="callout amber">
-  <div class="ct">Practical Note</div>
-  <p>Chamfer Distance scales as $O(|P| \cdot |Q|)$ naively, but with KD-trees drops to $O((|P|+|Q|)\log|Q|)$. For 100k-point clouds, the difference is seconds vs milliseconds per forward pass.</p>
+  <div class="info-card"><h4>Use Chamfer for training</h4><p>Differentiable, robust to small outliers, efficient with KD-trees. Standard in PointNet, FoldingNet, occupancy networks.</p></div>
+  <div class="info-card"><h4>Use Hausdorff for evaluation</h4><p>Worst-case coverage matters in safety-critical apps (medical, autonomous driving). Too sensitive to noise for training losses.</p></div>
 </div>
 
 <!-- ══════════════════════════════════════════════════
-     SECTION 4: EXPLICIT VS IMPLICIT
+     SECTION 4 — EXPLICIT vs IMPLICIT
 ══════════════════════════════════════════════════ -->
 <h2>4. Explicit vs. Implicit Representations</h2>
+<p>All 3D representations fall into one of two philosophies. <strong>Explicit</strong>: directly list the surface elements. <strong>Implicit</strong>: define a scalar field whose zero level set <em>is</em> the surface. The 3D side-by-side below renders the same torus shape both ways in real time.</p>
 
-<p>All 3D representations fall into one of two philosophies: <em>explicit</em> or <em>implicit</em>. This distinction cuts across everything we have seen so far and shapes how you render, optimize, and learn from shapes.</p>
+<div class="callout green"><div class="ct">Explicit</div><p>Mesh, point cloud, NURBS — every element directly describes part of the surface. Hand to GPU rasterizer, done.</p></div>
+<div class="callout green"><div class="ct">Implicit</div><p>SDF, occupancy network, NeRF — the surface is $\{x:f(x)=0\}$. Must ray-march or run Marching Cubes to get geometry. But topology changes, interior queries, and blending are free.</p></div>
 
-<h3>Explicit Representations</h3>
-<p>An <strong>explicit</strong> representation directly lists the surface. A mesh gives you the triangles. A point cloud gives you the samples. You can immediately iterate over every surface element. Rendering is straightforward: hand the triangles to the GPU rasterizer.</p>
+<p>The right panel uses <strong>sphere tracing</strong> (ray marching with SDF step sizes) in a live GLSL shader — the torus is never stored as triangles, it is computed from its distance function on every pixel.</p>
 
-<div class="callout green">
-  <div class="ct">Explicit Examples</div>
-  <p>Polygon mesh, point cloud, NURBS patches, parametric curves, subdivision surfaces. Every element directly describes part of the surface.</p>
-</div>
-
-<h3>Implicit Representations</h3>
-<p>An <strong>implicit</strong> representation defines the surface indirectly as the level set of a scalar function $f : \mathbb{R}^3 \to \mathbb{R}$. The surface is everywhere $f(x) = 0$. To render, you must <em>extract</em> the surface (Marching Cubes) or <em>ray-march</em> through the field.</p>
-
-<div class="math-box">
-$$\mathcal{S} = \{x \in \mathbb{R}^3 : f(x) = 0\}, \qquad f(x) \begin{cases} < 0 & \text{inside}\\ = 0 & \text{on surface}\\ > 0 & \text{outside}\end{cases}$$
-</div>
-
-<div class="callout green">
-  <div class="ct">Implicit Examples</div>
-  <p>Signed Distance Function, occupancy network, NeRF density field, DeepSDF. The surface is never listed — it is recovered from a function.</p>
-</div>
-
-<p>The visualization below shows both in action. The left panel shows <strong>explicit rendering</strong> (triangles drawn directly). The right panel shows <strong>implicit rendering via Marching Squares</strong> (2D analog of Marching Cubes): a grid of SDF values is sampled, and the zero-crossing contour is traced by examining each cell. Use the slider to watch the isosurface extraction unfold cell by cell.</p>
-
-<!-- Explicit vs Implicit canvas -->
 <div class="graphic-container">
-  <div style="padding:12px 18px;background:#0f0f1e;border-bottom:1px solid #1a1a28;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-    <span style="font-size:.78rem;color:#6060a0;font-weight:700;text-transform:uppercase;letter-spacing:.08em;flex:1;">Explicit vs Implicit Rendering</span>
-    <button class="tab-btn active" data-shape="circle" style="padding:4px 12px;font-size:.75rem;">Circle</button>
-    <button class="tab-btn" data-shape="star" style="padding:4px 12px;font-size:.75rem;">Star</button>
-    <button class="tab-btn" data-shape="heart" style="padding:4px 12px;font-size:.75rem;">Blob</button>
+  <div style="padding:10px 16px;background:#0f0f1e;border-bottom:1px solid #1a1a28;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+    <span style="font-size:.76rem;color:#6060a0;font-weight:700;text-transform:uppercase;letter-spacing:.08em;flex:1;">Explicit vs Implicit — 3D (drag each panel to orbit)</span>
+    <button class="tab-btn active" data-wi="off" style="padding:4px 11px;font-size:.74rem;">Solid</button>
+    <button class="tab-btn" data-wi="on" style="padding:4px 11px;font-size:.74rem;">+ Wireframe</button>
   </div>
-  <div class="split-canvas-row" style="height:380px;">
-    <div class="split-panel">
+  <div class="split-row" style="height:400px;">
+    <div class="split-pane" id="expl-pane">
       <div class="split-label" style="color:#34d399;">Explicit — Triangle Mesh</div>
       <canvas id="expl-canvas" style="width:100%;height:100%;display:block;"></canvas>
     </div>
-    <div class="split-panel">
-      <div class="split-label" style="color:#a78bfa;">Implicit — Marching Squares</div>
+    <div class="split-pane" id="impl-pane">
+      <div class="split-label" style="color:#a78bfa;">Implicit — Ray-marched SDF</div>
       <canvas id="impl-canvas" style="width:100%;height:100%;display:block;"></canvas>
-    </div>
-  </div>
-  <div class="controls">
-    <div class="ctrl-grid">
-      <div class="ctrl-group">
-        <label>Grid resolution <span class="val" id="ms-res-val">24</span></label>
-        <input type="range" id="ms-res" min="8" max="48" step="4" value="24">
-      </div>
-      <div class="ctrl-group">
-        <label>Reveal cells <span class="val" id="ms-reveal-val">100%</span></label>
-        <input type="range" id="ms-reveal" min="0" max="100" step="1" value="100">
-      </div>
     </div>
   </div>
 </div>
 
-<table class="rep-table" style="margin-top:1.5rem;">
+<table class="rep-table">
   <thead><tr><th></th><th>Explicit</th><th>Implicit</th></tr></thead>
   <tbody>
-    <tr><td><strong>Surface access</strong></td><td class="good">Directly listed</td><td class="bad">Must extract (Marching Cubes)</td></tr>
-    <tr><td><strong>Topology change</strong></td><td class="bad">Very difficult</td><td class="good">Natural (level set evolves)</td></tr>
+    <tr><td><strong>Surface access</strong></td><td class="good">Directly listed</td><td class="bad">Extract (Marching Cubes) or ray-march</td></tr>
+    <tr><td><strong>Topology change</strong></td><td class="bad">Very hard</td><td class="good">Natural — level set evolves</td></tr>
     <tr><td><strong>Resolution</strong></td><td class="mid">Fixed at creation</td><td class="good">Query at any resolution</td></tr>
     <tr><td><strong>GPU rendering</strong></td><td class="good">Rasterization</td><td class="mid">Ray marching / vol. rendering</td></tr>
-    <tr><td><strong>Interior queries</strong></td><td class="bad">Expensive (ray casting)</td><td class="good">Free (sign of $f$)</td></tr>
+    <tr><td><strong>Inside/outside</strong></td><td class="bad">Expensive (ray casting)</td><td class="good">Free — just check sign of $f$</td></tr>
   </tbody>
 </table>
 
 <!-- ══════════════════════════════════════════════════
-     SECTION 5: EIKONAL REGULARIZATION
+     SECTION 5 — EIKONAL
 ══════════════════════════════════════════════════ -->
 <h2>5. Eikonal Regularization</h2>
-
-<p>Neural implicit representations (like DeepSDF or IGR) parameterize the implicit function with an MLP: $f_\theta(x)$. The network is trained on surface points and normals, but nothing forces its output to be a <em>proper</em> signed distance function. An arbitrary network output could be zero on the right surface but have wildly wrong gradient magnitudes — making it useless for ray marching or physics.</p>
+<p>Neural implicit representations parameterize the implicit function with an MLP: $f_\theta(x)$. Nothing forces it to be a <em>proper</em> SDF — the network can find any zero-crossing that fits the training data. An arbitrary function may have wildly wrong gradient magnitudes, ruining ray-marching and distance queries.</p>
 
 <h3>The Eikonal Equation</h3>
-<p>A function $f: \mathbb{R}^3 \to \mathbb{R}$ is a true SDF if and only if it satisfies the <strong>Eikonal equation</strong> everywhere:</p>
+<p>A function $f$ is a true SDF if and only if it satisfies the <strong>Eikonal equation</strong> everywhere:</p>
+<div class="math-box">$$|\nabla f(x)|=1\quad\forall\,x\in\mathbb{R}^3$$</div>
 
-<div class="math-box">
-$$|\nabla f(x)| = 1 \quad \forall\, x \in \mathbb{R}^3$$
-</div>
+<h3>The Eikonal Loss (Gropp et al., IGR 2020)</h3>
+<div class="math-box">$$\mathcal{L}_{\text{total}}=\mathcal{L}_{\text{data}}+\lambda\underbrace{\,\mathbb{E}_{x}\!\left[(|\nabla_x f_\theta(x)|-1)^2\right]}_{\mathcal{L}_{\text{eikonal}}}$$</div>
 
-<p>This is a fundamental result from PDE theory. The SDF is the unique viscosity solution of the Eikonal equation with the boundary condition $f = 0$ on $\mathcal{S}$. If a function's gradient has magnitude $\neq 1$, it is not a proper distance function, even if its zero set looks correct.</p>
+<p>The expectation samples points both on and off the surface. The $\lambda$ controls how strongly we penalize non-unit gradients. Without it, sphere tracing either <strong>undershoots</strong> ($|\nabla f|<1$, tiny steps, slow) or <strong>overshoots</strong> ($|\nabla f|>1$, misses surface entirely).</p>
 
-<h3>The Eikonal Loss</h3>
-<p>Gropp et al. (2020) proposed <strong>Implicit Geometric Regularization (IGR)</strong> which adds an Eikonal term to the training loss:</p>
+<p>The 3D visualization below samples points on concentric shells around a sphere. Each point is colored by its gradient magnitude $|\nabla f|$. <span style="color:#34d399;font-weight:600;">Green</span> = eikonal satisfied ($|\nabla f|\approx1$). <span style="color:#f87171;font-weight:600;">Red</span> = gradient too steep. <span style="color:#60a5fa;font-weight:600;">Blue</span> = gradient too shallow. Increase $\lambda$ to watch everything turn green.</p>
 
-<div class="math-box">
-$$\mathcal{L}_{\text{total}} = \underbrace{\mathcal{L}_{\text{data}}}_{\text{fit surface}} + \lambda\,\underbrace{\mathbb{E}_{x}\!\left[\,(|\nabla_x f_\theta(x)| - 1)^2\,\right]}_{\mathcal{L}_{\text{eikonal}}}$$
-</div>
-
-<p>The expectation is taken over points sampled both on and off the surface. The $\lambda$ parameter controls how strongly we penalize non-unit gradients. This simple addition dramatically improves the quality of the recovered SDF and prevents degenerate solutions where the network collapses all space to a single plane.</p>
-
-<h3>Why It Matters for Ray Marching</h3>
-<p>Safe ray marching uses sphere tracing: from position $x$ along ray direction $\mathbf{d}$, step by $|f(x)|$ — the SDF value tells you the largest step you can take without overshooting the surface. If $|\nabla f| \neq 1$, the SDF value no longer equals the true distance, and sphere tracing either:</p>
-<ul>
-  <li><strong>Undershoots</strong> ($|\nabla f| < 1$): takes tiny steps, very slow convergence</li>
-  <li><strong>Overshoots</strong> ($|\nabla f| > 1$): steps past the surface, missing it entirely</li>
-</ul>
-
-<div class="math-box">
-$$x_{t+1} = x_t + f(x_t) \cdot \mathbf{d} \quad \text{(sphere tracing step, valid only if }|\nabla f|=1)$$
-</div>
-
-<!-- Eikonal 2D canvas -->
 <div class="graphic-container">
-  <div style="padding:12px 18px;background:#0f0f1e;border-bottom:1px solid #1a1a28;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-    <span style="font-size:.78rem;color:#6060a0;font-weight:700;text-transform:uppercase;letter-spacing:.08em;flex:1;">Eikonal Regularization — Interactive</span>
-    <button class="tab-btn active" data-eik="gradmag">|∇f| field</button>
+  <div class="tab-row">
+    <button class="tab-btn active" data-eik="gradmag">|∇f| magnitude</button>
     <button class="tab-btn" data-eik="violation">Eikonal violation</button>
-    <button class="tab-btn" data-eik="raymarch">Ray march quality</button>
+    <button class="tab-btn" data-eik="raymarch">Sphere-trace steps</button>
   </div>
-  <div style="position:relative;background:#09090f;">
-    <canvas id="eik-canvas" class="canvas2d" style="height:420px;"></canvas>
-    <div class="hud" style="top:12px;right:12px;min-width:190px;" id="eik-hud">
-      <div class="hud-title">Eikonal Field</div>
-      <div id="eik-hud-body" style="font-size:.77rem;color:#8080a8;line-height:1.8;"></div>
+  <div class="canvas-wrapper" id="eik-wrap" style="height:440px;background:radial-gradient(ellipse at center,#16182a,#06060f);">
+    <canvas id="eik-canvas" style="width:100%;height:100%;display:block;"></canvas>
+    <div class="hud" style="top:12px;right:12px;min-width:205px;">
+      <div class="hud-title" id="eik-hud-title">|∇f| Magnitude</div>
+      <div id="eik-hud-body" style="font-size:.76rem;color:#8080a8;line-height:1.85;"></div>
     </div>
   </div>
   <div class="controls">
@@ -553,48 +407,38 @@ $$x_{t+1} = x_t + f(x_t) \cdot \mathbf{d} \quad \text{(sphere tracing step, vali
         <input type="range" id="eik-lam" min="0" max="1" step="0.01" value="0">
       </div>
       <div class="ctrl-group">
-        <label>Network roughness <span class="val" id="eik-rough-val">0.50</span></label>
-        <input type="range" id="eik-rough" min="0" max="1" step="0.01" value="0.5">
+        <label>Network roughness <span class="val" id="eik-rough-val">0.60</span></label>
+        <input type="range" id="eik-rough" min="0" max="1" step="0.01" value="0.6">
       </div>
     </div>
-    <p style="margin-top:10px;margin-bottom:0;font-size:.78rem;color:#6060a0;">Increase λ to enforce the eikonal constraint. Watch the |∇f| field approach 1 everywhere (green = good, red/blue = violation).</p>
+    <p style="margin-top:10px;margin-bottom:0;font-size:.77rem;color:#6060a0;">Increase λ to enforce eikonal. Watch the sample points turn green as |∇f| → 1 everywhere.</p>
   </div>
 </div>
 
 <div class="info-grid">
-  <div class="info-card">
-    <h4>Without Eikonal (λ = 0)</h4>
-    <p>The network finds any zero-crossing that fits the data. Gradient magnitudes vary wildly. Ray marching fails. The "SDF" cannot be used for distance queries.</p>
-  </div>
-  <div class="info-card">
-    <h4>With Eikonal (λ > 0)</h4>
-    <p>Gradients are pulled toward unit magnitude. The function becomes a proper SDF. Ray marching converges in O(depth) steps. Normals are accurate everywhere, not just on training points.</p>
-  </div>
+  <div class="info-card"><h4>Without eikonal (λ=0)</h4><p>Network finds any zero-crossing. Gradients vary wildly. Sphere tracing either misses the surface or needs hundreds of steps. "SDF" unusable for distance queries.</p></div>
+  <div class="info-card"><h4>With eikonal (λ&gt;0)</h4><p>Gradients pulled toward unit magnitude. Function becomes a proper SDF. Sphere tracing converges in O(depth) steps. Normals accurate everywhere off training points.</p></div>
 </div>
 
 <div class="callout amber">
-  <div class="ct">Connection to Other Methods</div>
-  <p>NeuS, VolSDF, and NeRF variants all use some form of the eikonal constraint to keep their density or SDF fields well-behaved. Without it, the network learns degenerate representations that overfit the training views but fail on novel angles.</p>
+  <div class="ct">Used in</div>
+  <p>NeuS, VolSDF, IGR, instant-NGP all incorporate eikonal or similar constraints. Without it, neural SDFs look plausible on training views but fail completely when used as proper distance functions for physics, collision, or novel-view synthesis.</p>
 </div>
 
 <!-- ══════════════════════════════════════════════════
      CONCLUSION
 ══════════════════════════════════════════════════ -->
 <h2>Conclusion</h2>
-
-<p>We have traveled from the simplest possible 3D representation — an unordered set of points — up through implicit neural fields constrained by PDEs. Here is the thread that connects them all:</p>
-
+<p>We have traveled from the simplest possible 3D representation — an unordered set of points — to implicit neural fields constrained by PDEs. The thread connecting them:</p>
 <ol>
-  <li><strong>Point clouds</strong> are what sensors give you; everything else is a way to make points more useful — adding connectivity (mesh), spatial structure (KD-tree, voxel), or compactness (tri-plane).</li>
-  <li><strong>Normals</strong> are the bridge from geometry to shading and physics: they tell you which way a surface faces. The SDF is the cleanest continuous version of "where is the surface" — it encodes distance and orientation simultaneously.</li>
-  <li><strong>Chamfer and Hausdorff</strong> give you two complementary lenses on shape similarity. Chamfer sees average coverage; Hausdorff sees worst-case gaps. Use both in evaluation, but only Chamfer in training.</li>
-  <li><strong>Explicit vs. implicit</strong> is not a binary choice but a spectrum. Modern methods like 3DGS (Gaussian Splatting) are explicitly positioned but implicitly optimized; NeRF is implicitly defined but explicitly rendered.</li>
+  <li><strong>Point clouds</strong> are what sensors give you. Everything else adds structure: connectivity (mesh), spatial index (KD-tree, voxel), or compactness (tri-plane).</li>
+  <li><strong>Normals</strong> are the bridge from geometry to shading. Face normals give faceted appearance; vertex normals give smooth appearance from the same coarse mesh. The normal map encoding $(\mathbf{n}+1)/2\to\text{RGB}$ is universal in graphics and neural rendering.</li>
+  <li><strong>Chamfer and Hausdorff</strong> give two complementary views: Chamfer sees average coverage, Hausdorff sees the worst gap. Use both in evaluation; only Chamfer in training.</li>
+  <li><strong>Explicit vs. implicit</strong> is not binary. 3DGS is explicitly positioned but implicitly optimized. NeRF is implicitly defined but explicitly ray-marched. The side-by-side above shows they produce visually identical results through fundamentally different pipelines.</li>
   <li><strong>Eikonal regularization</strong> is the mathematical glue that turns an arbitrary scalar network into a proper SDF. Without it, implicit representations are geometrically meaningless even when they look visually plausible.</li>
 </ol>
 
-<p>The choice of representation dictates everything downstream: what loss functions are available, how you can render, what inductive biases your network carries, and how much memory you pay. There is no universally best answer — only the right tool for your geometry, your data, and your compute budget.</p>
-
-<div class="callout blue" style="margin-top:2rem;">
+<div class="callout blue">
   <div class="ct">Further Reading</div>
   <p>
     <a href="https://arxiv.org/abs/1901.05103" target="_blank">DeepSDF (Park et al., 2019)</a> ·
@@ -605,1275 +449,920 @@ $$x_{t+1} = x_t + f(x_t) \cdot \mathbf{d} \quad \text{(sphere tracing step, vali
   </p>
 </div>
 
-<p style="font-size:.82rem;color:#505070;margin-top:3rem;padding-top:1.5rem;border-top:1px solid #1a1a28;">
-  Written with interactive visualizations built in Three.js and the Canvas 2D API. All shapes generated procedurally. Math rendered with KaTeX.
+<p style="font-size:.8rem;color:#505070;margin-top:3rem;padding-top:1.4rem;border-top:1px solid #1a1a28;">
+  All visualizations built with Three.js (3D) and Canvas 2D. Math rendered with KaTeX. Shapes generated procedurally.
   Written with the help of <a href="https://claude.ai" target="_blank">Claude</a>.
 </p>
-
 </main>
 
+<!-- ═══════════════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════════════ -->
 <script>
-/* ═══════════════════════════════════════════════
-   UTILITIES
-═══════════════════════════════════════════════ */
-function makeRenderer(canvas, w, h) {
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setSize(w, h, false);
-  return renderer;
-}
+'use strict';
+const dpr = Math.min(window.devicePixelRatio, 2);
+let activeOrbitState = null;
 
-function makeCamera(aspect) {
-  const cam = new THREE.PerspectiveCamera(45, aspect, 0.01, 100);
-  cam.position.set(0, 1.5, 3.5);
-  cam.lookAt(0, 0, 0);
-  return cam;
-}
-
-function addOrbit(wrapper, onUpdate) {
+/* ── shared orbit helper ── */
+function makeOrbit(wrapper, cam, r0 = 4.0, th0 = 0.5, ph0 = 1.1) {
+  let th = th0, ph = ph0, r = r0;
   let dragging = false, px = 0, py = 0;
-  let theta = 0.5, phi = 1.1, r = 3.5;
-  function getXYZ() {
-    return [
-      r * Math.sin(phi) * Math.sin(theta),
-      r * Math.cos(phi),
-      r * Math.sin(phi) * Math.cos(theta)
-    ];
+  function sync() {
+    cam.position.set(r*Math.sin(ph)*Math.sin(th), r*Math.cos(ph), r*Math.sin(ph)*Math.cos(th));
+    cam.lookAt(0,0,0);
   }
-  wrapper.addEventListener('mousedown', e => { dragging = true; px = e.clientX; py = e.clientY; });
+  sync();
+  wrapper.addEventListener('mousedown', e => { dragging=true; activeOrbitState=state; px=e.clientX; py=e.clientY; });
+  wrapper.addEventListener('wheel', e => { r=Math.max(1.8,Math.min(9,r+e.deltaY*0.01)); sync(); e.preventDefault(); },{passive:false});
+  const state = { sync };
   window.addEventListener('mousemove', e => {
-    if (!dragging) return;
-    theta -= (e.clientX - px) * 0.012;
-    phi = Math.max(0.15, Math.min(Math.PI - 0.15, phi - (e.clientY - py) * 0.012));
-    px = e.clientX; py = e.clientY;
-    onUpdate(...getXYZ());
+    if (!dragging || activeOrbitState !== state) return;
+    th -= (e.clientX-px)*0.013; ph=Math.max(0.1,Math.min(Math.PI-0.1,ph-(e.clientY-py)*0.013));
+    px=e.clientX; py=e.clientY; sync();
   });
-  window.addEventListener('mouseup', () => dragging = false);
-  wrapper.addEventListener('wheel', e => {
-    r = Math.max(2, Math.min(7, r + e.deltaY * 0.008));
-    onUpdate(...getXYZ());
-    e.preventDefault();
-  }, { passive: false });
-  return { get: getXYZ };
+  window.addEventListener('mouseup', () => { dragging=false; });
+  return state;
 }
 
-function addLight(scene) {
-  const amb = new THREE.AmbientLight(0x334466, 0.8);
-  const dir = new THREE.DirectionalLight(0xffffff, 1.2);
-  dir.position.set(3, 4, 3);
-  const dir2 = new THREE.DirectionalLight(0x8888ff, 0.4);
-  dir2.position.set(-3, -2, -2);
-  scene.add(amb, dir, dir2);
+function addLight(sc) {
+  sc.add(new THREE.AmbientLight(0x334466,0.9));
+  const d=new THREE.DirectionalLight(0xffffff,1.2); d.position.set(3,5,3); sc.add(d);
+  const d2=new THREE.DirectionalLight(0x6688bb,0.4); d2.position.set(-3,-2,-2); sc.add(d2);
 }
 
-/* ═══════════════════════════════════════════════
-   SCENE 1: REPRESENTATION VIEWER
-═══════════════════════════════════════════════ */
-(function initRepScene() {
-  const wrapper = document.getElementById('rep-wrapper');
-  const canvas = document.getElementById('rep-canvas');
-  const W = wrapper.clientWidth, H = 420;
-  canvas.width = W * window.devicePixelRatio;
-  canvas.height = H * window.devicePixelRatio;
-  canvas.style.width = W + 'px';
-  canvas.style.height = H + 'px';
+function initCanvas(canvas, wrapper) {
+  const W=wrapper.clientWidth, H=parseInt(wrapper.style.height)||440;
+  canvas.width=W*dpr; canvas.height=H*dpr; canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+  renderer.setPixelRatio(1); renderer.setSize(W*dpr,H*dpr,false);
+  return {renderer,W,H};
+}
 
-  const renderer = makeRenderer(canvas, W * window.devicePixelRatio, H * window.devicePixelRatio);
-  renderer.setPixelRatio(1);
-  const scene = new THREE.Scene();
-  const camera = makeCamera(W / H);
+/* ═══════════════════════════════════════════
+   SCENE 1 — REPRESENTATION VIEWER
+═══════════════════════════════════════════ */
+(function() {
+  const wrap=document.getElementById('rep-wrap');
+  const canvas=document.getElementById('rep-canvas');
+  const {renderer,W,H}=initCanvas(canvas,wrap);
+  const scene=new THREE.Scene();
+  const cam=new THREE.PerspectiveCamera(45,W/H,0.01,100);
   addLight(scene);
+  const orbit=makeOrbit(wrap,cam,4.0);
 
-  let currentGroup = null;
-  let rotSpeed = 0.5;
-  let autoRot = true;
+  let group=null, pcMat=null, vxRes=8, currentRep='pc', autoT=0, rotSpd=0.5;
 
-  const orbit = addOrbit(wrapper, (x, y, z) => { camera.position.set(x, y, z); camera.lookAt(0, 0, 0); });
-
-  // ── Point Cloud ──
-  function makePointCloud(n = 2000) {
-    const geo = new THREE.BufferGeometry();
-    const positions = new Float32Array(n * 3);
-    const colors = new Float32Array(n * 3);
-    // sample torus surface
-    for (let i = 0; i < n; i++) {
-      const u = Math.random() * Math.PI * 2;
-      const v = Math.random() * Math.PI * 2;
-      const R = 1.0, r = 0.4;
-      const x = (R + r * Math.cos(v)) * Math.cos(u);
-      const y = r * Math.sin(v);
-      const z = (R + r * Math.cos(v)) * Math.sin(u);
-      positions[i * 3] = x;
-      positions[i * 3 + 1] = y;
-      positions[i * 3 + 2] = z;
-      const t = (y + r) / (2 * r);
-      const c = new THREE.Color().setHSL(0.55 + t * 0.35, 0.9, 0.55);
-      colors[i * 3] = c.r; colors[i * 3 + 1] = c.g; colors[i * 3 + 2] = c.b;
+  /* Point Cloud */
+  function makePCloud(n=2500) {
+    const pos=new Float32Array(n*3), col=new Float32Array(n*3);
+    for(let i=0;i<n;i++){
+      const u=Math.random()*Math.PI*2, v=Math.random()*Math.PI*2;
+      const R=1.0,r=0.4;
+      const x=(R+r*Math.cos(v))*Math.cos(u), y=r*Math.sin(v), z=(R+r*Math.cos(v))*Math.sin(u);
+      pos.set([x,y,z],i*3);
+      const c=new THREE.Color().setHSL(0.55+(y+r)/(2*r)*0.35,0.85,0.55);
+      col.set([c.r,c.g,c.b],i*3);
     }
-    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    const mat = new THREE.PointsMaterial({ size: 0.04, vertexColors: true, sizeAttenuation: true });
-    return { mesh: new THREE.Points(geo, mat), mat };
+    const geo=new THREE.BufferGeometry();
+    geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+    geo.setAttribute('color',new THREE.BufferAttribute(col,3));
+    pcMat=new THREE.PointsMaterial({size:0.04,vertexColors:true,sizeAttenuation:true});
+    return new THREE.Points(geo,pcMat);
   }
 
-  // ── Mesh ──
+  /* Mesh — low-poly icosphere so triangles are clearly visible */
   function makeMesh() {
-    const geo = new THREE.TorusGeometry(1.0, 0.4, 48, 96);
-    const mat = new THREE.MeshPhongMaterial({ color: 0x3b82f6, shininess: 80, specular: 0x88aaff });
-    const mesh = new THREE.Mesh(geo, mat);
-    const wmat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, wireframe: true, opacity: 0.25, transparent: true });
-    const wire = new THREE.Mesh(geo, wmat);
-    wire.visible = false;
-    const g = new THREE.Group();
-    g.add(mesh, wire);
-    return { group: g, solid: mesh, wire };
+    const g=new THREE.Group();
+    const geo=new THREE.TorusGeometry(1.0,0.4,12,24); // low poly
+    // Solid face
+    const solidMat=new THREE.MeshPhongMaterial({color:0x2563eb,shininess:60,specular:0x88aaff,flatShading:true});
+    g.add(new THREE.Mesh(geo,solidMat));
+    // Wireframe overlay
+    const wireMat=new THREE.MeshBasicMaterial({color:0x38bdf8,wireframe:true,opacity:0.6,transparent:true});
+    g.add(new THREE.Mesh(geo,wireMat));
+    // Vertex dots — iterate positions
+    const nonIdx=geo.toNonIndexed();
+    const posAttr=nonIdx.attributes.position;
+    const vtxGeo=new THREE.BufferGeometry();
+    vtxGeo.setAttribute('position',posAttr);
+    const vtxMat=new THREE.PointsMaterial({color:0xfbbf24,size:0.08,sizeAttenuation:true});
+    g.add(new THREE.Points(vtxGeo,vtxMat));
+    return {group:g, vertCount:geo.attributes.position.count, faceCount:geo.index?geo.index.count/3:posAttr.count/3};
   }
 
-  // ── Voxel Grid ──
+  /* Voxel grid */
   function makeVoxels(res) {
-    const step = 2.8 / res;
-    const g = new THREE.Group();
-    const geo = new THREE.BoxGeometry(step * 0.88, step * 0.88, step * 0.88);
-    const R = 1.0, r = 0.4;
-    for (let i = 0; i < res; i++) for (let j = 0; j < res; j++) for (let k = 0; k < res; k++) {
-      const x = -1.4 + (i + 0.5) * step;
-      const y = -1.4 + (j + 0.5) * step;
-      const z = -1.4 + (k + 0.5) * step;
-      const d = Math.sqrt(x * x + z * z);
-      const sdf = Math.sqrt((d - R) * (d - R) + y * y) - r;
-      if (sdf < 0) {
-        const t = (y + r) / (2 * r);
-        const mat = new THREE.MeshPhongMaterial({ color: new THREE.Color().setHSL(0.55 + t * 0.3, 0.8, 0.5) });
-        const m = new THREE.Mesh(geo, mat);
-        m.position.set(x, y, z);
-        g.add(m);
+    const g=new THREE.Group();
+    const step=2.8/res;
+    const boxGeo=new THREE.BoxGeometry(step*0.88,step*0.88,step*0.88);
+    const R=1.0,r=0.4;
+    for(let i=0;i<res;i++) for(let j=0;j<res;j++) for(let k=0;k<res;k++){
+      const x=-1.4+(i+0.5)*step, y=-1.4+(j+0.5)*step, z=-1.4+(k+0.5)*step;
+      const d=Math.sqrt(x*x+z*z);
+      if(Math.sqrt((d-R)**2+y*y)<r){
+        const t=(y+r)/(2*r);
+        const m=new THREE.MeshPhongMaterial({color:new THREE.Color().setHSL(0.55+t*0.3,0.78,0.5)});
+        const mesh=new THREE.Mesh(boxGeo,m);
+        mesh.position.set(x,y,z); g.add(mesh);
       }
     }
     return g;
   }
 
-  // ── Tri-plane ──
+  /* Tri-plane */
+  let tpQueryMesh=null, tpProjLines=[], tpProjDots=[];
   function makeTriplane() {
-    const g = new THREE.Group();
-    const planeGeo = (axis) => {
-      const geo = new THREE.PlaneGeometry(2.6, 2.6, 1, 1);
-      if (axis === 'xz') { geo.rotateX(-Math.PI / 2); }
-      else if (axis === 'yz') { geo.rotateY(Math.PI / 2); }
-      return geo;
-    };
-    const planes = [
-      { geo: planeGeo('xy'), color: 0x3b82f6, label: 'XY plane' },
-      { geo: planeGeo('xz'), color: 0x10b981, label: 'XZ plane' },
-      { geo: planeGeo('yz'), color: 0xa855f7, label: 'YZ plane' },
+    const g=new THREE.Group();
+    const planeConfigs=[
+      {name:'XY',color:0x3b82f6,rotX:0,rotY:0},
+      {name:'XZ',color:0x10b981,rotX:-Math.PI/2,rotY:0},
+      {name:'YZ',color:0xa855f7,rotX:0,rotY:Math.PI/2},
     ];
-    planes.forEach(({ geo, color }) => {
-      const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.22, side: THREE.DoubleSide });
-      const edge = new THREE.EdgesGeometry(geo);
-      const edgeMat = new THREE.LineBasicMaterial({ color, opacity: 0.7, transparent: true });
-      g.add(new THREE.Mesh(geo, mat));
-      g.add(new THREE.LineSegments(edge, edgeMat));
+    planeConfigs.forEach(({color,rotX,rotY})=>{
+      const pGeo=new THREE.PlaneGeometry(2.8,2.8);
+      const pMat=new THREE.MeshBasicMaterial({color,transparent:true,opacity:0.13,side:THREE.DoubleSide,depthWrite:false});
+      const pm=new THREE.Mesh(pGeo,pMat);
+      pm.rotation.x=rotX; pm.rotation.y=rotY; g.add(pm);
+      const eGeo=new THREE.EdgesGeometry(pGeo);
+      const eMat=new THREE.LineBasicMaterial({color,opacity:0.5,transparent:true});
+      const el=new THREE.LineSegments(eGeo,eMat);
+      el.rotation.x=rotX; el.rotation.y=rotY; g.add(el);
     });
     // Small torus in center
-    const tGeo = new THREE.TorusGeometry(0.6, 0.24, 16, 32);
-    const tMat = new THREE.MeshPhongMaterial({ color: 0xf59e0b, shininess: 60 });
-    g.add(new THREE.Mesh(tGeo, tMat));
+    const tGeo=new THREE.TorusGeometry(0.65,0.25,12,24);
+    const tMat=new THREE.MeshPhongMaterial({color:0xf59e0b,shininess:50});
+    g.add(new THREE.Mesh(tGeo,tMat));
     // Query point
-    const qGeo = new THREE.SphereGeometry(0.08, 8, 8);
-    const qMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-    const qMesh = new THREE.Mesh(qGeo, qMat);
-    qMesh.position.set(0.5, 0.3, 0.4);
-    // projection lines
-    const lineMat = new THREE.LineBasicMaterial({ color: 0xffffff, opacity: 0.5, transparent: true });
-    function projLine(from, to) {
-      const geo = new THREE.BufferGeometry().setFromPoints([from, to]);
-      return new THREE.Line(geo, lineMat);
-    }
-    g.add(qMesh);
-    g.add(projLine(new THREE.Vector3(0.5, 0.3, 0.4), new THREE.Vector3(0.5, 0.3, 0)));
-    g.add(projLine(new THREE.Vector3(0.5, 0.3, 0.4), new THREE.Vector3(0.5, 0, 0.4)));
-    g.add(projLine(new THREE.Vector3(0.5, 0.3, 0.4), new THREE.Vector3(0, 0.3, 0.4)));
+    const qGeo=new THREE.SphereGeometry(0.07,12,6);
+    const qMat=new THREE.MeshBasicMaterial({color:0xffffff});
+    tpQueryMesh=new THREE.Mesh(qGeo,qMat);
+    g.add(tpQueryMesh);
+    // Projection dots (XY=blue, XZ=green, YZ=purple)
+    const dotColors=[0x60a5fa,0x34d399,0xc084fc];
+    tpProjDots=dotColors.map(c=>{
+      const dg=new THREE.SphereGeometry(0.06,8,4);
+      const dm=new THREE.MeshBasicMaterial({color:c});
+      const d=new THREE.Mesh(dg,dm); g.add(d); return d;
+    });
+    // Projection lines
+    tpProjLines=dotColors.map(c=>{
+      const lg=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3()]);
+      const lm=new THREE.LineBasicMaterial({color:c,opacity:0.8,transparent:true});
+      const l=new THREE.Line(lg,lm); g.add(l); return {line:l,geo:lg};
+    });
     return g;
   }
 
-  let repObjects = {};
-  let currentRep = 'pointcloud';
-  let pcMat = null;
-  let meshObjs = null;
-  let voxRes = 8;
-
-  function switchRep(rep) {
-    currentRep = rep;
-    if (currentGroup) { scene.remove(currentGroup); currentGroup = null; }
-
-    const hudTitle = document.getElementById('rep-hud-title');
-    const hudBody = document.getElementById('rep-hud-body');
-    document.getElementById('pc-ctrl').style.display = 'none';
-    document.getElementById('vx-ctrl').style.display = 'none';
-
-    if (rep === 'pointcloud') {
-      const { mesh, mat } = makePointCloud(2000);
-      currentGroup = new THREE.Group();
-      currentGroup.add(mesh);
-      pcMat = mat;
-      hudTitle.textContent = 'Point Cloud';
-      hudBody.innerHTML = 'Points: 2000<br>Color: by height<br>No connectivity';
-      document.getElementById('pc-ctrl').style.display = '';
-    } else if (rep === 'mesh') {
-      meshObjs = makeMesh();
-      currentGroup = meshObjs.group;
-      hudTitle.textContent = 'Polygon Mesh';
-      hudBody.innerHTML = 'Vertices: 4800<br>Faces: 9216<br>Wireframe: toggle';
-    } else if (rep === 'voxel') {
-      currentGroup = makeVoxels(voxRes);
-      hudTitle.textContent = 'Voxel Grid';
-      hudBody.innerHTML = `Resolution: ${voxRes}³<br>Voxels: ${currentGroup.children.length}<br>Color: by height`;
-      document.getElementById('vx-ctrl').style.display = '';
-    } else if (rep === 'triplane') {
-      currentGroup = makeTriplane();
-      hudTitle.textContent = 'Tri-plane';
-      hudBody.innerHTML = '<span style="color:#3b82f6">■</span> XY plane<br><span style="color:#10b981">■</span> XZ plane<br><span style="color:#a855f7">■</span> YZ plane<br>● query point';
-    }
-    if (currentGroup) scene.add(currentGroup);
+  let tpQx=0.5,tpQy=0.4,tpQz=0.6;
+  function updateTriplane(){
+    if(!tpQueryMesh) return;
+    tpQueryMesh.position.set(tpQx,tpQy,tpQz);
+    // XY plane: proj to z=0
+    const projXY=new THREE.Vector3(tpQx,tpQy,0);
+    // XZ plane: proj to y=0
+    const projXZ=new THREE.Vector3(tpQx,0,tpQz);
+    // YZ plane: proj to x=0
+    const projYZ=new THREE.Vector3(0,tpQy,tpQz);
+    const projs=[projXY,projXZ,projYZ];
+    const qpt=new THREE.Vector3(tpQx,tpQy,tpQz);
+    tpProjDots.forEach((d,i)=>d.position.copy(projs[i]));
+    tpProjLines.forEach(({line,geo},i)=>{
+      geo.setFromPoints([qpt,projs[i]]);
+      geo.attributes.position.needsUpdate=true;
+    });
+    document.getElementById('rep-hud-body').innerHTML=
+      `Query: (${tpQx.toFixed(2)}, ${tpQy.toFixed(2)}, ${tpQz.toFixed(2)})<br>`+
+      `<span style="color:#60a5fa">XY proj:</span> (${tpQx.toFixed(2)}, ${tpQy.toFixed(2)})<br>`+
+      `<span style="color:#34d399">XZ proj:</span> (${tpQx.toFixed(2)}, ${tpQz.toFixed(2)})<br>`+
+      `<span style="color:#c084fc">YZ proj:</span> (${tpQy.toFixed(2)}, ${tpQz.toFixed(2)})<br>`+
+      `<span style="color:#6060a0;font-size:.7rem">sum features → MLP</span>`;
   }
 
-  switchRep('pointcloud');
+  function switchRep(rep){
+    currentRep=rep;
+    if(group){scene.remove(group);group=null;}
+    tpQueryMesh=null; tpProjLines=[]; tpProjDots=[];
+    ['pc-ctrl','vx-ctrl','tp-qx-ctrl','tp-qy-ctrl','tp-qz-ctrl'].forEach(id=>document.getElementById(id).style.display='none');
+    const hudTitle=document.getElementById('rep-hud-title');
+    const hudBody=document.getElementById('rep-hud-body');
+    if(rep==='pc'){
+      group=new THREE.Group(); group.add(makePCloud()); scene.add(group);
+      hudTitle.textContent='Point Cloud';
+      hudBody.innerHTML='Samples: 2500<br>Colored by height<br>No surface connectivity';
+      document.getElementById('pc-ctrl').style.display='';
+    } else if(rep==='mesh'){
+      const {group:mg,vertCount,faceCount}=makeMesh();
+      group=mg; scene.add(group);
+      hudTitle.textContent='Triangle Mesh';
+      hudBody.innerHTML=`Vertices: ${vertCount}<br>Triangles: ${Math.round(faceCount)}<br><span style="color:#fbbf24">● vertices</span><br><span style="color:#38bdf8">― wireframe</span><br><span style="color:#2563eb">▪ solid faces</span>`;
+    } else if(rep==='voxel'){
+      group=makeVoxels(vxRes); scene.add(group);
+      hudTitle.textContent='Voxel Grid';
+      hudBody.innerHTML=`Resolution: ${vxRes}³<br>Filled voxels: ${group.children.length}<br>Colored by height`;
+      document.getElementById('vx-ctrl').style.display='';
+    } else if(rep==='triplane'){
+      group=makeTriplane(); scene.add(group);
+      hudTitle.textContent='Tri-plane';
+      hudBody.innerHTML='Loading…';
+      ['tp-qx-ctrl','tp-qy-ctrl','tp-qz-ctrl'].forEach(id=>document.getElementById(id).style.display='');
+      updateTriplane();
+    }
+  }
 
-  document.querySelectorAll('.tab-btn[data-rep]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab-btn[data-rep]').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      switchRep(btn.dataset.rep);
+  document.querySelectorAll('.tab-btn[data-rep]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.tab-btn[data-rep]').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active'); switchRep(btn.dataset.rep);
+    });
+  });
+  document.getElementById('pc-size').addEventListener('input',function(){
+    document.getElementById('pc-size-val').textContent=this.value;
+    if(pcMat) pcMat.size=parseFloat(this.value)*0.013;
+  });
+  document.getElementById('vx-res').addEventListener('input',function(){
+    vxRes=parseInt(this.value); document.getElementById('vx-res-val').textContent=vxRes;
+    if(currentRep==='voxel') switchRep('voxel');
+  });
+  document.getElementById('rot-speed').addEventListener('input',function(){
+    rotSpd=parseFloat(this.value); document.getElementById('rot-val').textContent=rotSpd===0?'off':'on';
+  });
+  ['qx','qy','qz'].forEach(ax=>{
+    document.getElementById(`tp-${ax}`).addEventListener('input',function(){
+      const v=parseFloat(this.value);
+      if(ax==='qx') tpQx=v; else if(ax==='qy') tpQy=v; else tpQz=v;
+      document.getElementById(`tp-${ax}-val`).textContent=v.toFixed(2);
+      if(currentRep==='triplane') updateTriplane();
     });
   });
 
-  document.getElementById('pc-size').addEventListener('input', function () {
-    document.getElementById('pc-size-val').textContent = this.value;
-    if (pcMat) pcMat.size = parseFloat(this.value) * 0.013;
-  });
-
-  document.getElementById('vx-res').addEventListener('input', function () {
-    voxRes = parseInt(this.value);
-    document.getElementById('vx-res-val').textContent = voxRes;
-    if (currentRep === 'voxel') switchRep('voxel');
-  });
-
-  document.getElementById('rot-speed').addEventListener('input', function () {
-    rotSpeed = parseFloat(this.value);
-    document.getElementById('rot-val').textContent = rotSpeed === 0 ? 'off' : 'on';
-    autoRot = rotSpeed > 0;
-  });
-
-  let t = 0;
-  function animate() {
-    requestAnimationFrame(animate);
-    t += 0.016;
-    if (autoRot && currentGroup) currentGroup.rotation.y = t * rotSpeed * 0.3;
-    renderer.render(scene, camera);
-  }
-  animate();
+  switchRep('pc');
+  let t=0;
+  (function animate(){requestAnimationFrame(animate);t+=0.016;if(rotSpd>0&&group)group.rotation.y=t*rotSpd*0.3;renderer.render(scene,cam);})();
 })();
 
-/* ═══════════════════════════════════════════════
+/* ═══════════════════════════════════════════
    KD-TREE 2D
-═══════════════════════════════════════════════ */
-(function initKDTree() {
-  const canvas = document.getElementById('kd-canvas');
-  const ctx = canvas.getContext('2d');
-  let W, H;
-  let pts = [];
-  let maxDepth = 6;
-  let numPts = 24;
-  let queryPt = null;
-  let nearestPt = null;
-  let visitedCells = [];
+═══════════════════════════════════════════ */
+(function(){
+  const canvas=document.getElementById('kd-canvas');
+  const ctx=canvas.getContext('2d');
+  let W,H,pts=[],maxD=6,numPts=24,qPt=null,nearest=null;
 
-  function resize() {
-    W = canvas.parentElement.clientWidth;
-    H = 400;
-    canvas.width = W * devicePixelRatio;
-    canvas.height = H * devicePixelRatio;
-    canvas.style.width = W + 'px';
-    canvas.style.height = H + 'px';
-    ctx.scale(devicePixelRatio, devicePixelRatio);
-    draw();
+  function resize(){
+    W=canvas.parentElement.clientWidth; H=360;
+    canvas.width=W*dpr; canvas.height=H*dpr;
+    canvas.style.width=W+'px'; canvas.style.height=H+'px';
+    ctx.scale(dpr,dpr); draw();
   }
+  function gen(n){pts=Array.from({length:n},()=>({x:0.07+Math.random()*0.86,y:0.07+Math.random()*0.86}));}
 
-  function genPoints(n) {
-    pts = [];
-    for (let i = 0; i < n; i++) {
-      pts.push({ x: 0.08 + Math.random() * 0.84, y: 0.08 + Math.random() * 0.84 });
+  class KD{
+    constructor(pts,depth,b){
+      this.b=b; this.d=depth; this.l=this.r=null; this.pt=null;
+      if(!pts||!pts.length) return;
+      const ax=depth%2;
+      const s=[...pts].sort((a,c)=>ax?a.y-c.y:a.x-c.x);
+      const m=Math.floor(s.length/2);
+      this.pt=s[m]; this.ax=ax; this.sv=ax?s[m].y:s[m].x;
+      const bl={...b},br={...b};
+      ax?(bl.maxY=this.sv,br.minY=this.sv):(bl.maxX=this.sv,br.minX=this.sv);
+      if(m>0) this.l=new KD(s.slice(0,m),depth+1,bl);
+      if(m<s.length-1) this.r=new KD(s.slice(m+1),depth+1,br);
     }
   }
-
-  class KDNode {
-    constructor(points, depth, bounds) {
-      this.depth = depth;
-      this.bounds = bounds;
-      this.left = null;
-      this.right = null;
-      if (!points || points.length === 0) return;
-      const axis = depth % 2;
-      points = [...points].sort((a, b) => axis === 0 ? a.x - b.x : a.y - b.y);
-      const mid = Math.floor(points.length / 2);
-      this.point = points[mid];
-      this.axis = axis;
-      this.splitVal = axis === 0 ? points[mid].x : points[mid].y;
-      const lb = { ...bounds }, rb = { ...bounds };
-      if (axis === 0) { lb.maxX = this.splitVal; rb.minX = this.splitVal; }
-      else { lb.maxY = this.splitVal; rb.minY = this.splitVal; }
-      const left = points.slice(0, mid);
-      const right = points.slice(mid + 1);
-      if (left.length > 0) this.left = new KDNode(left, depth + 1, lb);
-      if (right.length > 0) this.right = new KDNode(right, depth + 1, rb);
-    }
-  }
-
-  function buildTree() {
-    return new KDNode(pts, 0, { minX: 0, maxX: 1, minY: 0, maxY: 1 });
-  }
-
-  const depthColors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7'];
-
-  function drawNode(node, depth) {
-    if (!node || !node.point || depth >= maxDepth) return;
-    const { minX, maxX, minY, maxY } = node.bounds;
-    const color = depthColors[Math.min(depth, depthColors.length - 1)];
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 2 - depth * 0.25;
-    ctx.setLineDash([]);
-    ctx.globalAlpha = 0.6;
-    if (node.axis === 0) {
-      const x = node.splitVal * W;
-      const y0 = minY * H, y1 = maxY * H;
-      ctx.beginPath(); ctx.moveTo(x, y0); ctx.lineTo(x, y1); ctx.stroke();
-    } else {
-      const y = node.splitVal * H;
-      const x0 = minX * W, x1 = maxX * W;
-      ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke();
-    }
-    ctx.globalAlpha = 1;
-    drawNode(node.left, depth + 1);
-    drawNode(node.right, depth + 1);
-  }
-
-  function nnSearch(node, q, depth, best) {
-    if (!node || !node.point) return best;
-    const d = Math.hypot(node.point.x - q.x, node.point.y - q.y);
-    if (d < best.dist) best = { dist: d, pt: node.point };
-    const axis = depth % 2;
-    const diff = axis === 0 ? q.x - node.splitVal : q.y - node.splitVal;
-    const near = diff < 0 ? node.left : node.right;
-    const far = diff < 0 ? node.right : node.left;
-    best = nnSearch(near, q, depth + 1, best);
-    if (Math.abs(diff) < best.dist) best = nnSearch(far, q, depth + 1, best);
+  function nnSearch(node,q,best){
+    if(!node||!node.pt) return best;
+    const d=Math.hypot(node.pt.x-q.x,node.pt.y-q.y);
+    if(d<best.d) best={d,pt:node.pt};
+    const diff=node.ax?q.y-node.sv:q.x-node.sv;
+    const near=diff<0?node.l:node.r, far=diff<0?node.r:node.l;
+    best=nnSearch(near,q,best);
+    if(Math.abs(diff)<best.d) best=nnSearch(far,q,best);
     return best;
   }
 
-  function draw() {
-    ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = '#09090f';
-    ctx.fillRect(0, 0, W, H);
+  const DC=['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#a855f7'];
+  function drawNode(n,d){
+    if(!n||!n.pt||d>=maxD) return;
+    const col=DC[Math.min(d,DC.length-1)];
+    ctx.strokeStyle=col; ctx.lineWidth=Math.max(0.8,2-d*0.28); ctx.globalAlpha=0.55;
+    if(n.ax===0){const x=n.sv*W;ctx.beginPath();ctx.moveTo(x,n.b.minY*H);ctx.lineTo(x,n.b.maxY*H);ctx.stroke();}
+    else{const y=n.sv*H;ctx.beginPath();ctx.moveTo(n.b.minX*W,y);ctx.lineTo(n.b.maxX*W,y);ctx.stroke();}
+    ctx.globalAlpha=1;
+    drawNode(n.l,d+1); drawNode(n.r,d+1);
+  }
 
-    const tree = buildTree();
-    drawNode(tree, 0);
-
-    // Draw points
-    pts.forEach(p => {
-      ctx.beginPath();
-      ctx.arc(p.x * W, p.y * H, 5, 0, Math.PI * 2);
-      ctx.fillStyle = '#60a5fa';
-      ctx.fill();
-      ctx.strokeStyle = '#1e3a5f';
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
+  function draw(){
+    ctx.clearRect(0,0,W,H); ctx.fillStyle='#09090f'; ctx.fillRect(0,0,W,H);
+    const tree=new KD(pts,0,{minX:0,maxX:1,minY:0,maxY:1});
+    drawNode(tree,0);
+    pts.forEach(p=>{
+      ctx.beginPath(); ctx.arc(p.x*W,p.y*H,5,0,Math.PI*2);
+      ctx.fillStyle='#60a5fa'; ctx.fill();
+      ctx.strokeStyle='#1e3a5f'; ctx.lineWidth=1.5; ctx.stroke();
     });
-
-    if (queryPt) {
-      // Draw nearest neighbor line
-      if (nearestPt) {
-        ctx.beginPath();
-        ctx.moveTo(queryPt.x * W, queryPt.y * H);
-        ctx.lineTo(nearestPt.x * W, nearestPt.y * H);
-        ctx.strokeStyle = '#fbbf24';
-        ctx.lineWidth = 2;
-        ctx.setLineDash([5, 4]);
-        ctx.stroke();
+    if(qPt){
+      if(nearest){
+        ctx.setLineDash([5,4]);
+        ctx.strokeStyle='#fbbf24'; ctx.lineWidth=2;
+        ctx.beginPath(); ctx.moveTo(qPt.x*W,qPt.y*H); ctx.lineTo(nearest.x*W,nearest.y*H); ctx.stroke();
         ctx.setLineDash([]);
-        // Nearest point highlight
-        ctx.beginPath();
-        ctx.arc(nearestPt.x * W, nearestPt.y * H, 9, 0, Math.PI * 2);
-        ctx.strokeStyle = '#fbbf24';
-        ctx.lineWidth = 2.5;
-        ctx.stroke();
+        ctx.beginPath(); ctx.arc(nearest.x*W,nearest.y*H,10,0,Math.PI*2);
+        ctx.strokeStyle='#fbbf24'; ctx.lineWidth=2.5; ctx.stroke();
       }
-      // Query point
-      ctx.beginPath();
-      ctx.arc(queryPt.x * W, queryPt.y * H, 7, 0, Math.PI * 2);
-      ctx.fillStyle = '#f0f0f0';
-      ctx.fill();
-      ctx.strokeStyle = '#60a5fa';
-      ctx.lineWidth = 2;
-      ctx.stroke();
+      ctx.beginPath(); ctx.arc(qPt.x*W,qPt.y*H,7,0,Math.PI*2);
+      ctx.fillStyle='#f0f0f0'; ctx.fill();
+      ctx.strokeStyle='#60a5fa'; ctx.lineWidth=2; ctx.stroke();
     }
-
-    // Legend
-    depthColors.slice(0, maxDepth).forEach((c, i) => {
-      ctx.fillStyle = c;
-      ctx.fillRect(10, 10 + i * 18, 16, 4);
-      ctx.fillStyle = '#9090b0';
-      ctx.font = '11px monospace';
-      ctx.fillText(`depth ${i}`, 32, 15 + i * 18);
+    DC.slice(0,maxD).forEach((c,i)=>{
+      ctx.fillStyle=c; ctx.fillRect(10,10+i*17,14,4);
+      ctx.fillStyle='#9090b0'; ctx.font='11px monospace'; ctx.fillText('depth '+i,30,15+i*17);
     });
   }
 
-  canvas.addEventListener('click', e => {
-    const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / W;
-    const y = (e.clientY - rect.top) / H;
-    queryPt = { x, y };
-    const tree = buildTree();
-    const best = nnSearch(tree, queryPt, 0, { dist: Infinity, pt: null });
-    nearestPt = best.pt;
-    draw();
+  canvas.addEventListener('click',e=>{
+    const r=canvas.getBoundingClientRect();
+    qPt={x:(e.clientX-r.left)/W,y:(e.clientY-r.top)/H};
+    const tree=new KD(pts,0,{minX:0,maxX:1,minY:0,maxY:1});
+    const res=nnSearch(tree,qPt,{d:Infinity,pt:null});
+    nearest=res.pt; draw();
   });
+  document.getElementById('kd-depth').addEventListener('input',function(){maxD=parseInt(this.value);document.getElementById('kd-depth-val').textContent=maxD;draw();});
+  document.getElementById('kd-n').addEventListener('input',function(){numPts=parseInt(this.value);document.getElementById('kd-n-val').textContent=numPts;qPt=null;nearest=null;gen(numPts);draw();});
 
-  document.getElementById('kd-depth').addEventListener('input', function () {
-    maxDepth = parseInt(this.value);
-    document.getElementById('kd-depth-val').textContent = maxDepth;
-    draw();
-  });
-
-  document.getElementById('kd-n').addEventListener('input', function () {
-    numPts = parseInt(this.value);
-    document.getElementById('kd-n-val').textContent = numPts;
-    queryPt = null; nearestPt = null;
-    genPoints(numPts);
-    draw();
-  });
-
-  genPoints(numPts);
-  resize();
-  window.addEventListener('resize', resize);
+  gen(numPts); resize(); window.addEventListener('resize',resize);
 })();
 
-/* ═══════════════════════════════════════════════
-   SCENE 2: NORMALS
-═══════════════════════════════════════════════ */
-(function initNormScene() {
-  const wrapper = document.getElementById('norm-wrapper');
-  const canvas = document.getElementById('norm-canvas');
-  const W = wrapper.clientWidth, H = 400;
-  canvas.width = W * devicePixelRatio;
-  canvas.height = H * devicePixelRatio;
-  canvas.style.width = W + 'px';
-  canvas.style.height = H + 'px';
-
-  const renderer = makeRenderer(canvas, W * devicePixelRatio, H * devicePixelRatio);
-  renderer.setPixelRatio(1);
-  const scene = new THREE.Scene();
-  const camera = makeCamera(W / H);
-  camera.position.set(0, 1, 3.5);
+/* ═══════════════════════════════════════════
+   SCENE 2 — NORMALS (3D)
+═══════════════════════════════════════════ */
+(function(){
+  const wrap=document.getElementById('norm-wrap');
+  const canvas=document.getElementById('norm-canvas');
+  const {renderer,W,H}=initCanvas(canvas,wrap);
+  const scene=new THREE.Scene();
+  const cam=new THREE.PerspectiveCamera(45,W/H,0.01,100);
   addLight(scene);
+  makeOrbit(wrap,cam,3.8);
 
-  const orbit = addOrbit(wrapper, (x, y, z) => { camera.position.set(x, y, z); camera.lookAt(0, 0, 0); });
+  let meshGrp=null, normMode='face', arrowLen=0.3;
+  const legend=document.getElementById('norm-legend');
 
-  let arrowGroup = new THREE.Group();
-  let meshObj = null;
-  let normMode = 'vertex';
-  let density = 20;
-  let arrowLen = 0.25;
+  function buildNormals(){
+    if(meshGrp){scene.remove(meshGrp);}
+    meshGrp=new THREE.Group();
+    legend.style.display='none';
 
-  function buildNormals() {
-    scene.remove(arrowGroup);
-    if (meshObj) scene.remove(meshObj);
-    arrowGroup = new THREE.Group();
-
-    const geo = new THREE.SphereGeometry(1, density, density);
-    geo.computeVertexNormals();
-
-    let mat;
-    if (normMode === 'colored') {
-      const cGeo = geo.clone();
-      const normals = cGeo.attributes.normal;
-      const colors = new Float32Array(normals.count * 3);
-      for (let i = 0; i < normals.count; i++) {
-        colors[i * 3] = normals.getX(i) * 0.5 + 0.5;
-        colors[i * 3 + 1] = normals.getY(i) * 0.5 + 0.5;
-        colors[i * 3 + 2] = normals.getZ(i) * 0.5 + 0.5;
+    if(normMode==='face'){
+      // Low-poly for visible faces
+      const geo=new THREE.IcosahedronGeometry(1.0,2);
+      const fMat=new THREE.MeshPhongMaterial({color:0x2563eb,flatShading:true,shininess:30});
+      meshGrp.add(new THREE.Mesh(geo,fMat));
+      // Arrow at each face center
+      const nonIdx=geo.toNonIndexed();
+      const pos=nonIdx.attributes.position;
+      for(let i=0;i<pos.count;i+=3){
+        const v0=new THREE.Vector3(pos.getX(i),pos.getY(i),pos.getZ(i));
+        const v1=new THREE.Vector3(pos.getX(i+1),pos.getY(i+1),pos.getZ(i+1));
+        const v2=new THREE.Vector3(pos.getX(i+2),pos.getY(i+2),pos.getZ(i+2));
+        const c=new THREE.Vector3().addVectors(v0,v1).add(v2).divideScalar(3);
+        const n=new THREE.Vector3().crossVectors(v1.clone().sub(v0),v2.clone().sub(v0)).normalize();
+        const arr=new THREE.ArrowHelper(n,c,arrowLen,0x34d399,arrowLen*0.4,arrowLen*0.25);
+        meshGrp.add(arr);
       }
-      cGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-      mat = new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 60 });
-      meshObj = new THREE.Mesh(cGeo, mat);
-    } else if (normMode === 'face') {
-      mat = new THREE.MeshPhongMaterial({ color: 0x3b82f6, flatShading: true, shininess: 30 });
-      meshObj = new THREE.Mesh(geo, mat);
+      document.getElementById('norm-hud-title').textContent='Face Normals';
+      document.getElementById('norm-hud-body').innerHTML=
+        'One arrow per face<br>All points in a face<br>share the same normal<br><span style="color:#6060a0;font-size:.7rem">→ faceted/flat shading</span>';
+
+    } else if(normMode==='vertex'){
+      const geo=new THREE.SphereGeometry(1.0,16,8);
+      geo.computeVertexNormals();
+      const sMat=new THREE.MeshPhongMaterial({color:0x2563eb,shininess:80});
+      meshGrp.add(new THREE.Mesh(geo,sMat));
+      const pos=geo.attributes.position, nrm=geo.attributes.normal;
+      const step=Math.max(1,Math.floor(pos.count/80));
+      for(let i=0;i<pos.count;i+=step){
+        const orig=new THREE.Vector3(pos.getX(i),pos.getY(i),pos.getZ(i));
+        const dir=new THREE.Vector3(nrm.getX(i),nrm.getY(i),nrm.getZ(i)).normalize();
+        const arr=new THREE.ArrowHelper(dir,orig,arrowLen,0xf59e0b,arrowLen*0.4,arrowLen*0.25);
+        meshGrp.add(arr);
+      }
+      document.getElementById('norm-hud-title').textContent='Vertex Normals';
+      document.getElementById('norm-hud-body').innerHTML=
+        'One arrow per vertex<br>Average of adjacent<br>face normals<br><span style="color:#6060a0;font-size:.7rem">→ smooth shading</span>';
+
     } else {
-      mat = new THREE.MeshPhongMaterial({ color: 0x3b82f6, shininess: 80 });
-      meshObj = new THREE.Mesh(geo, mat);
+      // Color by normal
+      const geo=new THREE.SphereGeometry(1.0,32,16);
+      geo.computeVertexNormals();
+      const nrm=geo.attributes.normal;
+      const cols=new Float32Array(nrm.count*3);
+      for(let i=0;i<nrm.count;i++){
+        cols[i*3]  =nrm.getX(i)*0.5+0.5;
+        cols[i*3+1]=nrm.getY(i)*0.5+0.5;
+        cols[i*3+2]=nrm.getZ(i)*0.5+0.5;
+      }
+      geo.setAttribute('color',new THREE.BufferAttribute(cols,3));
+      const cMat=new THREE.MeshPhongMaterial({vertexColors:true,shininess:0});
+      meshGrp.add(new THREE.Mesh(geo,cMat));
+      document.getElementById('norm-hud-title').textContent='Normal Map Encoding';
+      document.getElementById('norm-hud-body').innerHTML=
+        'RGB = (n+1)/2<br>'+
+        '<span style="color:#f87171">■</span> +X = red (right)<br>'+
+        '<span style="color:#34d399">■</span> +Y = green (up)<br>'+
+        '<span style="color:#60a5fa">■</span> +Z = blue (front)<br>'+
+        '<span style="color:#6060a0">■</span> −axis = dark';
+      legend.style.display='';
+      legend.innerHTML=
+        '<div style="font-size:.68rem;color:#6060a0;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;">Normal → Color encoding</div>'+
+        '<div><span style="color:#f87171">●</span> n=(+1,0,0) → <span style="color:#f87171">red</span> (right)</div>'+
+        '<div><span style="color:#4ade80">●</span> n=(0,+1,0) → <span style="color:#4ade80">green</span> (up)</div>'+
+        '<div><span style="color:#60a5fa">●</span> n=(0,0,+1) → <span style="color:#60a5fa">blue</span> (front)</div>'+
+        '<div style="color:#888">−axis → darker version</div>'+
+        '<div style="margin-top:3px;color:#888;font-size:.7rem">Formula: RGB = (n+1)÷2</div>';
     }
-    scene.add(meshObj);
-
-    const pos = geo.attributes.position;
-    const norms = geo.attributes.normal;
-    const step = Math.max(1, Math.floor(pos.count / (density * 2)));
-    for (let i = 0; i < pos.count; i += step) {
-      const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
-      const nx = norms.getX(i), ny = norms.getY(i), nz = norms.getZ(i);
-      const origin = new THREE.Vector3(x, y, z);
-      const dir = new THREE.Vector3(nx, ny, nz).normalize();
-      const arrow = new THREE.ArrowHelper(dir, origin, arrowLen, 0x34d399, arrowLen * 0.35, arrowLen * 0.2);
-      arrowGroup.add(arrow);
-    }
-    scene.add(arrowGroup);
-
-    const hud = document.getElementById('norm-hud');
-    if (normMode === 'vertex') hud.innerHTML = 'Vertex normals<br>Averaged from faces<br>Smooth shading';
-    else if (normMode === 'face') hud.innerHTML = 'Face normals<br>Per-triangle<br>Flat shading';
-    else hud.innerHTML = 'Normal → RGB<br>n.x → Red<br>n.y → Green<br>n.z → Blue';
+    scene.add(meshGrp);
   }
 
-  document.querySelectorAll('.tab-btn[data-norm]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab-btn[data-norm]').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      normMode = btn.dataset.norm;
-      buildNormals();
+  document.querySelectorAll('.tab-btn[data-norm]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.tab-btn[data-norm]').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active'); normMode=btn.dataset.norm; buildNormals();
     });
   });
-
-  document.getElementById('norm-dens').addEventListener('input', function () {
-    density = parseInt(this.value);
-    document.getElementById('norm-dens-val').textContent = density;
-    buildNormals();
-  });
-  document.getElementById('norm-len').addEventListener('input', function () {
-    arrowLen = parseFloat(this.value);
-    document.getElementById('norm-len-val').textContent = arrowLen.toFixed(2);
+  document.getElementById('norm-len').addEventListener('input',function(){
+    arrowLen=parseFloat(this.value);
+    document.getElementById('norm-len-val').textContent=arrowLen.toFixed(2);
     buildNormals();
   });
 
   buildNormals();
-  let t = 0;
-  function animate() {
-    requestAnimationFrame(animate);
-    t += 0.016;
-    if (meshObj) meshObj.rotation.y = t * 0.2;
-    arrowGroup.rotation.y = t * 0.2;
-    renderer.render(scene, camera);
-  }
-  animate();
+  let t=0;
+  (function animate(){requestAnimationFrame(animate);t+=0.016;if(meshGrp)meshGrp.rotation.y=t*0.25;renderer.render(scene,cam);})();
 })();
 
-/* ═══════════════════════════════════════════════
-   SDF 2D
-═══════════════════════════════════════════════ */
-(function initSDF() {
-  const canvas = document.getElementById('sdf-canvas');
-  const ctx = canvas.getContext('2d');
-  let W, H;
-  let sdfMode = 'sphere';
-  let shape = { x: 0.5, y: 0.5, r: 0.22 };
-  let dragging = false;
-  let mousePos = null;
+/* ═══════════════════════════════════════════
+   SCENE 3 — SDF 3D
+═══════════════════════════════════════════ */
+(function(){
+  const wrap=document.getElementById('sdf-wrap');
+  const canvas=document.getElementById('sdf-canvas');
+  const {renderer,W,H}=initCanvas(canvas,wrap);
+  const scene=new THREE.Scene();
+  const cam=new THREE.PerspectiveCamera(45,W/H,0.01,100);
+  addLight(scene);
+  makeOrbit(wrap,cam,4.2);
 
-  function resize() {
-    W = canvas.parentElement.clientWidth;
-    H = 400;
-    canvas.width = W * devicePixelRatio;
-    canvas.height = H * devicePixelRatio;
-    canvas.style.width = W + 'px';
-    canvas.style.height = H + 'px';
-    ctx.scale(devicePixelRatio, devicePixelRatio);
-    draw();
+  const SDF_R=1.2;
+
+  // Sphere surface (semi-transparent)
+  const surfGeo=new THREE.SphereGeometry(SDF_R,48,24);
+  const surfMat=new THREE.MeshPhongMaterial({color:0x3b82f6,transparent:true,opacity:0.2,side:THREE.DoubleSide,depthWrite:false});
+  scene.add(new THREE.Mesh(surfGeo,surfMat));
+  const wireGeo=new THREE.SphereGeometry(SDF_R,20,10);
+  scene.add(new THREE.Mesh(wireGeo,new THREE.MeshBasicMaterial({color:0x1d4ed8,wireframe:true,opacity:0.25,transparent:true})));
+
+  // Query sphere
+  const qMat=new THREE.MeshBasicMaterial({color:0xef4444});
+  const qMesh=new THREE.Mesh(new THREE.SphereGeometry(0.07,16,8),qMat);
+  scene.add(qMesh);
+
+  // Nearest-point marker
+  const nMesh=new THREE.Mesh(new THREE.SphereGeometry(0.05,8,4),new THREE.MeshBasicMaterial({color:0xffffff}));
+  scene.add(nMesh);
+
+  // Distance line
+  const lineGeo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3()]);
+  const lineMat=new THREE.LineBasicMaterial({color:0xfbbf24,linewidth:2});
+  scene.add(new THREE.Line(lineGeo,lineMat));
+
+  // Axes
+  scene.add(new THREE.AxesHelper(2.0));
+
+  let qx=0,qy=0,qz=1.8;
+
+  function updateSDF(){
+    const q=new THREE.Vector3(qx,qy,qz);
+    const sdf=q.length()-SDF_R;
+    qMesh.position.copy(q);
+    if(Math.abs(sdf)<0.08) qMat.color.setHex(0x22c55e);
+    else if(sdf>0) qMat.color.setHex(0xef4444);
+    else qMat.color.setHex(0x3b82f6);
+    const nearPt=q.length()>0.001?q.clone().normalize().multiplyScalar(SDF_R):new THREE.Vector3(SDF_R,0,0);
+    nMesh.position.copy(nearPt);
+    lineGeo.setFromPoints([q,nearPt]);
+    lineGeo.attributes.position.needsUpdate=true;
+    document.getElementById('sdf-qpos').textContent=`(${qx.toFixed(2)},${qy.toFixed(2)},${qz.toFixed(2)})`;
+    document.getElementById('sdf-val').textContent=sdf.toFixed(4);
+    document.getElementById('sdf-dist').textContent=Math.abs(sdf).toFixed(4);
+    const signEl=document.getElementById('sdf-sign');
+    if(Math.abs(sdf)<0.08){signEl.textContent='On surface (≈0)';signEl.className='val onsurf';}
+    else if(sdf<0){signEl.textContent='Inside (−)';signEl.className='val inside';}
+    else{signEl.textContent='Outside (+)';signEl.className='val outside';}
   }
 
-  function sdfCircle(px, py, cx, cy, r) {
-    return Math.hypot(px - cx, py - cy) - r;
-  }
-  function sdfBox(px, py, cx, cy, hw, hh) {
-    const dx = Math.abs(px - cx) - hw;
-    const dy = Math.abs(py - cy) - hh;
-    return Math.sqrt(Math.max(dx, 0) ** 2 + Math.max(dy, 0) ** 2) + Math.min(Math.max(dx, dy), 0);
-  }
-  function sdfFn(px, py) {
-    const x = px / W, y = py / H;
-    if (sdfMode === 'sphere') return sdfCircle(x, y, shape.x, shape.y, shape.r);
-    if (sdfMode === 'box') return sdfBox(x, y, shape.x, shape.y, 0.18, 0.14);
-    // union of two circles
-    const d1 = sdfCircle(x, y, shape.x - 0.1, shape.y, 0.15);
-    const d2 = sdfCircle(x, y, shape.x + 0.1, shape.y, 0.15);
-    return Math.min(d1, d2);
-  }
-
-  function draw() {
-    if (!W) return;
-    const imgData = ctx.createImageData(W, H);
-    const data = imgData.data;
-    for (let py = 0; py < H; py++) {
-      for (let px = 0; px < W; px++) {
-        const d = sdfFn(px, py);
-        const idx = (py * W + px) * 4;
-        const t = Math.min(Math.abs(d) / 0.4, 1);
-        let r, g, b;
-        if (d < 0) {
-          r = Math.round(10 + t * 30);
-          g = Math.round(20 + t * 50);
-          b = Math.round(80 + t * 130);
-        } else {
-          r = Math.round(80 + t * 130);
-          g = Math.round(15 + t * 20);
-          b = Math.round(15 + t * 20);
-        }
-        data[idx] = r; data[idx + 1] = g; data[idx + 2] = b; data[idx + 3] = 255;
-      }
-    }
-    ctx.putImageData(imgData, 0, 0);
-
-    // Draw contour lines
-    ctx.globalAlpha = 0.35;
-    for (let lv = -0.3; lv <= 0.35; lv += 0.06) {
-      if (Math.abs(lv) < 0.01) continue;
-      drawContour(lv, lv < 0 ? '#60a5fa' : '#f87171');
-    }
-    ctx.globalAlpha = 1;
-    // Zero level set
-    drawContour(0, '#ffffff');
-
-    if (mousePos) {
-      const d = sdfFn(mousePos.x, mousePos.y);
-      document.getElementById('sdf-val').textContent = d.toFixed(4);
-      document.getElementById('sdf-inside').textContent = d < 0 ? 'yes' : 'no';
-      ctx.beginPath();
-      ctx.arc(mousePos.x, mousePos.y, 5, 0, Math.PI * 2);
-      ctx.fillStyle = '#f0f0f0';
-      ctx.fill();
-    }
-  }
-
-  function drawContour(level, color) {
-    const res = 3;
-    ctx.strokeStyle = color;
-    ctx.lineWidth = level === 0 ? 2.5 : 1;
-    ctx.beginPath();
-    let drawing = false;
-    for (let py = 0; py < H; py += res) {
-      for (let px = 0; px < W; px += res) {
-        const d = sdfFn(px, py);
-        const d2 = sdfFn(px + res, py);
-        if ((d - level) * (d2 - level) < 0) {
-          const fx = px + res * (level - d) / (d2 - d);
-          if (!drawing) { ctx.moveTo(fx, py); drawing = true; } else ctx.lineTo(fx, py);
-        }
-      }
-    }
-    ctx.stroke();
-  }
-
-  document.querySelectorAll('.tab-btn[data-sdf]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab-btn[data-sdf]').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      sdfMode = btn.dataset.sdf;
-      draw();
+  ['x','y','z'].forEach(ax=>{
+    document.getElementById(`sdf-q${ax}`).addEventListener('input',function(){
+      const v=parseFloat(this.value);
+      if(ax==='x')qx=v;else if(ax==='y')qy=v;else qz=v;
+      document.getElementById(`sdf-q${ax}-val`).textContent=v.toFixed(2);
+      updateSDF();
     });
   });
 
-  canvas.addEventListener('mousedown', e => {
-    const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / W;
-    const y = (e.clientY - rect.top) / H;
-    if (Math.hypot(x - shape.x, y - shape.y) < 0.28) dragging = true;
-  });
-  canvas.addEventListener('mousemove', e => {
-    const rect = canvas.getBoundingClientRect();
-    mousePos = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-    if (dragging) {
-      shape.x = (e.clientX - rect.left) / W;
-      shape.y = (e.clientY - rect.top) / H;
-    }
-    draw();
-  });
-  canvas.addEventListener('mouseup', () => dragging = false);
-  canvas.addEventListener('mouseleave', () => { mousePos = null; document.getElementById('sdf-val').textContent = '—'; document.getElementById('sdf-inside').textContent = '—'; draw(); });
-
-  resize();
-  window.addEventListener('resize', resize);
+  updateSDF();
+  (function animate(){requestAnimationFrame(animate);renderer.render(scene,cam);})();
 })();
 
-/* ═══════════════════════════════════════════════
+/* ═══════════════════════════════════════════
    CHAMFER / HAUSDORFF 2D
-═══════════════════════════════════════════════ */
-(function initDistances() {
-  const canvas = document.getElementById('dist-canvas');
-  const ctx = canvas.getContext('2d');
-  let W, H;
-  let distMode = 'chamfer';
-  let draggingPt = null;
+═══════════════════════════════════════════ */
+(function(){
+  const canvas=document.getElementById('dist-canvas');
+  const ctx=canvas.getContext('2d');
+  let W,H,distMode='chamfer',dragPt=null;
 
-  function resize() {
-    W = canvas.parentElement.clientWidth;
-    H = 420;
-    canvas.width = W * devicePixelRatio;
-    canvas.height = H * devicePixelRatio;
-    canvas.style.width = W + 'px';
-    canvas.style.height = H + 'px';
-    ctx.scale(devicePixelRatio, devicePixelRatio);
-    draw();
+  function resize(){
+    W=canvas.parentElement.clientWidth; H=420;
+    canvas.width=W*dpr; canvas.height=H*dpr;
+    canvas.style.width=W+'px'; canvas.style.height=H+'px';
+    ctx.scale(dpr,dpr); draw();
   }
 
-  function circle(cx, cy, r, n) {
-    return Array.from({ length: n }, (_, i) => {
-      const a = (i / n) * Math.PI * 2;
-      return { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };
-    });
+  function ring(cx,cy,r,n){return Array.from({length:n},(_,i)=>({x:cx+r*Math.cos(i/n*Math.PI*2),y:cy+r*Math.sin(i/n*Math.PI*2),set:'P'}));}
+  let setP=ring(0.3,0.5,0.18,10);
+  let setQ=ring(0.7,0.5,0.13,8).map(p=>({...p,y:p.y+0.05,set:'Q'}));
+
+  function d2(a,b){return(a.x-b.x)**2+(a.y-b.y)**2;}
+  function nearest(pt,set){return set.reduce((b,q)=>d2(pt,q)<d2(pt,b)?q:b,set[0]);}
+
+  function chamfer(P,Q){
+    const a=P.reduce((s,p)=>s+Math.sqrt(d2(p,nearest(p,Q))),0)/P.length;
+    const b=Q.reduce((s,q)=>s+Math.sqrt(d2(q,nearest(q,P))),0)/Q.length;
+    return(a+b)/2;
+  }
+  function hausdorff(P,Q){
+    const fwd=P.map(p=>({from:p,to:nearest(p,Q),d:Math.sqrt(d2(p,nearest(p,Q)))}));
+    const bwd=Q.map(q=>({from:q,to:nearest(q,P),d:Math.sqrt(d2(q,nearest(q,P)))}));
+    const mF=fwd.reduce((m,x)=>x.d>m.d?x:m,fwd[0]);
+    const mB=bwd.reduce((m,x)=>x.d>m.d?x:m,bwd[0]);
+    return mF.d>=mB.d?mF:mB;
   }
 
-  let setP = circle(0.32, 0.5, 0.2, 10);
-  let setQ = circle(0.68, 0.5, 0.14, 8).map(p => ({ x: p.x, y: p.y + 0.05 }));
+  function draw(){
+    if(!W)return;
+    ctx.clearRect(0,0,W,H); ctx.fillStyle='#09090f'; ctx.fillRect(0,0,W,H);
 
-  function dist2(a, b) { return (a.x - b.x) ** 2 + (a.y - b.y) ** 2; }
-  function nearest(pt, set) { return set.reduce((best, q) => dist2(pt, q) < dist2(pt, best) ? q : best, set[0]); }
-
-  function chamfer(P, Q) {
-    const a = P.reduce((s, p) => s + Math.sqrt(dist2(p, nearest(p, Q))), 0) / P.length;
-    const b = Q.reduce((s, q) => s + Math.sqrt(dist2(q, nearest(q, P))), 0) / Q.length;
-    return (a + b) / 2;
-  }
-
-  function hausdorff(P, Q) {
-    const fwd = P.map(p => ({ p, q: nearest(p, Q), d: Math.sqrt(dist2(p, nearest(p, Q))) }));
-    const bwd = Q.map(q => ({ p: nearest(q, P), q, d: Math.sqrt(dist2(q, nearest(q, P))) }));
-    const maxFwd = fwd.reduce((m, x) => x.d > m.d ? x : m, fwd[0]);
-    const maxBwd = bwd.reduce((m, x) => x.d > m.d ? x : m, bwd[0]);
-    return maxFwd.d > maxBwd.d ? maxFwd : { p: maxBwd.p, q: maxBwd.q, d: maxBwd.d };
-  }
-
-  function draw() {
-    if (!W) return;
-    ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = '#09090f';
-    ctx.fillRect(0, 0, W, H);
-
-    // Draw correspondence lines
-    ctx.globalAlpha = 0.25;
-    ctx.lineWidth = 1;
-    if (distMode === 'chamfer') {
-      ctx.strokeStyle = '#9ca3af';
-      setP.forEach(p => {
-        const q = nearest(p, setQ);
-        ctx.beginPath(); ctx.moveTo(p.x * W, p.y * H); ctx.lineTo(q.x * W, q.y * H); ctx.stroke();
-      });
-      setQ.forEach(q => {
-        const p = nearest(q, setP);
-        ctx.beginPath(); ctx.moveTo(q.x * W, q.y * H); ctx.lineTo(p.x * W, p.y * H); ctx.stroke();
-      });
+    if(distMode==='chamfer'){
+      // P→Q lines (blue tones)
+      ctx.globalAlpha=0.3; ctx.strokeStyle='#3b82f6'; ctx.lineWidth=1;
+      setP.forEach(p=>{const q=nearest(p,setQ);ctx.beginPath();ctx.moveTo(p.x*W,p.y*H);ctx.lineTo(q.x*W,q.y*H);ctx.stroke();});
+      // Q→P lines (orange tones)
+      ctx.strokeStyle='#f97316';
+      setQ.forEach(q=>{const p=nearest(q,setP);ctx.beginPath();ctx.moveTo(q.x*W,q.y*H);ctx.lineTo(p.x*W,p.y*H);ctx.stroke();});
+      ctx.globalAlpha=1;
+      document.getElementById('dist-legend').innerHTML=
+        '<span style="color:#3b82f6;">●</span> Set P — drag any point<br>'+
+        '<span style="color:#f97316;">●</span> Set Q — drag any point<br>'+
+        '<span style="color:#3b82f6;">—</span> P→Q nearest lines<br>'+
+        '<span style="color:#f97316;">—</span> Q→P nearest lines';
     } else {
-      ctx.strokeStyle = '#9ca3af';
-      setP.forEach(p => {
-        const q = nearest(p, setQ);
-        ctx.beginPath(); ctx.moveTo(p.x * W, p.y * H); ctx.lineTo(q.x * W, q.y * H); ctx.stroke();
+      // All correspondences faint
+      ctx.globalAlpha=0.15; ctx.strokeStyle='#9ca3af'; ctx.lineWidth=1;
+      setP.forEach(p=>{const q=nearest(p,setQ);ctx.beginPath();ctx.moveTo(p.x*W,p.y*H);ctx.lineTo(q.x*W,q.y*H);ctx.stroke();});
+      setQ.forEach(q=>{const p=nearest(q,setP);ctx.beginPath();ctx.moveTo(q.x*W,q.y*H);ctx.lineTo(p.x*W,p.y*H);ctx.stroke();});
+      ctx.globalAlpha=1;
+      // Hausdorff pair — bright red, thick
+      const h=hausdorff(setP,setQ);
+      // Glow
+      ctx.shadowColor='#ef4444'; ctx.shadowBlur=14;
+      ctx.strokeStyle='#ef4444'; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.moveTo(h.from.x*W,h.from.y*H); ctx.lineTo(h.to.x*W,h.to.y*H); ctx.stroke();
+      ctx.shadowBlur=0;
+      // Distance label at midpoint
+      const mx=(h.from.x+h.to.x)/2*W, my=(h.from.y+h.to.y)/2*H;
+      ctx.fillStyle='rgba(6,6,18,.88)'; ctx.strokeStyle='#ef4444'; ctx.lineWidth=1;
+      const label=`d = ${h.d.toFixed(3)}`;
+      ctx.font='bold 12px monospace';
+      const tw=ctx.measureText(label).width;
+      ctx.fillRect(mx-tw/2-6,my-10,tw+12,22);
+      ctx.strokeRect(mx-tw/2-6,my-10,tw+12,22);
+      ctx.fillStyle='#ef4444'; ctx.textAlign='center'; ctx.fillText(label,mx,my+5); ctx.textAlign='left';
+      // Highlight Hausdorff endpoints
+      [h.from,h.to].forEach(pt=>{
+        ctx.beginPath(); ctx.arc(pt.x*W,pt.y*H,11,0,Math.PI*2);
+        ctx.strokeStyle='#ef4444'; ctx.lineWidth=2.5; ctx.stroke();
       });
-      setQ.forEach(q => {
-        const p = nearest(q, setP);
-        ctx.beginPath(); ctx.moveTo(q.x * W, q.y * H); ctx.lineTo(p.x * W, p.y * H); ctx.stroke();
-      });
-    }
-    ctx.globalAlpha = 1;
-
-    // Hausdorff max line
-    if (distMode === 'hausdorff') {
-      const h = hausdorff(setP, setQ);
-      ctx.strokeStyle = '#ef4444';
-      ctx.lineWidth = 2.5;
-      ctx.beginPath(); ctx.moveTo(h.p.x * W, h.p.y * H); ctx.lineTo(h.q.x * W, h.q.y * H); ctx.stroke();
-      // Arrow heads
-      const dx = h.q.x - h.p.x, dy = h.q.y - h.p.y;
-      const len = Math.hypot(dx, dy);
-      ctx.fillStyle = '#ef4444';
-      ctx.beginPath();
-      const ex = h.p.x * W + (dx / len) * (h.d * W - 8);
-      const ey = h.p.y * H + (dy / len) * (h.d * H - 8);
-      const angle = Math.atan2(dy, dx);
-      ctx.save();
-      ctx.translate(ex, ey);
-      ctx.rotate(angle);
-      ctx.beginPath(); ctx.moveTo(8, 0); ctx.lineTo(-5, 5); ctx.lineTo(-5, -5); ctx.closePath();
-      ctx.fill();
-      ctx.restore();
+      document.getElementById('dist-legend').innerHTML=
+        '<span style="color:#3b82f6;">●</span> Set P<br>'+
+        '<span style="color:#f97316;">●</span> Set Q<br>'+
+        '<span style="color:#9ca3af;">—</span> all correspondences (faint)<br>'+
+        '<span style="color:#ef4444;font-weight:700;">—</span> Hausdorff pair (worst-case)';
     }
 
-    // Draw set P (blue)
-    setP.forEach(p => {
-      ctx.beginPath(); ctx.arc(p.x * W, p.y * H, 7, 0, Math.PI * 2);
-      ctx.fillStyle = '#3b82f6'; ctx.fill();
-      ctx.strokeStyle = '#1e3a6a'; ctx.lineWidth = 1.5; ctx.stroke();
+    // Draw points
+    setP.forEach(p=>{
+      ctx.beginPath();ctx.arc(p.x*W,p.y*H,7,0,Math.PI*2);
+      ctx.fillStyle='#3b82f6';ctx.fill();
+      ctx.strokeStyle='#1d4ed8';ctx.lineWidth=1.5;ctx.stroke();
     });
-    // Draw set Q (pink)
-    setQ.forEach(q => {
-      ctx.beginPath(); ctx.arc(q.x * W, q.y * H, 7, 0, Math.PI * 2);
-      ctx.fillStyle = '#ec4899'; ctx.fill();
-      ctx.strokeStyle = '#6a1e4a'; ctx.lineWidth = 1.5; ctx.stroke();
+    setQ.forEach(q=>{
+      ctx.beginPath();ctx.arc(q.x*W,q.y*H,7,0,Math.PI*2);
+      ctx.fillStyle='#f97316';ctx.fill();
+      ctx.strokeStyle='#9a3412';ctx.lineWidth=1.5;ctx.stroke();
     });
-
     // Labels
-    ctx.font = 'bold 13px monospace';
-    ctx.fillStyle = '#3b82f6';
-    ctx.fillText('P', setP[0].x * W + 10, setP[0].y * H - 8);
-    ctx.fillStyle = '#ec4899';
-    ctx.fillText('Q', setQ[0].x * W + 10, setQ[0].y * H - 8);
+    ctx.font='bold 13px monospace';
+    ctx.fillStyle='#60a5fa'; ctx.fillText('P',setP[0].x*W+10,setP[0].y*H-8);
+    ctx.fillStyle='#fb923c'; ctx.fillText('Q',setQ[0].x*W+10,setQ[0].y*H-8);
 
-    // Metric
-    let val;
-    if (distMode === 'chamfer') {
-      val = chamfer(setP, setQ).toFixed(4);
-    } else {
-      val = hausdorff(setP, setQ).d.toFixed(4);
-    }
-    document.getElementById('dist-val').textContent = val;
-    document.getElementById('dist-np').textContent = setP.length;
-    document.getElementById('dist-nq').textContent = setQ.length;
+    const val=distMode==='chamfer'?chamfer(setP,setQ).toFixed(4):hausdorff(setP,setQ).d.toFixed(4);
+    document.getElementById('dist-val').textContent=val;
+    document.getElementById('dist-np').textContent=setP.length;
+    document.getElementById('dist-nq').textContent=setQ.length;
   }
 
-  document.querySelectorAll('.tab-btn[data-dist]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab-btn[data-dist]').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      distMode = btn.dataset.dist;
-      document.getElementById('dist-hud-title').textContent = btn.textContent;
-      draw();
+  document.querySelectorAll('.tab-btn[data-dist]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.tab-btn[data-dist]').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active'); distMode=btn.dataset.dist;
+      document.getElementById('dist-hud-title').textContent=btn.textContent; draw();
     });
   });
 
-  canvas.addEventListener('mousedown', e => {
-    const rect = canvas.getBoundingClientRect();
-    const mx = (e.clientX - rect.left) / W;
-    const my = (e.clientY - rect.top) / H;
-    const allPts = [...setP.map(p => ({ p, set: 'P' })), ...setQ.map(p => ({ p, set: 'Q' }))];
-    const hit = allPts.find(({ p }) => Math.hypot(p.x - mx, p.y - my) < 0.04);
-    if (hit) draggingPt = hit;
+  canvas.addEventListener('mousedown',e=>{
+    const r=canvas.getBoundingClientRect();
+    const mx=(e.clientX-r.left)/W, my=(e.clientY-r.top)/H;
+    dragPt=[...setP,...setQ].find(p=>Math.hypot(p.x-mx,p.y-my)<0.04)||null;
   });
-  canvas.addEventListener('mousemove', e => {
-    if (!draggingPt) return;
-    const rect = canvas.getBoundingClientRect();
-    draggingPt.p.x = Math.max(0.02, Math.min(0.98, (e.clientX - rect.left) / W));
-    draggingPt.p.y = Math.max(0.02, Math.min(0.98, (e.clientY - rect.top) / H));
+  canvas.addEventListener('mousemove',e=>{
+    if(!dragPt)return;
+    const r=canvas.getBoundingClientRect();
+    dragPt.x=Math.max(0.02,Math.min(0.98,(e.clientX-r.left)/W));
+    dragPt.y=Math.max(0.02,Math.min(0.98,(e.clientY-r.top)/H));
     draw();
   });
-  canvas.addEventListener('mouseup', () => draggingPt = null);
+  canvas.addEventListener('mouseup',()=>dragPt=null);
 
-  resize();
-  window.addEventListener('resize', resize);
+  resize(); window.addEventListener('resize',resize);
 })();
 
-/* ═══════════════════════════════════════════════
-   EXPLICIT vs IMPLICIT (2D Canvas)
-═══════════════════════════════════════════════ */
-(function initExplImpl() {
-  const explCanvas = document.getElementById('expl-canvas');
-  const implCanvas = document.getElementById('impl-canvas');
-  const explCtx = explCanvas.getContext('2d');
-  const implCtx = implCanvas.getContext('2d');
-  let W, H;
-  let implShape = 'circle';
-  let gridRes = 24;
-  let reveal = 100;
+/* ═══════════════════════════════════════════
+   EXPLICIT vs IMPLICIT — 3D
+═══════════════════════════════════════════ */
+(function(){
+  // ── Explicit side (Three.js standard rendering) ──
+  const exPane=document.getElementById('expl-pane');
+  const exCanvas=document.getElementById('expl-canvas');
+  {
+    const W=exPane.clientWidth||400, H=400;
+    exCanvas.width=W*dpr; exCanvas.height=H*dpr; exCanvas.style.width=W+'px'; exCanvas.style.height=H+'px';
+    const renderer=new THREE.WebGLRenderer({canvas:exCanvas,antialias:true,alpha:true});
+    renderer.setPixelRatio(1); renderer.setSize(W*dpr,H*dpr,false);
+    const scene=new THREE.Scene(); addLight(scene);
+    const cam=new THREE.PerspectiveCamera(45,W/H,0.01,100);
+    makeOrbit(exPane,cam,4.0,0.5,1.1);
 
-  function resize() {
-    const container = explCanvas.parentElement.parentElement;
-    W = Math.floor(container.clientWidth / 2);
-    H = 380;
-    [explCanvas, implCanvas].forEach(c => {
-      c.width = W * devicePixelRatio;
-      c.height = H * devicePixelRatio;
-      c.style.width = W + 'px';
-      c.style.height = H + 'px';
-    });
-    explCtx.scale(devicePixelRatio, devicePixelRatio);
-    implCtx.scale(devicePixelRatio, devicePixelRatio);
-    draw();
-  }
+    const tGeo=new THREE.TorusGeometry(1.0,0.4,24,48);
+    const solid=new THREE.Mesh(tGeo,new THREE.MeshPhongMaterial({color:0x2563eb,shininess:80,specular:0x6688ff}));
+    scene.add(solid);
+    const wire=new THREE.Mesh(tGeo,new THREE.MeshBasicMaterial({color:0x38bdf8,wireframe:true,opacity:0.35,transparent:true}));
+    wire.visible=false; scene.add(wire);
 
-  // SDF functions
-  function sdfCircle(x, y) { return Math.hypot(x - 0.5, y - 0.5) - 0.3; }
-  function sdfStar(x, y) {
-    const cx = x - 0.5, cy = y - 0.5;
-    let angle = Math.atan2(cy, cx);
-    const k = 5;
-    angle = ((angle / Math.PI * k + 0.5) % 2 - 1) * Math.PI / k;
-    const r = Math.hypot(cx, cy);
-    const rOuter = 0.28, rInner = 0.14;
-    const rBound = rInner + (rOuter - rInner) * Math.cos(angle) / Math.cos(Math.PI / k);
-    return r - rBound;
-  }
-  function sdfBlob(x, y) {
-    const d1 = sdfCircle(x - 0.08, y);
-    const d2 = sdfCircle(x + 0.08, y + 0.05);
-    return Math.min(d1, d2);
-  }
-  function getSDF(x, y) {
-    if (implShape === 'circle') return sdfCircle(x, y);
-    if (implShape === 'star') return sdfStar(x, y);
-    return sdfBlob(x, y);
-  }
-
-  // Build explicit triangulated shape
-  function buildExplicit() {
-    if (implShape === 'circle') {
-      const n = 48;
-      const pts = [];
-      for (let i = 0; i < n; i++) {
-        const a = (i / n) * Math.PI * 2;
-        pts.push({ x: 0.5 + 0.3 * Math.cos(a), y: 0.5 + 0.3 * Math.sin(a) });
-      }
-      return pts;
-    }
-    if (implShape === 'star') {
-      const pts = [];
-      const k = 5;
-      for (let i = 0; i < k * 2; i++) {
-        const a = (i / (k * 2)) * Math.PI * 2 - Math.PI / 2;
-        const r = i % 2 === 0 ? 0.28 : 0.14;
-        pts.push({ x: 0.5 + r * Math.cos(a), y: 0.5 + r * Math.sin(a) });
-      }
-      return pts;
-    }
-    // blob: two circles
-    const pts = [];
-    const n = 24;
-    for (let i = 0; i < n; i++) {
-      const a = (i / n) * Math.PI * 2;
-      pts.push({ x: 0.42 + 0.3 * Math.cos(a), y: 0.5 + 0.3 * Math.sin(a) });
-    }
-    for (let i = 0; i < n; i++) {
-      const a = (i / n) * Math.PI * 2;
-      pts.push({ x: 0.58 + 0.3 * Math.cos(a), y: 0.55 + 0.3 * Math.sin(a) });
-    }
-    return pts;
-  }
-
-  function drawExplicit() {
-    explCtx.clearRect(0, 0, W, H);
-    explCtx.fillStyle = '#09090f';
-    explCtx.fillRect(0, 0, W, H);
-
-    const pts = buildExplicit();
-    // Fan triangulate from center
-    const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length;
-    const cy = pts.reduce((s, p) => s + p.y, 0) / pts.length;
-
-    explCtx.fillStyle = '#1d4ed8';
-    explCtx.strokeStyle = '#60a5fa';
-    explCtx.lineWidth = 1;
-
-    // Draw filled polygon
-    explCtx.beginPath();
-    explCtx.moveTo(pts[0].x * W, pts[0].y * H);
-    pts.forEach(p => explCtx.lineTo(p.x * W, p.y * H));
-    explCtx.closePath();
-    explCtx.fill();
-
-    // Draw triangle edges from center
-    explCtx.strokeStyle = '#38bdf8';
-    explCtx.lineWidth = 0.5;
-    explCtx.globalAlpha = 0.5;
-    pts.forEach((p, i) => {
-      const next = pts[(i + 1) % pts.length];
-      explCtx.beginPath();
-      explCtx.moveTo(cx * W, cy * H);
-      explCtx.lineTo(p.x * W, p.y * H);
-      explCtx.lineTo(next.x * W, next.y * H);
-      explCtx.closePath();
-      explCtx.stroke();
-    });
-    explCtx.globalAlpha = 1;
-
-    // Vertex dots
-    explCtx.fillStyle = '#93c5fd';
-    pts.forEach(p => {
-      explCtx.beginPath();
-      explCtx.arc(p.x * W, p.y * H, 2.5, 0, Math.PI * 2);
-      explCtx.fill();
+    document.querySelectorAll('.tab-btn[data-wi]').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        document.querySelectorAll('.tab-btn[data-wi]').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active'); wire.visible=btn.dataset.wi==='on';
+      });
     });
 
-    explCtx.fillStyle = '#60a5fa';
-    explCtx.font = 'bold 11px monospace';
-    explCtx.fillText(`${pts.length} vertices`, 10, H - 12);
-    const faces = implShape === 'blob' ? pts.length / 2 : pts.length;
-    explCtx.fillText(`${faces} triangles`, 10, H - 28);
+    let t=0;
+    (function animate(){requestAnimationFrame(animate);t+=0.016;solid.rotation.y=t*0.25;wire.rotation.y=t*0.25;renderer.render(scene,cam);})();
   }
 
-  function drawImplicit() {
-    implCtx.clearRect(0, 0, W, H);
-    implCtx.fillStyle = '#09090f';
-    implCtx.fillRect(0, 0, W, H);
+  // ── Implicit side (ray-marching GLSL shader) ──
+  const imPane=document.getElementById('impl-pane');
+  const imCanvas=document.getElementById('impl-canvas');
+  {
+    const W=imPane.clientWidth||400, H=400;
+    imCanvas.width=W*dpr; imCanvas.height=H*dpr; imCanvas.style.width=W+'px'; imCanvas.style.height=H+'px';
+    const renderer=new THREE.WebGLRenderer({canvas:imCanvas,antialias:false});
+    renderer.setPixelRatio(1); renderer.setSize(W*dpr,H*dpr,false);
 
-    const cellW = W / gridRes, cellH = H / gridRes;
-    const total = gridRes * gridRes;
-    const shown = Math.floor(total * reveal / 100);
+    // Orthographic camera for full-screen quad
+    const scene=new THREE.Scene();
+    const cam=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+    const camPosUniform=new THREE.Vector3(0,1.8*Math.sin(1.1),1.8*Math.cos(1.1)*4.0);
 
-    let cellIdx = 0;
-    for (let row = 0; row < gridRes; row++) {
-      for (let col = 0; col < gridRes; col++) {
-        if (cellIdx++ > shown) break;
-        const x0 = col / gridRes, y0 = row / gridRes;
-        const x1 = (col + 1) / gridRes, y1 = (row + 1) / gridRes;
-        const d00 = getSDF(x0, y0);
-        const d10 = getSDF(x1, y0);
-        const d01 = getSDF(x0, y1);
-        const d11 = getSDF(x1, y1);
+    const mat=new THREE.ShaderMaterial({
+      uniforms:{
+        uCamPos:{value:new THREE.Vector3(0,2.2,3.8)},
+        uRes:{value:new THREE.Vector2(W*dpr,H*dpr)},
+        uTime:{value:0},
+      },
+      vertexShader:`varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position,1.0);}`,
+      fragmentShader:`
+precision highp float;
+varying vec2 vUv;
+uniform vec3 uCamPos;
+uniform vec2 uRes;
+uniform float uTime;
 
-        const px = col * cellW, py = row * cellH;
-        // Color cell by average SDF
-        const avg = (d00 + d10 + d01 + d11) / 4;
-        if (avg < 0) {
-          const t = Math.min(Math.abs(avg) / 0.3, 1);
-          implCtx.fillStyle = `rgba(29,78,216,${0.3 + t * 0.5})`;
-        } else {
-          const t = Math.min(avg / 0.3, 1);
-          implCtx.fillStyle = `rgba(9,9,16,${0.6 + t * 0.3})`;
-        }
-        implCtx.fillRect(px, py, cellW, cellH);
-
-        // Grid
-        implCtx.strokeStyle = 'rgba(30,30,60,0.8)';
-        implCtx.lineWidth = 0.5;
-        implCtx.strokeRect(px, py, cellW, cellH);
-
-        // Marching squares: find zero crossings and draw contour segment
-        implCtx.strokeStyle = '#a78bfa';
-        implCtx.lineWidth = 2;
-        const crossings = [];
-        function interp(da, db, ax, ay, bx, by) {
-          if ((da < 0) !== (db < 0)) {
-            const t = da / (da - db);
-            crossings.push({ x: ax + t * (bx - ax), y: ay + t * (by - ay) });
-          }
-        }
-        interp(d00, d10, x0 * W, y0 * H, x1 * W, y0 * H);
-        interp(d10, d11, x1 * W, y0 * H, x1 * W, y1 * H);
-        interp(d11, d01, x1 * W, y1 * H, x0 * W, y1 * H);
-        interp(d01, d00, x0 * W, y1 * H, x0 * W, y0 * H);
-
-        if (crossings.length >= 2) {
-          implCtx.beginPath();
-          implCtx.moveTo(crossings[0].x, crossings[0].y);
-          implCtx.lineTo(crossings[1].x, crossings[1].y);
-          implCtx.stroke();
-        }
-
-        // SDF value at cell center
-        if (cellW > 12) {
-          const cx2 = (col + 0.5) / gridRes, cy2 = (row + 0.5) / gridRes;
-          const dc = getSDF(cx2, cy2);
-          implCtx.font = `${Math.max(7, cellW * 0.35)}px monospace`;
-          implCtx.fillStyle = dc < 0 ? '#93c5fd' : '#9ca3af';
-          implCtx.textAlign = 'center';
-          implCtx.fillText(dc.toFixed(2), px + cellW / 2, py + cellH / 2 + 4);
-          implCtx.textAlign = 'left';
-        }
-      }
-    }
-
-    implCtx.fillStyle = '#a78bfa';
-    implCtx.font = 'bold 11px monospace';
-    implCtx.fillText(`${gridRes}×${gridRes} grid`, 10, H - 12);
-    implCtx.fillText('zero level set = surface', 10, H - 28);
+float sdTorus(vec3 p){
+  vec2 q=vec2(length(p.xz)-1.0,p.y);
+  return length(q)-0.4;
+}
+vec3 calcNorm(vec3 p){
+  float h=0.0004;
+  return normalize(vec3(
+    sdTorus(p+vec3(h,0,0))-sdTorus(p-vec3(h,0,0)),
+    sdTorus(p+vec3(0,h,0))-sdTorus(p-vec3(0,h,0)),
+    sdTorus(p+vec3(0,0,h))-sdTorus(p-vec3(0,0,h))
+  ));
+}
+void main(){
+  vec2 uv=vUv*2.0-1.0;
+  uv.x*=uRes.x/uRes.y;
+  vec3 ro=uCamPos;
+  vec3 forward=normalize(-ro);
+  vec3 worldUp=vec3(0,1,0);
+  if(abs(dot(forward,worldUp))>0.98) worldUp=vec3(0,0,1);
+  vec3 right=normalize(cross(forward,worldUp));
+  vec3 up=cross(right,forward);
+  float fov=0.55;
+  vec3 rd=normalize(uv.x*right*fov+uv.y*up*fov+forward);
+  float t=0.5;
+  bool hit=false;
+  for(int i=0;i<120;i++){
+    vec3 p=ro+rd*t;
+    float d=sdTorus(p);
+    if(abs(d)<0.0008){hit=true;break;}
+    if(t>14.0) break;
+    t+=max(abs(d)*0.85,0.002);
   }
-
-  function draw() { drawExplicit(); drawImplicit(); }
-
-  document.querySelectorAll('.tab-btn[data-shape]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab-btn[data-shape]').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      implShape = btn.dataset.shape;
-      draw();
+  if(hit){
+    vec3 p=ro+rd*t;
+    vec3 n=calcNorm(p);
+    vec3 L1=normalize(vec3(2,3,1));
+    vec3 L2=normalize(vec3(-1,-1,-2));
+    float diff=max(dot(n,L1),0.0)*0.75+max(dot(n,L2),0.0)*0.1+0.15;
+    float fres=pow(1.0-max(dot(-rd,n),0.0),4.0)*0.45;
+    vec3 col=vec3(0.18,0.45,1.0)*diff+vec3(0.6,0.75,1.0)*fres;
+    col=mix(col,vec3(0.04,0.04,0.09),clamp((t-6.0)*0.06,0.0,1.0));
+    gl_FragColor=vec4(col,1.0);
+  } else {
+    float grd=dot(vUv-0.5,vUv-0.5)*0.8;
+    gl_FragColor=vec4(vec3(0.04-grd*0.02,0.04-grd*0.02,0.09-grd*0.02),1.0);
+  }
+}`,
     });
-  });
-  document.getElementById('ms-res').addEventListener('input', function () {
-    gridRes = parseInt(this.value);
-    document.getElementById('ms-res-val').textContent = gridRes;
-    draw();
-  });
-  document.getElementById('ms-reveal').addEventListener('input', function () {
-    reveal = parseInt(this.value);
-    document.getElementById('ms-reveal-val').textContent = reveal + '%';
-    draw();
-  });
+    scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),mat));
 
-  resize();
-  window.addEventListener('resize', resize);
+    // Orbital control updates the camPos uniform
+    let th=0.5,ph=1.1,r=4.0,dragging=false,px2=0,py2=0;
+    let implOrbitActive=false;
+    function syncCam(){
+      mat.uniforms.uCamPos.value.set(r*Math.sin(ph)*Math.sin(th),r*Math.cos(ph),r*Math.sin(ph)*Math.cos(th));
+    }
+    syncCam();
+    imPane.addEventListener('mousedown',e=>{dragging=true;implOrbitActive=true;px2=e.clientX;py2=e.clientY;});
+    window.addEventListener('mousemove',e=>{
+      if(!dragging||!implOrbitActive) return;
+      th-=(e.clientX-px2)*0.013; ph=Math.max(0.1,Math.min(Math.PI-0.1,ph-(e.clientY-py2)*0.013));
+      px2=e.clientX; py2=e.clientY; syncCam();
+    });
+    window.addEventListener('mouseup',()=>{dragging=false;implOrbitActive=false;});
+    imPane.addEventListener('wheel',e=>{r=Math.max(1.8,Math.min(9,r+e.deltaY*0.01));syncCam();e.preventDefault();},{passive:false});
+
+    let t2=0;
+    (function animate(){
+      requestAnimationFrame(animate);
+      t2+=0.016; mat.uniforms.uTime.value=t2;
+      renderer.render(scene,cam);
+    })();
+  }
 })();
 
-/* ═══════════════════════════════════════════════
-   EIKONAL 2D
-═══════════════════════════════════════════════ */
-(function initEikonal() {
-  const canvas = document.getElementById('eik-canvas');
-  const ctx = canvas.getContext('2d');
-  let W, H;
-  let eikMode = 'gradmag';
-  let lambda = 0;
-  let roughness = 0.5;
+/* ═══════════════════════════════════════════
+   EIKONAL — 3D
+═══════════════════════════════════════════ */
+(function(){
+  const wrap=document.getElementById('eik-wrap');
+  const canvas=document.getElementById('eik-canvas');
+  const {renderer,W,H}=initCanvas(canvas,wrap);
+  const scene=new THREE.Scene();
+  const cam=new THREE.PerspectiveCamera(45,W/H,0.01,100);
+  addLight(scene);
+  makeOrbit(wrap,cam,4.2,0.7,1.1);
 
-  function resize() {
-    W = canvas.parentElement.clientWidth;
-    H = 420;
-    canvas.width = W * devicePixelRatio;
-    canvas.height = H * devicePixelRatio;
-    canvas.style.width = W + 'px';
-    canvas.style.height = H + 'px';
-    ctx.scale(devicePixelRatio, devicePixelRatio);
-    draw();
+  let lambda=0,roughness=0.6,eikMode='gradmag';
+  let ptCloud=null;
+
+  // Transparent sphere surface
+  const sfGeo=new THREE.SphereGeometry(1.0,32,16);
+  const sfMat=new THREE.MeshPhongMaterial({color:0x3b82f6,transparent:true,opacity:0.12,side:THREE.DoubleSide,depthWrite:false});
+  scene.add(new THREE.Mesh(sfGeo,sfMat));
+  scene.add(new THREE.Mesh(new THREE.SphereGeometry(1.0,24,12),new THREE.MeshBasicMaterial({color:0x1d4ed8,wireframe:true,opacity:0.2,transparent:true})));
+
+  // True SDF of unit sphere
+  function trueSDF(x,y,z){return Math.sqrt(x*x+y*y+z*z)-1.0;}
+  // Noisy SDF
+  function noisySDF(x,y,z,rgh){
+    const t=trueSDF(x,y,z);
+    return t+rgh*0.22*(Math.sin(x*7+1.3)*Math.cos(y*6-0.7)+Math.sin(y*9+0.4)*Math.cos(z*8-1.1)+Math.sin(z*5-0.9)*Math.cos(x*11+0.6));
+  }
+  function learnedSDF(x,y,z){
+    return noisySDF(x,y,z,roughness)*(1-lambda)+trueSDF(x,y,z)*lambda;
+  }
+  function gradMag(x,y,z){
+    const h=0.015;
+    const dx=(learnedSDF(x+h,y,z)-learnedSDF(x-h,y,z))/(2*h);
+    const dy=(learnedSDF(x,y+h,z)-learnedSDF(x,y-h,z))/(2*h);
+    const dz=(learnedSDF(x,y,z+h)-learnedSDF(x,y,z-h))/(2*h);
+    return Math.sqrt(dx*dx+dy*dy+dz*dz);
   }
 
-  // True SDF of circle
-  function trueSDF(x, y) { return Math.hypot(x - 0.5, y - 0.5) - 0.3; }
-
-  // "Neural" SDF: true SDF distorted by sinusoidal noise
-  function noisySDF(x, y, rough) {
-    const t = trueSDF(x, y);
-    const noise = rough * 0.15 * (Math.sin(x * 18 + 1.2) * Math.cos(y * 15 - 0.8) + Math.sin(x * 9 - 0.5) * Math.cos(y * 22 + 1.1));
-    return t + noise;
+  // Ray-march steps approximation
+  function rayMarchSteps(x,y,z){
+    const d=Math.max(0.001,learnedSDF(x,y,z));
+    const gm=gradMag(x,y,z);
+    return Math.min(30,Math.ceil(d/(gm*0.05+0.001)));
   }
 
-  // Blend toward true SDF with lambda (eikonal correction proxy)
-  function learnedSDF(x, y) {
-    const n = noisySDF(x, y, roughness);
-    const tr = trueSDF(x, y);
-    return n * (1 - lambda) + tr * lambda;
-  }
-
-  function gradMag(f, x, y) {
-    const h = 0.005;
-    const dx = (f(x + h, y) - f(x - h, y)) / (2 * h);
-    const dy = (f(x, y + h) - f(x, y - h)) / (2 * h);
-    return Math.sqrt(dx * dx + dy * dy);
-  }
-
-  function draw() {
-    if (!W) return;
-    ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = '#09090f';
-    ctx.fillRect(0, 0, W, H);
-
-    const step = 3;
-    const imgData = ctx.createImageData(W, H);
-    const data = imgData.data;
-
-    for (let py = 0; py < H; py += step) {
-      for (let px = 0; px < W; px += step) {
-        const x = px / W, y = py / H;
-        const sdf = learnedSDF(x, y);
-
-        let r, g, b;
-        if (eikMode === 'gradmag') {
-          const gm = gradMag(learnedSDF, x, y);
-          const err = gm - 1;
-          if (err > 0) { r = Math.min(255, Math.round(60 + err * 500)); g = Math.round(20); b = Math.round(20); }
-          else { r = Math.round(20); g = Math.round(20); b = Math.min(255, Math.round(60 + Math.abs(err) * 500)); }
-          if (Math.abs(err) < 0.05) { r = 20; g = Math.round(150 - Math.abs(err) * 1000); b = 20; }
-        } else if (eikMode === 'violation') {
-          const gm = gradMag(learnedSDF, x, y);
-          const err = Math.abs(gm - 1);
-          const t = Math.min(err / 0.4, 1);
-          r = Math.round(t * 220); g = Math.round((1 - t) * 180); b = Math.round(20);
-        } else {
-          // ray march quality
-          if (sdf < 0) { r = 20; g = 40; b = 120; }
-          else {
-            const gm = gradMag(learnedSDF, x, y);
-            const steps = Math.max(1, Math.min(20, Math.ceil(sdf / (gm * 0.02))));
-            const t = 1 - steps / 20;
-            r = Math.round(20 + t * 200); g = Math.round(60 + t * 140); b = Math.round(20);
-          }
-        }
-
-        for (let sy = 0; sy < step && py + sy < H; sy++) {
-          for (let sx = 0; sx < step && px + sx < W; sx++) {
-            const idx = ((py + sy) * W + px + sx) * 4;
-            data[idx] = r; data[idx + 1] = g; data[idx + 2] = b; data[idx + 3] = 255;
-          }
-        }
-      }
-    }
-    ctx.putImageData(imgData, 0, 0);
-
-    // Zero level set
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 2;
-    for (let py = 0; py < H - step; py += step) {
-      for (let px = 0; px < W - step; px += step) {
-        const d00 = learnedSDF(px / W, py / H);
-        const d10 = learnedSDF((px + step) / W, py / H);
-        if (d00 * d10 < 0) {
-          const fx = px + step * d00 / (d00 - d10);
-          ctx.beginPath(); ctx.moveTo(fx, py); ctx.lineTo(fx, py + step); ctx.stroke();
-        }
-        const d01 = learnedSDF(px / W, (py + step) / H);
-        if (d00 * d01 < 0) {
-          const fy = py + step * d00 / (d00 - d01);
-          ctx.beginPath(); ctx.moveTo(px, fy); ctx.lineTo(px + step, fy); ctx.stroke();
-        }
-      }
-    }
-
-    // Colorbar legend
-    const barX = W - 30, barY = 20, barH = 140, barW = 14;
-    for (let i = 0; i < barH; i++) {
-      const t = i / barH;
-      if (eikMode === 'violation') {
-        ctx.fillStyle = `rgb(${Math.round(t * 220)},${Math.round((1 - t) * 180)},20)`;
+  function buildPointCloud(){
+    if(ptCloud) scene.remove(ptCloud);
+    const N=2000;
+    const pos=new Float32Array(N*3), col=new Float32Array(N*3);
+    for(let i=0;i<N;i++){
+      // Sample on a shell around the sphere (r in [1.05, 2.2])
+      const r=1.05+Math.random()*1.15;
+      const th2=Math.random()*Math.PI*2, ph2=Math.acos(2*Math.random()-1);
+      const x=r*Math.sin(ph2)*Math.cos(th2), y=r*Math.cos(ph2), z=r*Math.sin(ph2)*Math.sin(th2);
+      pos.set([x,y,z],i*3);
+      let color;
+      if(eikMode==='gradmag'){
+        const gm=gradMag(x,y,z);
+        const err=gm-1;
+        if(Math.abs(err)<0.1){color=new THREE.Color().setHSL(0.33,0.9,0.5);}     // green
+        else if(err>0){color=new THREE.Color().setHSL(0.0,0.9,Math.min(0.7,0.35+err*0.3));}  // red
+        else{color=new THREE.Color().setHSL(0.62,0.9,Math.min(0.7,0.35+Math.abs(err)*0.3));} // blue
+      } else if(eikMode==='violation'){
+        const gm=gradMag(x,y,z);
+        const viol=Math.abs(gm-1);
+        const t=Math.min(viol/0.6,1);
+        color=new THREE.Color().setHSL(0.33-t*0.33,0.9,0.5);
       } else {
-        if (t < 0.45) ctx.fillStyle = `rgb(20,20,${Math.round(60 + (0.45 - t) / 0.45 * 190)})`;
-        else if (t < 0.55) ctx.fillStyle = `rgb(20,${Math.round(100 + (0.55 - t) / 0.1 * 80)},20)`;
-        else ctx.fillStyle = `rgb(${Math.round(60 + (t - 0.55) / 0.45 * 180)},20,20)`;
+        const steps=rayMarchSteps(x,y,z);
+        const t=1-steps/30;
+        color=new THREE.Color().setHSL(0.33*t,0.85,0.35+t*0.3);
       }
-      ctx.fillRect(barX, barY + i, barW, 1);
+      col.set([color.r,color.g,color.b],i*3);
     }
-    ctx.strokeStyle = '#404060';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(barX, barY, barW, barH);
-    ctx.fillStyle = '#9090b0';
-    ctx.font = '10px monospace';
-    ctx.textAlign = 'right';
-    ctx.fillText('high', barX - 4, barY + 8);
-    ctx.fillText('1.0', barX - 4, barY + barH / 2 + 4);
-    ctx.fillText('low', barX - 4, barY + barH - 2);
-    ctx.textAlign = 'left';
+    const geo=new THREE.BufferGeometry();
+    geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+    geo.setAttribute('color',new THREE.BufferAttribute(col,3));
+    const mat=new THREE.PointsMaterial({size:0.055,vertexColors:true,sizeAttenuation:true});
+    ptCloud=new THREE.Points(geo,mat);
+    scene.add(ptCloud);
 
-    // Update HUD
-    const hud = document.getElementById('eik-hud-body');
-    if (eikMode === 'gradmag') {
-      hud.innerHTML = `λ = ${lambda.toFixed(2)}<br>roughness = ${roughness.toFixed(2)}<br><span style="color:#22c55e">■</span> |∇f|≈1 (good)<br><span style="color:#ef4444">■</span> |∇f|>1 (overshoot)<br><span style="color:#3b82f6">■</span> |∇f|<1 (undershoot)`;
-    } else if (eikMode === 'violation') {
-      hud.innerHTML = `Eikonal error<br>||∇f| − 1|<br><span style="color:#22c55e">■</span> low error<br><span style="color:#ef4444">■</span> high error`;
-    } else {
-      hud.innerHTML = `Sphere-tracing steps<br>to reach surface<br><span style="color:#22c55e">■</span> few steps (fast)<br><span style="color:#ef4444">■</span> many steps (slow)`;
-    }
+    // HUD
+    const gm_avg=Array.from({length:50},()=>{
+      const r=1.3+Math.random()*0.8;
+      const th2=Math.random()*Math.PI*2, ph2=Math.acos(2*Math.random()-1);
+      return gradMag(r*Math.sin(ph2)*Math.cos(th2),r*Math.cos(ph2),r*Math.sin(ph2)*Math.sin(th2));
+    }).reduce((a,b)=>a+b)/50;
+
+    const hb=document.getElementById('eik-hud-body');
+    hb.innerHTML=
+      `λ = ${lambda.toFixed(2)}<br>`+
+      `roughness = ${roughness.toFixed(2)}<br>`+
+      `avg |∇f| = ${gm_avg.toFixed(3)}<br>`+
+      (eikMode==='gradmag'?
+        '<span style="color:#34d399">■</span> |∇f|≈1 (satisfied)<br><span style="color:#f87171">■</span> |∇f|>1 (too steep)<br><span style="color:#60a5fa">■</span> |∇f|<1 (too flat)':
+      eikMode==='violation'?
+        '<span style="color:#34d399">■</span> low violation<br><span style="color:#f87171">■</span> high violation':
+        '<span style="color:#34d399">■</span> few steps (good)<br><span style="color:#f87171">■</span> many steps (bad)');
   }
 
-  document.querySelectorAll('.tab-btn[data-eik]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab-btn[data-eik]').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      eikMode = btn.dataset.eik;
-      draw();
+  document.querySelectorAll('.tab-btn[data-eik]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.tab-btn[data-eik]').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active'); eikMode=btn.dataset.eik;
+      document.getElementById('eik-hud-title').textContent=btn.textContent;
+      buildPointCloud();
     });
   });
-  document.getElementById('eik-lam').addEventListener('input', function () {
-    lambda = parseFloat(this.value);
-    document.getElementById('eik-lam-val').textContent = lambda.toFixed(2);
-    draw();
+  document.getElementById('eik-lam').addEventListener('input',function(){
+    lambda=parseFloat(this.value); document.getElementById('eik-lam-val').textContent=lambda.toFixed(2);
+    buildPointCloud();
   });
-  document.getElementById('eik-rough').addEventListener('input', function () {
-    roughness = parseFloat(this.value);
-    document.getElementById('eik-rough-val').textContent = roughness.toFixed(2);
-    draw();
+  document.getElementById('eik-rough').addEventListener('input',function(){
+    roughness=parseFloat(this.value); document.getElementById('eik-rough-val').textContent=roughness.toFixed(2);
+    buildPointCloud();
   });
 
-  resize();
-  window.addEventListener('resize', resize);
+  buildPointCloud();
+  (function animate(){requestAnimationFrame(animate);renderer.render(scene,cam);})();
 })();
 </script>
 </body>
