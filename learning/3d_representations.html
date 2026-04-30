@@ -181,9 +181,23 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 <p>The <strong>tri-plane</strong> (Chan et al., EG3D 2022) projects a 3D query point $p=(x,y,z)$ onto three axis-aligned feature planes and bilinearly interpolates a feature from each. Drag the sliders above (switch to the Tri-plane tab) to move the query point and watch the projections update live.</p>
 <div class="math-box">$$F(p)=f_{XY}(\pi_{XY}(p))+f_{XZ}(\pi_{XZ}(p))+f_{YZ}(\pi_{YZ}(p))$$
 $$\pi_{XY}(p)=(x,y),\quad\pi_{XZ}(p)=(x,z),\quad\pi_{YZ}(p)=(y,z)$$</div>
+
+<p><strong>What is $\pi_{XY}$?</strong> A simple orthographic <em>projection</em> — it just drops one coordinate. $\pi_{XY}(p)=(x,y)$ discards $z$. No parameters, no learning. Think of shining a light along the $Z$-axis and looking at the shadow on the $XY$ floor.</p>
+<p><strong>What is $f_{XY}$?</strong> A <em>learned 2D feature texture</em> — a grid of $H\times W$ cells, each storing a $C$-dimensional vector. Nothing more than a 2D array of numbers (like an image with $C$ channels) that is <em>jointly optimized during training</em>. It is not a neural network; it is a parameter tensor. Reading a value from it at a non-integer position uses standard GPU bilinear interpolation — exactly the same as sampling a texture in a game engine.</p>
+
+<div class="callout amber">
+  <div class="ct">The full query pipeline</div>
+  <p>
+    <strong>Step 1 — Project</strong>: $\pi_{XY}(p)=(x,y)$, $\;\pi_{XZ}(p)=(x,z)$, $\;\pi_{YZ}(p)=(y,z)$. Three 2D coordinates, one per plane.<br>
+    <strong>Step 2 — Sample</strong>: Bilinear-interpolate each feature texture at the projected coordinate → three $C$-dim feature vectors $\mathbf{f}_1,\mathbf{f}_2,\mathbf{f}_3$.<br>
+    <strong>Step 3 — Aggregate</strong>: $\mathbf{f} = \mathbf{f}_1+\mathbf{f}_2+\mathbf{f}_3$ (element-wise sum).<br>
+    <strong>Step 4 — Decode</strong>: Pass $\mathbf{f}$ through a <em>small MLP</em> (the only neural network in the pipeline) that outputs density $\sigma$ and colour $\mathbf{c}$.
+  </p>
+</div>
+
 <div class="info-grid">
-  <div class="info-card"><h4 style="color:#34d399;">Advantages</h4><p>$128\times$ cheaper than a $128^3$ voxel grid. GPU-native bilinear sampling. Differentiable end-to-end.</p></div>
-  <div class="info-card"><h4 style="color:#f87171;">Disadvantages</h4><p>Axis-aligned bias. Cannot represent features uncorrelated across all three axes. Slightly less expressive than full 3D grids.</p></div>
+  <div class="info-card"><h4 style="color:#34d399;">Advantages</h4><p>$128\times$ cheaper than a $128^3$ voxel grid ($3\times H\times W\times C$ vs $N^3\times C$). GPU-native bilinear sampling. Differentiable end-to-end. Training is fast because gradients flow through simple texture lookups.</p></div>
+  <div class="info-card"><h4 style="color:#f87171;">Disadvantages</h4><p>Axis-aligned bias — a feature uncorrelated across all three planes (e.g. a diagonal feature) cannot be captured. Slightly less expressive than full 3D voxel grids at the same resolution. The three planes must share the same spatial extent.</p></div>
 </div>
 
 <table class="rep-table">
@@ -242,8 +256,27 @@ $$\pi_{XY}(p)=(x,y),\quad\pi_{XZ}(p)=(x,z),\quad\pi_{YZ}(p)=(y,z)$$</div>
   </div>
 </div>
 <div class="callout blue">
-  <div class="ct">Color-coded Normals (Normal Map)</div>
-  <p>The standard encoding maps each normal component from $[-1,1]$ to $[0,1]$: $\text{RGB}=\tfrac{\mathbf{n}+1}{2}$. So pointing right $(+X)$ = <span style="color:#f87171;">red</span>, pointing up $(+Y)$ = <span style="color:#34d399;">green</span>, pointing toward you $(+Z)$ = <span style="color:#60a5fa;">blue</span>. Normals pointing away from an axis appear dark. This encoding is universal in normal-mapping and neural rendering pipelines.</p>
+  <div class="ct">Color-coded Normals (Normal Map) — How the encoding works</div>
+  <p style="margin-bottom:.9rem;">A normal vector has components $(n_x, n_y, n_z)\in[-1,1]^3$. We cannot store negative numbers in a pixel (which lives in $[0,1]$), so we linearly remap each component:</p>
+  <div class="math-box" style="margin:0 0 .9rem 0;text-align:left;padding:.7rem 1rem;">$$R = \frac{n_x+1}{2},\quad G = \frac{n_y+1}{2},\quad B = \frac{n_z+1}{2}$$</div>
+  <p style="margin-bottom:.8rem;">When a component is $+1$ the channel is $1.0$ (bright); when it is $-1$ the channel is $0.0$ (black); when it is $0$ the channel is $0.5$ (medium grey). Six canonical directions decode to:</p>
+  <table style="width:100%;border-collapse:collapse;font-size:.8rem;margin-bottom:.8rem;">
+    <thead><tr style="color:#6060a0;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;">
+      <th style="text-align:left;padding:4px 8px;border-bottom:1px solid #252545;">Normal direction</th>
+      <th style="text-align:left;padding:4px 8px;border-bottom:1px solid #252545;">$(n_x,\,n_y,\,n_z)$</th>
+      <th style="text-align:left;padding:4px 8px;border-bottom:1px solid #252545;">RGB = (n+1)/2</th>
+      <th style="padding:4px 8px;border-bottom:1px solid #252545;">Colour</th>
+    </tr></thead>
+    <tbody style="color:#9090b0;">
+      <tr><td style="padding:3px 8px;">Right (+X)</td><td style="padding:3px 8px;font-family:monospace;">(+1, 0, 0)</td><td style="padding:3px 8px;font-family:monospace;">(1.0, 0.5, 0.5)</td><td style="padding:3px 8px;"><span style="display:inline-block;width:18px;height:14px;background:rgb(255,128,128);border-radius:3px;vertical-align:middle;margin-right:5px;"></span><span style="color:#f87171;">bright red</span></td></tr>
+      <tr style="background:#0a0a16;"><td style="padding:3px 8px;">Left (−X)</td><td style="padding:3px 8px;font-family:monospace;">(−1, 0, 0)</td><td style="padding:3px 8px;font-family:monospace;">(0.0, 0.5, 0.5)</td><td style="padding:3px 8px;"><span style="display:inline-block;width:18px;height:14px;background:rgb(0,128,128);border-radius:3px;vertical-align:middle;margin-right:5px;"></span><span style="color:#2dd4bf;">dark teal</span></td></tr>
+      <tr><td style="padding:3px 8px;">Up (+Y)</td><td style="padding:3px 8px;font-family:monospace;">(0, +1, 0)</td><td style="padding:3px 8px;font-family:monospace;">(0.5, 1.0, 0.5)</td><td style="padding:3px 8px;"><span style="display:inline-block;width:18px;height:14px;background:rgb(128,255,128);border-radius:3px;vertical-align:middle;margin-right:5px;"></span><span style="color:#4ade80;">bright green</span></td></tr>
+      <tr style="background:#0a0a16;"><td style="padding:3px 8px;">Down (−Y)</td><td style="padding:3px 8px;font-family:monospace;">(0, −1, 0)</td><td style="padding:3px 8px;font-family:monospace;">(0.5, 0.0, 0.5)</td><td style="padding:3px 8px;"><span style="display:inline-block;width:18px;height:14px;background:rgb(128,0,128);border-radius:3px;vertical-align:middle;margin-right:5px;"></span><span style="color:#c084fc;">dark purple</span></td></tr>
+      <tr><td style="padding:3px 8px;">Toward you (+Z)</td><td style="padding:3px 8px;font-family:monospace;">(0, 0, +1)</td><td style="padding:3px 8px;font-family:monospace;">(0.5, 0.5, 1.0)</td><td style="padding:3px 8px;"><span style="display:inline-block;width:18px;height:14px;background:rgb(128,128,255);border-radius:3px;vertical-align:middle;margin-right:5px;"></span><span style="color:#818cf8;">bright blue</span></td></tr>
+      <tr style="background:#0a0a16;"><td style="padding:3px 8px;">Away from you (−Z)</td><td style="padding:3px 8px;font-family:monospace;">(0, 0, −1)</td><td style="padding:3px 8px;font-family:monospace;">(0.5, 0.5, 0.0)</td><td style="padding:3px 8px;"><span style="display:inline-block;width:18px;height:14px;background:rgb(128,128,0);border-radius:3px;vertical-align:middle;margin-right:5px;"></span><span style="color:#a3a330;">olive/dark</span></td></tr>
+    </tbody>
+  </table>
+  <p style="margin:0;font-size:.82rem;">The sphere above shows all of this at once: the right hemisphere is reddish, the top is greenish, and the front-facing area is bluish. Diagonals blend smoothly. This encoding is used in every tangent-space normal map in games, in NeRF normal supervision, and in neural rendering quality metrics.</p>
 </div>
 
 <h3>Signed Distance Function (SDF)</h3>
@@ -630,11 +663,18 @@ function initCanvas(canvas, wrapper) {
       geo.attributes.position.needsUpdate=true;
     });
     document.getElementById('rep-hud-body').innerHTML=
-      `Query: (${tpQx.toFixed(2)}, ${tpQy.toFixed(2)}, ${tpQz.toFixed(2)})<br>`+
-      `<span style="color:#60a5fa">XY proj:</span> (${tpQx.toFixed(2)}, ${tpQy.toFixed(2)})<br>`+
-      `<span style="color:#34d399">XZ proj:</span> (${tpQx.toFixed(2)}, ${tpQz.toFixed(2)})<br>`+
-      `<span style="color:#c084fc">YZ proj:</span> (${tpQy.toFixed(2)}, ${tpQz.toFixed(2)})<br>`+
-      `<span style="color:#6060a0;font-size:.7rem">sum features → MLP</span>`;
+      `<span style="color:#9090b0;font-size:.72rem;">query point p</span><br>`+
+      `<span style="font-family:monospace;color:#f0f0f8;">(${tpQx.toFixed(2)}, ${tpQy.toFixed(2)}, ${tpQz.toFixed(2)})</span><br>`+
+      `<div style="border-top:1px solid #252545;margin:5px 0;"></div>`+
+      `<span style="color:#60a5fa;font-size:.72rem;">① π_XY(p) = drop z</span><br>`+
+      `<span style="font-family:monospace;color:#60a5fa;">(${tpQx.toFixed(2)}, ${tpQy.toFixed(2)})</span> <span style="color:#404060;font-size:.7rem;">→ sample f_XY</span><br>`+
+      `<span style="color:#34d399;font-size:.72rem;">② π_XZ(p) = drop y</span><br>`+
+      `<span style="font-family:monospace;color:#34d399;">(${tpQx.toFixed(2)}, ${tpQz.toFixed(2)})</span> <span style="color:#404060;font-size:.7rem;">→ sample f_XZ</span><br>`+
+      `<span style="color:#c084fc;font-size:.72rem;">③ π_YZ(p) = drop x</span><br>`+
+      `<span style="font-family:monospace;color:#c084fc;">(${tpQy.toFixed(2)}, ${tpQz.toFixed(2)})</span> <span style="color:#404060;font-size:.7rem;">→ sample f_YZ</span><br>`+
+      `<div style="border-top:1px solid #252545;margin:5px 0;"></div>`+
+      `<span style="color:#facc15;font-size:.72rem;">④ sum → MLP → σ, RGB</span><br>`+
+      `<span style="color:#404060;font-size:.69rem;">f_XY, f_XZ, f_YZ are learned<br>2D feature textures (not NNs).<br>Only the decoder is an MLP.</span>`;
   }
 
   function switchRep(rep){
@@ -870,19 +910,23 @@ function initCanvas(canvas, wrapper) {
       meshGrp.add(new THREE.Mesh(geo,cMat));
       document.getElementById('norm-hud-title').textContent='Normal Map Encoding';
       document.getElementById('norm-hud-body').innerHTML=
-        'RGB = (n+1)/2<br>'+
-        '<span style="color:#f87171">■</span> +X = red (right)<br>'+
-        '<span style="color:#34d399">■</span> +Y = green (up)<br>'+
-        '<span style="color:#60a5fa">■</span> +Z = blue (front)<br>'+
-        '<span style="color:#6060a0">■</span> −axis = dark';
+        '<span style="color:#38bdf8;font-size:.78rem;">RGB = (n + 1) / 2</span><br>'+
+        '<span style="color:#6060a0;font-size:.7rem;">maps [−1,1] → [0,1]</span><br><br>'+
+        '<span style="color:#f87171">■</span> +X → R=1.0, G=0.5, B=0.5<br>'+
+        '<span style="color:#2dd4bf">■</span> −X → R=0.0, G=0.5, B=0.5<br>'+
+        '<span style="color:#4ade80">■</span> +Y → R=0.5, G=1.0, B=0.5<br>'+
+        '<span style="color:#c084fc">■</span> −Y → R=0.5, G=0.0, B=0.5<br>'+
+        '<span style="color:#818cf8">■</span> +Z → R=0.5, G=0.5, B=1.0<br>'+
+        '<span style="color:#a3a330">■</span> −Z → R=0.5, G=0.5, B=0.0';
       legend.style.display='';
       legend.innerHTML=
-        '<div style="font-size:.68rem;color:#6060a0;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;">Normal → Color encoding</div>'+
-        '<div><span style="color:#f87171">●</span> n=(+1,0,0) → <span style="color:#f87171">red</span> (right)</div>'+
-        '<div><span style="color:#4ade80">●</span> n=(0,+1,0) → <span style="color:#4ade80">green</span> (up)</div>'+
-        '<div><span style="color:#60a5fa">●</span> n=(0,0,+1) → <span style="color:#60a5fa">blue</span> (front)</div>'+
-        '<div style="color:#888">−axis → darker version</div>'+
-        '<div style="margin-top:3px;color:#888;font-size:.7rem">Formula: RGB = (n+1)÷2</div>';
+        '<div style="font-size:.68rem;color:#6060a0;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Hover a region to decode</div>'+
+        '<div style="display:flex;gap:6px;align-items:center;margin-bottom:3px;"><span style="display:inline-block;width:14px;height:10px;background:rgb(255,128,128);border-radius:2px;"></span><span>Right (+X) — bright red</span></div>'+
+        '<div style="display:flex;gap:6px;align-items:center;margin-bottom:3px;"><span style="display:inline-block;width:14px;height:10px;background:rgb(128,255,128);border-radius:2px;"></span><span>Up (+Y) — bright green</span></div>'+
+        '<div style="display:flex;gap:6px;align-items:center;margin-bottom:3px;"><span style="display:inline-block;width:14px;height:10px;background:rgb(128,128,255);border-radius:2px;"></span><span>Front (+Z) — bright blue</span></div>'+
+        '<div style="display:flex;gap:6px;align-items:center;margin-bottom:3px;"><span style="display:inline-block;width:14px;height:10px;background:rgb(0,128,128);border-radius:2px;"></span><span>Left (−X) — teal</span></div>'+
+        '<div style="display:flex;gap:6px;align-items:center;margin-bottom:3px;"><span style="display:inline-block;width:14px;height:10px;background:rgb(128,0,128);border-radius:2px;"></span><span>Down (−Y) — purple</span></div>'+
+        '<div style="display:flex;gap:6px;align-items:center;"><span style="display:inline-block;width:14px;height:10px;background:rgb(128,128,0);border-radius:2px;"></span><span>Back (−Z) — olive</span></div>';
     }
     scene.add(meshGrp);
   }
