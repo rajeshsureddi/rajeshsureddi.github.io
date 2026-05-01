@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neural Networks from Scratch — PyTorch Implementation</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>document.addEventListener('DOMContentLoaded',()=>hljs.highlightAll());</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0c0c14;color:#d4d4e0;line-height:1.75;}
+a{color:#38bdf8;}
+.article-body{max-width:900px;margin:0 auto;padding:3.5rem 1.5rem 5rem;}
+h1{font-size:2.4rem;font-weight:800;color:#f0f0f8;letter-spacing:-.03em;margin-bottom:.8rem;}
+h2{font-size:1.55rem;font-weight:700;color:#f0f0f8;margin:3.5rem 0 1.2rem;padding-bottom:.6rem;border-bottom:2px solid #1e1e30;}
+h3{font-size:1.05rem;font-weight:600;color:#c0c0d8;margin:2rem 0 .7rem;}
+p{margin-bottom:1.3rem;color:#a0a0b8;}
+ul,ol{padding-left:1.6rem;margin-bottom:1.3rem;}
+li{margin-bottom:.45rem;color:#a0a0b8;}
+strong{color:#d4d4e8;}
+em{color:#c0c0d8;}
+.graphic-container{background:#09090f;border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5);margin:2rem 0;border:1px solid #1a1a28;}
+.canvas-wrapper{position:relative;width:100%;user-select:none;}
+.controls{background:#0f0f1e;border-top:1px solid #1a1a28;padding:16px 20px;}
+.ctrl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:11px 20px;}
+.ctrl-group{display:flex;flex-direction:column;gap:4px;}
+.ctrl-group label{font-size:.79rem;font-weight:600;color:#7070a0;display:flex;justify-content:space-between;}
+.ctrl-group label span.val{color:#38bdf8;font-family:monospace;}
+input[type=range]{-webkit-appearance:none;width:100%;background:transparent;cursor:pointer;}
+input[type=range]::-webkit-slider-runnable-track{height:4px;background:#1e1e38;border-radius:2px;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#38bdf8;margin-top:-5px;box-shadow:0 0 6px rgba(56,189,248,.5);}
+.math-box{background:#0f0f1e;border:1px solid #1e1e38;border-radius:10px;padding:1.2rem 1.4rem;margin:1.2rem 0;text-align:center;overflow-x:auto;}
+.math-box .katex{color:#d4d4f0;}
+.tab-row{display:flex;gap:6px;flex-wrap:wrap;padding:12px 16px;background:#0f0f1e;border-bottom:1px solid #1a1a28;}
+.tab-btn{background:#111128;border:1.5px solid #252545;color:#9090b0;padding:5px 13px;border-radius:7px;font-size:.79rem;font-weight:600;cursor:pointer;transition:all .15s;}
+.tab-btn:hover{border-color:#38bdf8;color:#38bdf8;}
+.tab-btn.active{background:#0d1a2e;border-color:#38bdf8;color:#38bdf8;box-shadow:0 0 8px rgba(56,189,248,.2);}
+.hud{position:absolute;background:rgba(6,6,18,.92);backdrop-filter:blur(10px);border:1px solid #252540;border-radius:9px;padding:10px 12px;pointer-events:none;z-index:10;}
+.hud-title{font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#38bdf8;border-bottom:1px solid #252540;padding-bottom:6px;margin-bottom:7px;}
+.hud-row{display:flex;justify-content:space-between;gap:10px;font-size:.75rem;margin-bottom:3px;color:#8080a8;}
+.hud-row span.val{color:#f0f0f8;font-family:monospace;}
+.callout{border-radius:10px;padding:13px 17px;margin:1.2rem 0;}
+.callout.green{background:#061410;border:1.5px solid #1a4a28;}
+.callout.blue{background:#04101a;border:1.5px solid #1a3a58;}
+.callout.amber{background:#140e04;border:1.5px solid #4a3810;}
+.callout.red{background:#140606;border:1.5px solid #4a1818;}
+.callout .ct{font-size:.69rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;}
+.callout.green .ct{color:#34d399;}.callout.blue .ct{color:#38bdf8;}.callout.amber .ct{color:#facc15;}.callout.red .ct{color:#f87171;}
+.callout p{font-size:.83rem;color:#8080a8;margin:0;}
+.callout p+p{margin-top:.5rem;}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:1.2rem 0;}
+@media(max-width:640px){.info-grid{grid-template-columns:1fr;}}
+.info-card{background:#0f0f1e;border:1px solid #1a1a28;border-radius:10px;padding:13px 15px;}
+.info-card h4{font-size:.85rem;font-weight:700;color:#c0c0d8;margin-bottom:6px;}
+.info-card p{font-size:.8rem;color:#7070a0;margin:0;}
+.code-block{background:#0d0d1a;border:1px solid #1e1e38;border-radius:10px;overflow:hidden;margin:1.4rem 0;}
+.code-header{background:#111128;padding:6px 14px 6px 14px;font-size:.72rem;color:#6060a0;font-weight:700;text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid #1e1e38;display:flex;justify-content:space-between;align-items:center;}
+.code-header .tag{color:#38bdf8;}
+pre{margin:0;padding:1rem 1.2rem;overflow-x:auto;}
+code.hljs{background:transparent;font-size:.82rem;line-height:1.65;}
+code:not(.hljs){font-family:'Fira Code','JetBrains Mono',Consolas,monospace;font-size:.83rem;background:#111128;padding:1px 5px;border-radius:4px;color:#c084fc;}
+.complexity-table{width:100%;border-collapse:collapse;margin:1.2rem 0;font-size:.81rem;}
+.complexity-table th{background:#111128;color:#6060a0;font-size:.71rem;text-transform:uppercase;letter-spacing:.07em;padding:8px 12px;border:1px solid #1e1e38;text-align:left;}
+.complexity-table td{padding:7px 12px;border:1px solid #1e1e38;color:#9090b0;font-family:monospace;}
+.complexity-table tr:nth-child(2n){background:#0a0a16;}
+.complexity-table .hl{color:#38bdf8;}.complexity-table .good{color:#34d399;}.complexity-table .mid{color:#facc15;}
+.dim-tag{font-family:monospace;font-size:.78rem;background:#0d1a2e;color:#60a5fa;border:1px solid #1a3a58;border-radius:4px;padding:1px 6px;white-space:nowrap;}
+.section-label{font-size:.77rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#6060a0;margin-bottom:.4rem;}
+.split-row{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #1a1a28;}
+@media(max-width:600px){.split-row{grid-template-columns:1fr;}}
+.split-pane{position:relative;}
+.split-pane+.split-pane{border-left:1px solid #1a1a28;}
+.nav-back{display:inline-flex;align-items:center;gap:6px;color:#6060a0;font-size:.8rem;text-decoration:none;margin-bottom:1.5rem;}
+.nav-back:hover{color:#38bdf8;}
+</style>
+</head>
+<body>
+<main class="article-body">
+
+<a href="../learning.html" class="nav-back">← LearningMyself</a>
+
+<header style="margin-bottom:2.8rem;">
+  <p class="section-label">Deep Learning · From Scratch</p>
+  <h1>Neural Networks from Scratch</h1>
+  <p style="font-size:1.05rem;color:#7070a0;max-width:600px;margin-bottom:0;">Every matrix multiply, every gradient — implemented in raw PyTorch (no <code>nn.Linear</code>, no autograd) with batch dimensions, complexity proofs, and interactive visualizations.</p>
+</header>
+
+<p>Before you can use a framework's abstraction, you need to understand what it is actually doing. This article builds a complete neural network from first principles: a hand-written linear layer, a manual backpropagation pass, every major activation function, and every major loss function. Every operation carries its batch dimension and its $\mathcal{O}(\cdot)$ cost.</p>
+
+<!-- ══════════════════════════════════════════════════
+     SECTION 1 — THE LINEAR LAYER
+══════════════════════════════════════════════════ -->
+<h2>1. The Linear Layer</h2>
+
+<h3>1.1 Forward Pass</h3>
+<p>A linear (fully-connected) layer computes an affine transformation. For a <em>batch</em> of $B$ inputs, each with $M$ features, mapped to $N$ outputs:</p>
+
+<div class="math-box">$$\underbrace{\mathbf{Y}}_{B\times N} = \underbrace{\mathbf{X}}_{B\times M}\ \underbrace{\mathbf{W}}_{M\times N} + \underbrace{\mathbf{b}}_{N}$$</div>
+
+<p>The $+\mathbf{b}$ broadcasts along the batch axis — every sample in the batch gets the same bias added. Let's count the cost. Each output element $Y_{b,n} = \sum_{m=0}^{M-1} X_{b,m}\,W_{m,n} + b_n$ requires $M$ multiplications and $M$ additions. There are $B \times N$ output elements, so:</p>
+
+<div class="callout blue">
+  <div class="ct">Complexity — Forward Pass</div>
+  <p>$B \times N$ outputs, each requiring $M$ multiply-adds $\Rightarrow$ $\mathbf{2BMN}$ FLOPs $\Rightarrow \mathcal{O}(BMN)$</p>
+  <p>For a typical hidden layer with $B=256,\,M=512,\,N=512$: roughly $\mathbf{134}$ million operations per layer.</p>
+</div>
+
+<div class="code-block">
+  <div class="code-header"><span>linear_layer.py</span><span class="tag">PyTorch — no nn.Linear</span></div>
+<pre><code class="language-python">import torch
+
+class Linear:
+    """Fully-connected layer — every operation written by hand."""
+
+    def __init__(self, in_features: int, out_features: int):
+        # Xavier (Glorot) Normal initialization:
+        #   scale = sqrt(2 / (fan_in + fan_out))
+        # Keeps variance of activations stable at init regardless of layer width.
+        scale = (2.0 / (in_features + out_features)) ** 0.5
+        self.W = torch.randn(in_features, out_features) * scale  # (M, N)
+        self.b = torch.zeros(out_features)                        # (N,)
+        # Gradient buffers — filled by .backward()
+        self.dW: torch.Tensor | None = None
+        self.db: torch.Tensor | None = None
+        self._x: torch.Tensor | None = None   # input cache for backward
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        x   : (B, M)  — batch of B inputs, each M-dimensional
+        out : (B, N)  — batch of B outputs, each N-dimensional
+
+        Cost: O(B·M·N)  — one matrix multiply + bias broadcast
+        """
+        self._x = x                      # cache for backward pass
+        return x @ self.W + self.b       # (B,M)@(M,N) + broadcast (N,) → (B,N)
+</code></pre>
+</div>
+
+<h3>1.2 Backward Pass — Deriving Every Gradient</h3>
+<p>Given $\frac{\partial L}{\partial \mathbf{Y}}$ (gradient of the scalar loss $L$ w.r.t. this layer's output, shape $B\times N$), we need three gradients: one for each parameter ($\mathbf{W}$, $\mathbf{b}$) and one to pass upstream ($\mathbf{X}$).</p>
+
+<p><strong>Gradient w.r.t. W.</strong> Write out a single element: $Y_{b,n} = \sum_m X_{b,m}\,W_{m,n}$. By the chain rule, $\frac{\partial L}{\partial W_{m,n}} = \sum_b \frac{\partial L}{\partial Y_{b,n}}\cdot X_{b,m}$. Stacking all $(m,n)$ pairs in matrix form:</p>
+<div class="math-box">$$\frac{\partial L}{\partial \mathbf{W}} = \mathbf{X}^\top \frac{\partial L}{\partial \mathbf{Y}} \quad \underbrace{(M\times B)\cdot(B\times N)}_{\text{shape }M\times N}$$</div>
+<p>Cost: $(M\times B)$ times $(B\times N)$ matrix multiply $\Rightarrow \mathcal{O}(BMN)$.</p>
+
+<p><strong>Gradient w.r.t. b.</strong> Each $b_n$ contributes to every sample: $\frac{\partial L}{\partial b_n} = \sum_b \frac{\partial L}{\partial Y_{b,n}}$, i.e. sum the upstream gradient over the batch axis.</p>
+<div class="math-box">$$\frac{\partial L}{\partial \mathbf{b}} = \sum_{b=1}^{B} \frac{\partial L}{\partial \mathbf{Y}}_{b,:} \quad \text{shape }N \qquad \mathcal{O}(BN)$$</div>
+
+<p><strong>Gradient w.r.t. X.</strong> $\frac{\partial L}{\partial X_{b,m}} = \sum_n \frac{\partial L}{\partial Y_{b,n}}\cdot W_{m,n}$. In matrix form:</p>
+<div class="math-box">$$\frac{\partial L}{\partial \mathbf{X}} = \frac{\partial L}{\partial \mathbf{Y}}\,\mathbf{W}^\top \quad \underbrace{(B\times N)\cdot(N\times M)}_{\text{shape }B\times M} \qquad \mathcal{O}(BMN)$$</div>
+
+<table class="complexity-table">
+  <thead><tr><th>Operation</th><th>Shapes</th><th>FLOPs</th><th>Big-O</th></tr></thead>
+  <tbody>
+    <tr><td>Forward  <code>Y = X @ W + b</code></td><td class="dim-tag">(B,M)·(M,N)→(B,N)</td><td>2BMN + BN</td><td class="hl">O(BMN)</td></tr>
+    <tr><td>Backward <code>dW = Xᵀ @ dY</code></td><td class="dim-tag">(M,B)·(B,N)→(M,N)</td><td>2BMN</td><td class="hl">O(BMN)</td></tr>
+    <tr><td>Backward <code>db = dY.sum(0)</code></td><td class="dim-tag">(B,N)→(N,)</td><td>BN</td><td class="good">O(BN)</td></tr>
+    <tr><td>Backward <code>dX = dY @ Wᵀ</code></td><td class="dim-tag">(B,N)·(N,M)→(B,M)</td><td>2BMN</td><td class="hl">O(BMN)</td></tr>
+  </tbody>
+</table>
+
+<p>The backward pass costs $\approx 3\times$ the forward pass — two matrix multiplies for parameters, one for the input gradient. This $3\times$ rule holds for any matrix multiply.</p>
+
+<div class="code-block">
+  <div class="code-header"><span>linear_layer.py (continued)</span><span class="tag">backward + SGD step</span></div>
+<pre><code class="language-python">    def backward(self, dout: torch.Tensor) -> torch.Tensor:
+        """
+        dout : (B, N)  — dL/dY from the layer above
+
+        Returns dL/dX : (B, M) — gradient to pass further upstream.
+        Also stores dW and db for the optimizer step.
+        """
+        # dL/dW = X^T @ dL/dY       shape: (M,B)·(B,N) → (M,N)  O(BMN)
+        self.dW = self._x.T @ dout
+
+        # dL/db = sum over batch     shape: (N,)                   O(BN)
+        self.db = dout.sum(dim=0)
+
+        # dL/dX = dL/dY @ W^T       shape: (B,N)·(N,M) → (B,M)  O(BMN)
+        return dout @ self.W.T
+
+    def step(self, lr: float) -> None:
+        """Vanilla SGD: move parameters opposite to their gradient."""
+        self.W -= lr * self.dW
+        self.b -= lr * self.db
+</code></pre>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SECTION 2 — ACTIVATION FUNCTIONS
+══════════════════════════════════════════════════ -->
+<h2>2. Activation Functions</h2>
+
+<p>Stack two linear layers with no activation between them: $\mathbf{Y} = (\mathbf{X}\mathbf{W}_1)\mathbf{W}_2 = \mathbf{X}(\mathbf{W}_1\mathbf{W}_2)$. The product $\mathbf{W}_1\mathbf{W}_2$ is itself a single matrix — no matter how many layers you add, the network stays linear. Activation functions introduce non-linearity after each layer, giving the network the capacity to approximate any continuous function (Universal Approximation Theorem).</p>
+
+<h3>2.1 The Six Functions</h3>
+
+<div class="code-block">
+  <div class="code-header"><span>activations.py</span><span class="tag">all from scratch</span></div>
+<pre><code class="language-python">import torch
+import math
+
+# ── Sigmoid ──────────────────────────────────────────────────────────────
+class Sigmoid:
+    """σ(x) = 1 / (1 + e^{-x})    Range: (0, 1)"""
+    def forward(self, x):
+        self._s = 1.0 / (1.0 + torch.exp(-x))
+        return self._s
+    def backward(self, dout):
+        # σ'(x) = σ(x)(1 − σ(x))   — reuse cached forward output
+        return dout * self._s * (1.0 - self._s)
+
+# ── Tanh ─────────────────────────────────────────────────────────────────
+class Tanh:
+    """tanh(x) = (e^x − e^{-x})/(e^x + e^{-x})   Range: (−1, 1)"""
+    def forward(self, x):
+        self._t = torch.tanh(x)       # uses stable fused kernel
+        return self._t
+    def backward(self, dout):
+        # tanh'(x) = 1 − tanh²(x)
+        return dout * (1.0 - self._t ** 2)
+
+# ── ReLU ──────────────────────────────────────────────────────────────────
+class ReLU:
+    """max(0, x)    Range: [0, ∞)"""
+    def forward(self, x):
+        self._mask = x > 0            # boolean gate: True where x > 0
+        return x * self._mask
+    def backward(self, dout):
+        # Gradient is 1 where x > 0, 0 elsewhere — gate the upstream gradient
+        return dout * self._mask
+
+# ── Leaky ReLU ────────────────────────────────────────────────────────────
+class LeakyReLU:
+    """max(αx, x)   Default α=0.01. Fixes the dying neuron problem."""
+    def __init__(self, alpha: float = 0.01):
+        self.alpha = alpha
+    def forward(self, x):
+        self._mask = x > 0
+        return torch.where(self._mask, x, self.alpha * x)
+    def backward(self, dout):
+        grad = torch.where(self._mask,
+                           torch.ones_like(dout),
+                           torch.full_like(dout, self.alpha))
+        return dout * grad
+
+# ── ELU ───────────────────────────────────────────────────────────────────
+class ELU:
+    """x if x>0 else α(e^x − 1)   Smooth, negative saturation."""
+    def __init__(self, alpha: float = 1.0):
+        self.alpha = alpha
+    def forward(self, x):
+        self._x = x
+        pos = x * (x > 0)
+        neg = self.alpha * (torch.exp(x.clamp(max=0)) - 1.0) * (x <= 0)
+        return pos + neg
+    def backward(self, dout):
+        pos_grad = (self._x > 0).float()
+        neg_grad = self.alpha * torch.exp(self._x.clamp(max=0)) * (self._x <= 0).float()
+        return dout * (pos_grad + neg_grad)
+
+# ── GELU (tanh approximation) ────────────────────────────────────────────
+class GELU:
+    """x·Φ(x)  ≈  0.5x(1 + tanh(√(2/π)(x + 0.044715x³)))
+    Used in GPT, BERT, and most modern Transformers."""
+    _C = math.sqrt(2.0 / math.pi)
+    def forward(self, x):
+        self._x = x
+        inner = self._C * (x + 0.044715 * x ** 3)
+        self._t = torch.tanh(inner)
+        return 0.5 * x * (1.0 + self._t)
+    def backward(self, dout):
+        x = self._x
+        inner = self._C * (x + 0.044715 * x ** 3)
+        sech2 = 1.0 - self._t ** 2                         # sech²(inner)
+        d_inner = self._C * (1.0 + 3 * 0.044715 * x ** 2)
+        dgelu = 0.5 * (1.0 + self._t) + 0.5 * x * sech2 * d_inner
+        return dout * dgelu
+
+# ── Swish / SiLU ─────────────────────────────────────────────────────────
+class Swish:
+    """x·σ(x)   Self-gated, smooth everywhere. Used in EfficientNet, LaMDA."""
+    def forward(self, x):
+        self._x = x
+        self._s = 1.0 / (1.0 + torch.exp(-x))
+        return x * self._s
+    def backward(self, dout):
+        # d/dx [x·σ(x)] = σ(x) + x·σ(x)·(1 − σ(x)) = σ(x)(1 + x(1−σ(x)))
+        grad = self._s * (1.0 + self._x * (1.0 - self._s))
+        return dout * grad
+</code></pre>
+</div>
+
+<h3>2.2 Properties at a Glance</h3>
+<table class="complexity-table" style="font-size:.78rem;">
+  <thead><tr><th>Function</th><th>Formula</th><th>Gradient</th><th>Range</th><th>Key issue</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Sigmoid</strong></td><td>1/(1+e⁻ˣ)</td><td>σ(1−σ) ≤ 0.25</td><td>(0,1)</td><td class="mid">Vanishing gradient, not zero-centred</td></tr>
+    <tr><td><strong>Tanh</strong></td><td>(eˣ−e⁻ˣ)/(eˣ+e⁻ˣ)</td><td>1−tanh²(x) ≤ 1</td><td>(−1,1)</td><td class="mid">Vanishing gradient (better than σ)</td></tr>
+    <tr><td><strong>ReLU</strong></td><td>max(0,x)</td><td>0 or 1</td><td>[0,∞)</td><td class="mid">Dying neuron (x&lt;0 → dead forever)</td></tr>
+    <tr><td><strong>Leaky ReLU</strong></td><td>max(αx,x)</td><td>α or 1</td><td>(−∞,∞)</td><td class="good">Fixes dying neuron</td></tr>
+    <tr><td><strong>ELU</strong></td><td>x or α(eˣ−1)</td><td>1 or f(x)+α</td><td>(−α,∞)</td><td class="good">Smooth, negative saturation</td></tr>
+    <tr><td><strong>GELU</strong></td><td>x·Φ(x)</td><td>Φ(x)+xφ(x)</td><td>(−∞,∞)</td><td class="good">State-of-art for Transformers</td></tr>
+    <tr><td><strong>Swish</strong></td><td>x·σ(x)</td><td>σ(1+x(1−σ))</td><td>(−∞,∞)</td><td class="good">Smooth, self-gated</td></tr>
+  </tbody>
+</table>
+
+<h3>2.3 Interactive Activation Explorer</h3>
+<p>Drag the vertical line to inspect $f(x)$ and $f'(x)$ at any point. Shaded regions show where gradients become dangerously small (&lt;&nbsp;0.1) — this is where vanishing gradient lives.</p>
+
+<div class="graphic-container">
+  <div class="tab-row" id="act-tabs">
+    <button class="tab-btn active" data-act="sigmoid">Sigmoid</button>
+    <button class="tab-btn" data-act="tanh">Tanh</button>
+    <button class="tab-btn" data-act="relu">ReLU</button>
+    <button class="tab-btn" data-act="leaky">Leaky ReLU</button>
+    <button class="tab-btn" data-act="elu">ELU</button>
+    <button class="tab-btn" data-act="gelu">GELU</button>
+    <button class="tab-btn" data-act="swish">Swish</button>
+  </div>
+  <div class="canvas-wrapper" style="background:#09090f;">
+    <canvas id="act-canvas" style="display:block;width:100%;height:340px;cursor:crosshair;"></canvas>
+    <div class="hud" style="top:12px;right:12px;min-width:190px;">
+      <div class="hud-title" id="act-hud-title">Sigmoid</div>
+      <div class="hud-row"><span>x</span><span class="val" id="act-x">0.00</span></div>
+      <div class="hud-row"><span>f(x)</span><span class="val" id="act-fx">0.500</span></div>
+      <div class="hud-row"><span>f′(x)</span><span class="val" id="act-dfx">0.250</span></div>
+      <div class="hud-row"><span>Saturated?</span><span class="val" id="act-sat">no</span></div>
+      <div style="margin-top:8px;font-size:.7rem;color:#404060;line-height:1.8;">
+        <span style="color:#38bdf8;">—</span> f(x) activation<br>
+        <span style="color:#fb923c;">—</span> f′(x) gradient<br>
+        <span style="background:rgba(248,113,113,.15);padding:0 4px;border-radius:2px;color:#888;">■</span> gradient &lt; 0.1
+      </div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="ctrl-grid">
+      <div class="ctrl-group">
+        <label>x range <span class="val" id="act-range-val">±6</span></label>
+        <input type="range" id="act-range" min="2" max="10" step="1" value="6">
+      </div>
+      <div class="ctrl-group" id="leaky-alpha-group" style="display:none;">
+        <label>α (LeakyReLU) <span class="val" id="leaky-alpha-val">0.10</span></label>
+        <input type="range" id="leaky-alpha" min="0.01" max="0.5" step="0.01" value="0.1">
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3>2.4 The Vanishing Gradient Problem</h3>
+<p>For sigmoid: $\sigma'(x) = \sigma(x)(1-\sigma(x)) \leq 0.25$ always. Through $L$ layers, the gradient magnitude is multiplied by $\sigma'$ at each step. With 10 layers of sigmoid activations, the gradient reaching the first layer is at most $0.25^{10} \approx 10^{-6}$ — effectively zero. The first layers learn nothing.</p>
+
+<div class="callout red">
+  <div class="ct">Dying ReLU</div>
+  <p>A ReLU neuron whose pre-activation is always negative will always output 0, and its gradient will always be 0 — it is permanently dead. This can happen after a large gradient update flips all inputs negative. Leaky ReLU, ELU, and GELU avoid this by passing a small (but non-zero) gradient for $x &lt; 0$.</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SECTION 3 — MLP + TRAINING
+══════════════════════════════════════════════════ -->
+<h2>3. Assembling the MLP and Training with MSE</h2>
+
+<h3>3.1 MSE Loss from Scratch</h3>
+<p>Mean Squared Error measures the average squared deviation between prediction and target:</p>
+<div class="math-box">$$L_{\text{MSE}} = \frac{1}{BN}\sum_{b=1}^{B}\sum_{n=1}^{N}\!\left(\hat{y}_{b,n} - y_{b,n}\right)^2$$</div>
+<p>Gradient: $\frac{\partial L}{\partial \hat{\mathbf{Y}}} = \frac{2(\hat{\mathbf{Y}}-\mathbf{Y})}{BN}$. Note the division by $BN$ makes the loss scale-invariant to batch size — both the loss value and its gradient stay comparable across different $B$.</p>
+
+<div class="code-block">
+  <div class="code-header"><span>losses.py</span><span class="tag">MSE</span></div>
+<pre><code class="language-python">class MSELoss:
+    """Mean Squared Error — standard regression loss."""
+
+    def forward(self, y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
+        """
+        y_pred, y_true : (B, N)  — batch of B predictions, N outputs each
+        Returns scalar loss.
+        Cost: O(B·N)
+        """
+        self._diff = y_pred - y_true      # (B, N) — cache for backward
+        n_elements = y_pred.numel()       # B * N
+        return (self._diff ** 2).sum() / n_elements
+
+    def backward(self) -> torch.Tensor:
+        """
+        Returns dL/d(y_pred) : (B, N)
+        Cost: O(B·N)
+        """
+        n_elements = self._diff.numel()
+        return 2.0 * self._diff / n_elements
+</code></pre>
+</div>
+
+<h3>3.2 Full MLP</h3>
+
+<div class="code-block">
+  <div class="code-header"><span>mlp.py</span><span class="tag">complete from-scratch MLP</span></div>
+<pre><code class="language-python">class MLP:
+    """
+    Multi-layer perceptron built from our hand-written Linear + Activation blocks.
+
+    Usage:
+        model = MLP(dims=[2, 64, 64, 1], activation='relu')
+        y_pred = model.forward(x)   # x: (B, 2)
+        loss   = criterion.forward(y_pred, y_true)
+        dout   = criterion.backward()
+        model.backward(dout)
+        model.step(lr=1e-3)
+    """
+
+    def __init__(self, dims: list[int], activation: str = 'relu'):
+        act_map = {
+            'sigmoid': Sigmoid, 'tanh': Tanh, 'relu': ReLU,
+            'leaky': LeakyReLU, 'elu': ELU, 'gelu': GELU, 'swish': Swish,
+        }
+        act_cls = act_map[activation]
+
+        self.layers = []
+        for i in range(len(dims) - 1):
+            self.layers.append(Linear(dims[i], dims[i + 1]))
+            # Add activation after every layer EXCEPT the last (output) layer
+            if i < len(dims) - 2:
+                self.layers.append(act_cls())
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        x : (B, dims[0])
+        Sequentially applies all layers.
+        Total cost: Σ_l O(B · d_l · d_{l+1})
+        """
+        for layer in self.layers:
+            x = layer.forward(x)
+        return x
+
+    def backward(self, dout: torch.Tensor) -> None:
+        """Backprop in reverse layer order. Same asymptotic cost as forward."""
+        for layer in reversed(self.layers):
+            dout = layer.backward(dout)
+
+    def step(self, lr: float) -> None:
+        """SGD update for all Linear layers."""
+        for layer in self.layers:
+            if isinstance(layer, Linear):
+                layer.step(lr)
+</code></pre>
+</div>
+
+<h3>3.3 Complete Training Loop</h3>
+
+<div class="code-block">
+  <div class="code-header"><span>train.py</span><span class="tag">fit a sine wave</span></div>
+<pre><code class="language-python">import torch
+
+# ── Data: learn f(x) = sin(2πx) ────────────────────────────────────────
+torch.manual_seed(42)
+N_total = 1000
+x_all = torch.rand(N_total, 1) * 2 - 1          # uniform in [−1, 1]
+y_all = torch.sin(2 * torch.pi * x_all)          # target
+
+# ── Model & loss ────────────────────────────────────────────────────────
+model    = MLP(dims=[1, 64, 64, 1], activation='relu')
+criterion = MSELoss()
+
+# ── Hyper-parameters ────────────────────────────────────────────────────
+lr         = 1e-3
+batch_size = 64
+epochs     = 200
+
+# ── Training loop ───────────────────────────────────────────────────────
+for epoch in range(epochs):
+    # Shuffle data each epoch
+    idx = torch.randperm(N_total)
+    x_shuf, y_shuf = x_all[idx], y_all[idx]
+
+    epoch_loss = 0.0
+    n_batches  = 0
+
+    for start in range(0, N_total, batch_size):
+        # ── Slice mini-batch ────────────────────────────────────────────
+        xb = x_shuf[start : start + batch_size]   # (B, 1)
+        yb = y_shuf[start : start + batch_size]   # (B, 1)
+
+        # ── Forward pass ────────────────────────────────────────────────
+        y_pred = model.forward(xb)                 # (B, 1)
+        loss   = criterion.forward(y_pred, yb)     # scalar
+
+        # ── Backward pass ───────────────────────────────────────────────
+        dout = criterion.backward()                # (B, 1)
+        model.backward(dout)                       # propagates through all layers
+
+        # ── Parameter update ────────────────────────────────────────────
+        model.step(lr)
+
+        epoch_loss += loss.item()
+        n_batches  += 1
+
+    if (epoch + 1) % 20 == 0:
+        print(f"Epoch {epoch+1:3d} | MSE loss: {epoch_loss/n_batches:.6f}")
+
+# Output:
+# Epoch  20 | MSE loss: 0.148312
+# Epoch  40 | MSE loss: 0.042891
+# Epoch  60 | MSE loss: 0.018774
+# ...
+# Epoch 200 | MSE loss: 0.002103
+</code></pre>
+</div>
+
+<h3>3.4 Complexity of a Full Forward + Backward Pass</h3>
+<p>For an MLP with $L$ layers and widths $d_0, d_1, \ldots, d_L$, the full cost per batch is:</p>
+<div class="math-box">$$\text{Forward}: \sum_{l=0}^{L-1} \mathcal{O}(B\cdot d_l \cdot d_{l+1}) \qquad \text{Backward}: \approx 3\times\text{Forward cost}$$</div>
+<p>Deeper is cheaper than wider: a 10-layer $[64\to64]$ network costs $10\times B\times64\times64 = 40.96B$ K ops; a 2-layer $[320\to320]$ network with the same parameter count costs $2\times B\times320\times320 = 204.8B$ K ops — $5\times$ more. Depth is computationally efficient.</p>
+
+<h3>3.5 Interactive: Network Forward Pass</h3>
+<p>Move the input sliders to see activations propagate through a live $2{\to}4{\to}4{\to}1$ network. Circle colour encodes the neuron's output value. Line thickness = |weight|, colour = sign.</p>
+
+<div class="graphic-container">
+  <div style="padding:10px 16px;background:#0f0f1e;border-bottom:1px solid #1a1a28;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+    <span style="font-size:.75rem;color:#6060a0;font-weight:700;text-transform:uppercase;letter-spacing:.08em;flex:1;">Forward Pass — 2→4→4→1 ReLU Network</span>
+    <button class="tab-btn" id="nn-randomize" style="padding:4px 11px;font-size:.74rem;">⟳ Randomize Weights</button>
+  </div>
+  <div style="position:relative;background:#09090f;">
+    <canvas id="nn-canvas" style="display:block;width:100%;height:380px;"></canvas>
+    <div class="hud" style="top:12px;right:12px;min-width:185px;">
+      <div class="hud-title">Layer Outputs</div>
+      <div class="hud-row"><span>Layer 1</span><span class="val" id="nn-l1">—</span></div>
+      <div class="hud-row"><span>Layer 2</span><span class="val" id="nn-l2">—</span></div>
+      <div class="hud-row"><span>Output</span><span class="val" id="nn-out">—</span></div>
+      <div style="margin-top:8px;font-size:.7rem;color:#404060;line-height:1.7;">
+        <span style="color:#22c55e;">●</span> active neuron<br>
+        <span style="color:#3b82f6;">●</span> inactive (ReLU=0)<br>
+        <span style="color:#3b82f6;">—</span> positive weight<br>
+        <span style="color:#f87171;">—</span> negative weight
+      </div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="ctrl-grid">
+      <div class="ctrl-group">
+        <label>Input x₁ <span class="val" id="nn-x1-val">0.50</span></label>
+        <input type="range" id="nn-x1" min="-2" max="2" step="0.01" value="0.5">
+      </div>
+      <div class="ctrl-group">
+        <label>Input x₂ <span class="val" id="nn-x2-val">-0.30</span></label>
+        <input type="range" id="nn-x2" min="-2" max="2" step="0.01" value="-0.3">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SECTION 4 — LOSS FUNCTIONS
+══════════════════════════════════════════════════ -->
+<h2>4. Loss Functions</h2>
+<p>The loss function defines what "wrong" means. Different tasks require different geometry in the loss landscape. We cover five: MSE, MAE, Huber, Binary Cross-Entropy, and Categorical Cross-Entropy.</p>
+
+<h3>4.1 Mean Absolute Error (MAE / L1)</h3>
+<div class="math-box">$$L_{\text{MAE}} = \frac{1}{BN}\sum_{b,n}|\hat{y}_{b,n}-y_{b,n}| \qquad \frac{\partial L}{\partial \hat{y}_{b,n}}=\frac{\text{sign}(\hat{y}_{b,n}-y_{b,n})}{BN}$$</div>
+<p>MAE is <strong>robust to outliers</strong> — a single prediction 100 units off contributes linearly, not quadratically. But the gradient is constant regardless of how close you are to the target, which can cause instability very near convergence (it never "decelerates").</p>
+<div class="info-grid">
+  <div class="info-card"><h4 style="color:#34d399;">Use MAE when</h4><p>Your targets have outliers (e.g. house prices — a few mansions skew the distribution). You want the model to predict the <em>median</em> rather than the mean.</p></div>
+  <div class="info-card"><h4 style="color:#f87171;">Avoid MAE when</h4><p>The gradient discontinuity at zero causes oscillation at the end of training. Not differentiable at exactly zero — requires a subgradient.</p></div>
+</div>
+
+<h3>4.2 Huber Loss</h3>
+<div class="math-box">$$L_\delta(\varepsilon)=\begin{cases}\tfrac{1}{2}\varepsilon^2 & |\varepsilon|\leq\delta \\ \delta\!\left(|\varepsilon|-\tfrac{\delta}{2}\right) & |\varepsilon|>\delta\end{cases}, \quad \varepsilon=\hat{y}-y$$</div>
+<p>Huber is <strong>quadratic near zero</strong> (smooth gradient, fast convergence when close to target) and <strong>linear for large errors</strong> (robust to outliers). The $\delta$ hyperparameter controls the transition point. Gradient: $\varepsilon$ for $|\varepsilon|\leq\delta$, else $\delta\cdot\text{sign}(\varepsilon)$.</p>
+
+<h3>4.3 Binary Cross-Entropy (BCE)</h3>
+<p>For binary classification where the network output $\hat{p}\in(0,1)$ (after sigmoid) represents $P(y=1)$:</p>
+<div class="math-box">$$L_{\text{BCE}} = -\frac{1}{B}\sum_b\!\left[y_b\log\hat{p}_b + (1-y_b)\log(1-\hat{p}_b)\right]$$</div>
+<p>Gradient w.r.t. the sigmoid output: $\frac{\partial L}{\partial \hat{p}} = \frac{\hat{p}-y}{\hat{p}(1-\hat{p})}$. Beautifully, when combined with sigmoid in the final layer, the gradient simplifies to just $\hat{p}-y$ — no division.</p>
+
+<div class="callout amber">
+  <div class="ct">Numerical stability</div>
+  <p>Never compute $\log(\hat{p})$ when $\hat{p}$ can be 0. Always clamp: <code>p.clamp(min=1e-7, max=1-1e-7)</code>. In practice you should compute BCE from logits (pre-sigmoid) using the log-sum-exp trick to avoid overflow.</p>
+</div>
+
+<h3>4.4 Categorical Cross-Entropy + Softmax</h3>
+<p>For $K$-class classification. Softmax converts raw logits $\mathbf{z}\in\mathbb{R}^K$ to probabilities:</p>
+<div class="math-box">$$p_k = \frac{e^{z_k}}{\sum_{j=1}^K e^{z_j}} \qquad L_{\text{CE}} = -\sum_k y_k\log p_k$$</div>
+<p>The combined Softmax + Cross-Entropy gradient is the cleanest result in all of deep learning:</p>
+<div class="math-box">$$\frac{\partial L}{\partial z_k} = p_k - y_k$$</div>
+<p>where $y_k$ is the one-hot label. The gradient is just "prediction minus truth" — no logs, no divisions.</p>
+
+<div class="code-block">
+  <div class="code-header"><span>losses.py</span><span class="tag">all loss functions</span></div>
+<pre><code class="language-python">import torch
+
+# ── MAE / L1 ────────────────────────────────────────────────────────────
+class MAELoss:
+    def forward(self, y_pred, y_true):
+        self._diff = y_pred - y_true
+        return self._diff.abs().sum() / self._diff.numel()   # O(BN)
+    def backward(self):
+        return self._diff.sign() / self._diff.numel()         # O(BN)
+
+# ── Huber ────────────────────────────────────────────────────────────────
+class HuberLoss:
+    def __init__(self, delta: float = 1.0):
+        self.delta = delta
+    def forward(self, y_pred, y_true):
+        self._d = y_pred - y_true
+        abs_d = self._d.abs()
+        quad = 0.5 * self._d ** 2
+        lin  = self.delta * (abs_d - 0.5 * self.delta)
+        self._loss = torch.where(abs_d <= self.delta, quad, lin)
+        return self._loss.mean()                               # O(BN)
+    def backward(self):
+        n = self._d.numel()
+        # grad = d  when |d| ≤ δ,  else δ·sign(d)
+        grad = torch.where(self._d.abs() <= self.delta,
+                           self._d,
+                           self.delta * self._d.sign())
+        return grad / n                                        # O(BN)
+
+# ── Binary Cross-Entropy ─────────────────────────────────────────────────
+class BCELoss:
+    """Expects y_pred ∈ (0,1) — apply Sigmoid to logits first."""
+    def forward(self, y_pred, y_true):
+        p = y_pred.clamp(1e-7, 1 - 1e-7)   # numerical safety
+        self._p = p; self._y = y_true
+        return -(y_true * torch.log(p) + (1 - y_true) * torch.log(1 - p)).mean()
+    def backward(self):
+        # dL/dp = (p − y) / (p(1−p)) / B
+        B = self._p.shape[0]
+        return (self._p - self._y) / (self._p * (1 - self._p)) / B
+
+# ── Categorical Cross-Entropy with Softmax ───────────────────────────────
+class SoftmaxCELoss:
+    """
+    Numerically stable: subtract max before exp (log-sum-exp trick).
+    Expects logits (B, K) and integer class labels (B,).
+    """
+    def forward(self, logits, labels):
+        # Stable softmax
+        z = logits - logits.max(dim=1, keepdim=True).values
+        exp_z = torch.exp(z)
+        self._p = exp_z / exp_z.sum(dim=1, keepdim=True)    # (B, K)
+        self._labels = labels
+        B = logits.shape[0]
+        log_p = torch.log(self._p.clamp(1e-9))
+        # Gather log-prob of the correct class for each sample
+        return -log_p[torch.arange(B), labels].mean()
+    def backward(self):
+        # dL/dz_k = p_k − y_k    (one-hot y, so y_k = 1 for true class)
+        B = self._p.shape[0]
+        grad = self._p.clone()
+        grad[torch.arange(B), self._labels] -= 1.0
+        return grad / B
+</code></pre>
+</div>
+
+<h3>4.5 Comparison of Loss Function Properties</h3>
+<table class="complexity-table" style="font-size:.79rem;">
+  <thead><tr><th>Loss</th><th>Gradient at ε=0</th><th>Gradient at ε=3</th><th>Outlier robust?</th><th>Best for</th></tr></thead>
+  <tbody>
+    <tr><td><strong>MSE</strong></td><td class="good">0 (smooth)</td><td class="mid">6/BN (large)</td><td class="mid">No</td><td>Regression, when errors are Gaussian</td></tr>
+    <tr><td><strong>MAE</strong></td><td class="mid">±1/BN (jump)</td><td class="good">±1/BN (same)</td><td class="good">Yes</td><td>Median regression, heavy-tailed errors</td></tr>
+    <tr><td><strong>Huber(δ=1)</strong></td><td class="good">0 (smooth)</td><td class="good">δ/BN (clipped)</td><td class="good">Yes</td><td>Best of both — default for robust regression</td></tr>
+    <tr><td><strong>BCE</strong></td><td>—</td><td>—</td><td>—</td><td>Binary classification (sigmoid output)</td></tr>
+    <tr><td><strong>Softmax-CE</strong></td><td>—</td><td>—</td><td>—</td><td>Multi-class classification (K-class)</td></tr>
+  </tbody>
+</table>
+
+<h3>4.6 Interactive: Loss Function Comparison</h3>
+<p>Drag the vertical line to inspect loss value and gradient for each function at any error magnitude. Use the Huber δ slider to see how the quadratic-to-linear transition shifts.</p>
+
+<div class="graphic-container">
+  <div class="tab-row" style="flex-wrap:wrap;gap:5px;">
+    <button class="tab-btn active lf-toggle" data-lf="mse">MSE</button>
+    <button class="tab-btn active lf-toggle" data-lf="mae">MAE</button>
+    <button class="tab-btn active lf-toggle" data-lf="huber">Huber</button>
+    <button class="tab-btn lf-toggle" data-lf="bce">BCE</button>
+  </div>
+  <div style="position:relative;background:#09090f;">
+    <canvas id="lf-canvas" style="display:block;width:100%;height:380px;cursor:crosshair;"></canvas>
+    <div class="hud" style="top:12px;right:12px;min-width:205px;">
+      <div class="hud-title">Loss at ε = <span id="lf-eps">0.00</span></div>
+      <div class="hud-row"><span style="color:#38bdf8;">MSE</span><span class="val" id="lf-mse-v">—</span></div>
+      <div class="hud-row"><span style="color:#4ade80;">MAE</span><span class="val" id="lf-mae-v">—</span></div>
+      <div class="hud-row"><span style="color:#facc15;">Huber</span><span class="val" id="lf-hub-v">—</span></div>
+      <div class="hud-row"><span style="color:#f87171;">BCE</span><span class="val" id="lf-bce-v">—</span></div>
+      <div style="margin-top:8px;border-top:1px solid #252540;padding-top:7px;">
+        <div class="hud-title" style="margin-bottom:5px;">Gradient |dL/dε|</div>
+        <div class="hud-row"><span style="color:#38bdf8;">MSE</span><span class="val" id="lf-mse-g">—</span></div>
+        <div class="hud-row"><span style="color:#4ade80;">MAE</span><span class="val" id="lf-mae-g">—</span></div>
+        <div class="hud-row"><span style="color:#facc15;">Huber</span><span class="val" id="lf-hub-g">—</span></div>
+        <div class="hud-row"><span style="color:#f87171;">BCE</span><span class="val" id="lf-bce-g">—</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="ctrl-grid">
+      <div class="ctrl-group">
+        <label>Huber δ <span class="val" id="lf-delta-val">1.00</span></label>
+        <input type="range" id="lf-delta" min="0.1" max="3.0" step="0.05" value="1.0">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     CONCLUSION
+══════════════════════════════════════════════════ -->
+<h2>Conclusion</h2>
+<p>What we built from first principles:</p>
+<ol>
+  <li><strong>Linear layer</strong>: forward $\mathbf{Y}=\mathbf{X}\mathbf{W}+\mathbf{b}$ in $\mathcal{O}(BMN)$; backward three matrix operations each in $\mathcal{O}(BMN)$; total backward $\approx3\times$ forward.</li>
+  <li><strong>MLP</strong>: stack of linear layers + activations. Total cost $\sum_l \mathcal{O}(B d_l d_{l+1})$; deeper is cheaper than wider for the same parameter count.</li>
+  <li><strong>Activations</strong>: all are element-wise $\mathcal{O}(BN)$, but their gradient shapes make all the difference. Sigmoid/tanh: vanishing gradient for $|x|>3$. ReLU: dead neurons for $x<0$. Leaky/ELU/GELU/Swish: fix both.</li>
+  <li><strong>Losses</strong>: MSE for Gaussian errors; MAE/Huber when outliers exist; BCE for binary; Softmax-CE for multi-class. The combined Softmax-CE gradient $p_k-y_k$ is elegant and stable.</li>
+</ol>
+
+<div class="callout blue">
+  <div class="ct">What to try next</div>
+  <p>Add <strong>momentum</strong> (SGD+M) or <strong>Adam</strong> — same backward pass, just smarter update rule. Add <strong>BatchNorm</strong> — normalises layer inputs, which stabilises training with deep networks. Explore <strong>weight decay</strong> (L2 regularisation) — just add $\lambda\,\mathbf{W}$ to the gradient at the step.</p>
+</div>
+
+<p style="font-size:.8rem;color:#505070;margin-top:3rem;padding-top:1.4rem;border-top:1px solid #1a1a28;">
+  All visualizations built with Canvas 2D. Math rendered with KaTeX. Code examples are self-contained PyTorch (no <code>torch.nn</code>).
+  Written with the help of <a href="https://claude.ai" target="_blank">Claude</a>.
+</p>
+</main>
+
+<!-- ═══════════════════════════════════════════════════════
+     JAVASCRIPT — ALL VISUALIZATIONS
+═══════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+const dpr = Math.min(window.devicePixelRatio, 2);
+
+/* ════════════════════════════════════════
+   ACTIVATION FUNCTION EXPLORER
+════════════════════════════════════════ */
+(function(){
+  const canvas = document.getElementById('act-canvas');
+  const ctx    = canvas.getContext('2d');
+  let W, H, xRange = 6, actName = 'sigmoid', leakyAlpha = 0.1;
+  let dragX = null; // current x cursor position in world coords
+
+  function resize(){
+    W = canvas.parentElement.clientWidth;
+    H = 340;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    ctx.scale(dpr, dpr);
+    draw();
+  }
+
+  /* ── Activation functions ── */
+  function sigmoid(x){ return 1 / (1 + Math.exp(-x)); }
+  function dsigmoid(x){ const s = sigmoid(x); return s * (1 - s); }
+  function tanh_(x){ return Math.tanh(x); }
+  function dtanh(x){ return 1 - Math.tanh(x) ** 2; }
+  function relu(x){ return Math.max(0, x); }
+  function drelu(x){ return x > 0 ? 1 : 0; }
+  function leaky(x){ return x > 0 ? x : leakyAlpha * x; }
+  function dleaky(x){ return x > 0 ? 1 : leakyAlpha; }
+  function elu(x){ return x > 0 ? x : (Math.exp(x) - 1); }
+  function delu(x){ return x > 0 ? 1 : Math.exp(x); }
+  const GELU_C = Math.sqrt(2 / Math.PI);
+  function gelu(x){
+    const t = Math.tanh(GELU_C * (x + 0.044715 * x * x * x));
+    return 0.5 * x * (1 + t);
+  }
+  function dgelu(x){
+    const inner = GELU_C * (x + 0.044715 * x ** 3);
+    const t = Math.tanh(inner);
+    const sech2 = 1 - t * t;
+    const d_inner = GELU_C * (1 + 3 * 0.044715 * x * x);
+    return 0.5 * (1 + t) + 0.5 * x * sech2 * d_inner;
+  }
+  function swish(x){ const s = sigmoid(x); return x * s; }
+  function dswish(x){ const s = sigmoid(x); return s * (1 + x * (1 - s)); }
+
+  const ACT = {
+    sigmoid:  { f: sigmoid,  df: dsigmoid, ylo: -0.3, yhi: 1.3 },
+    tanh:     { f: tanh_,    df: dtanh,    ylo: -1.4, yhi: 1.4 },
+    relu:     { f: relu,     df: drelu,    ylo: -0.3, yhi: 3.5  },
+    leaky:    { f: leaky,    df: dleaky,   ylo: -1.5, yhi: 3.5  },
+    elu:      { f: elu,      df: delu,     ylo: -1.5, yhi: 3.5  },
+    gelu:     { f: gelu,     df: dgelu,    ylo: -0.5, yhi: 3.0  },
+    swish:    { f: swish,    df: dswish,   ylo: -0.5, yhi: 3.0  },
+  };
+
+  /* ── Coordinate helpers ── */
+  const pad = { l:50, r:20, t:20, b:35 };
+  function xToPixel(x){ return pad.l + (x + xRange) / (2 * xRange) * (W - pad.l - pad.r); }
+  function yToPixel(y, ylo, yhi){ return pad.t + (1 - (y - ylo) / (yhi - ylo)) * (H - pad.t - pad.b); }
+  function pixelToX(px){ return (px - pad.l) / (W - pad.l - pad.r) * 2 * xRange - xRange; }
+
+  function draw(){
+    if(!W) return;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#09090f'; ctx.fillRect(0, 0, W, H);
+
+    const { f, df, ylo, yhi } = ACT[actName];
+
+    /* ── Saturation shading (where |f'(x)| < 0.1) ── */
+    for(let px = pad.l; px < W - pad.r; px++){
+      const wx = pixelToX(px);
+      if(Math.abs(df(wx)) < 0.1){
+        ctx.fillStyle = 'rgba(248,113,113,.06)';
+        ctx.fillRect(px, pad.t, 1, H - pad.t - pad.b);
+      }
+    }
+
+    /* ── Grid & axes ── */
+    ctx.strokeStyle = '#1e1e38'; ctx.lineWidth = 1;
+    // Y-axis gridlines
+    const yTicks = [-1, 0, 0.5, 1];
+    yTicks.concat([ylo, yhi]).forEach(yv => {
+      const py = yToPixel(yv, ylo, yhi);
+      if(py < pad.t || py > H - pad.b) return;
+      ctx.beginPath(); ctx.moveTo(pad.l, py); ctx.lineTo(W - pad.r, py); ctx.stroke();
+      ctx.fillStyle = '#404060'; ctx.font = '10px monospace'; ctx.textAlign = 'right';
+      ctx.fillText(yv.toFixed(1), pad.l - 5, py + 4);
+    });
+    // X-axis gridlines
+    for(let xi = -xRange; xi <= xRange; xi++){
+      if(xi === 0) continue;
+      const px = xToPixel(xi);
+      ctx.beginPath(); ctx.moveTo(px, pad.t); ctx.lineTo(px, H - pad.b); ctx.stroke();
+      ctx.fillStyle = '#404060'; ctx.font = '10px monospace'; ctx.textAlign = 'center';
+      ctx.fillText(xi, px, H - pad.b + 14);
+    }
+    // y=0 line
+    const py0 = yToPixel(0, ylo, yhi);
+    ctx.strokeStyle = '#2a2a44'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(pad.l, py0); ctx.lineTo(W - pad.r, py0); ctx.stroke();
+    // x=0 line
+    const px0 = xToPixel(0);
+    ctx.beginPath(); ctx.moveTo(px0, pad.t); ctx.lineTo(px0, H - pad.b); ctx.stroke();
+
+    /* ── Plot f(x) ── */
+    function plotCurve(fn, color){
+      ctx.strokeStyle = color; ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      for(let px = pad.l; px <= W - pad.r; px++){
+        const wx = pixelToX(px);
+        const wy = fn(wx);
+        const py = yToPixel(wy, ylo, yhi);
+        if(px === pad.l) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+    }
+    plotCurve(f, '#38bdf8');
+    plotCurve(df, '#fb923c');
+
+    /* ── Draggable x marker ── */
+    const xp = dragX === null ? 0 : dragX;
+    const fv  = f(xp), dfv = df(xp);
+    const pxV = xToPixel(xp);
+    // Vertical line
+    ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(pxV, pad.t); ctx.lineTo(pxV, H - pad.b); ctx.stroke();
+    ctx.setLineDash([]);
+    // Dots on curves
+    [[fv, '#38bdf8'], [dfv, '#fb923c']].forEach(([v, c]) => {
+      const py = yToPixel(v, ylo, yhi);
+      ctx.beginPath(); ctx.arc(pxV, py, 5, 0, Math.PI * 2);
+      ctx.fillStyle = c; ctx.fill();
+    });
+
+    /* ── Labels ── */
+    ctx.fillStyle = '#38bdf8'; ctx.font = 'bold 11px monospace'; ctx.textAlign = 'left';
+    ctx.fillText('f(x)', W - pad.r - 38, pad.t + 16);
+    ctx.fillStyle = '#fb923c';
+    ctx.fillText("f'(x)", W - pad.r - 38, pad.t + 30);
+
+    /* ── HUD update ── */
+    document.getElementById('act-x').textContent    = xp.toFixed(3);
+    document.getElementById('act-fx').textContent   = fv.toFixed(4);
+    document.getElementById('act-dfx').textContent  = dfv.toFixed(4);
+    const sat = Math.abs(dfv) < 0.1;
+    const satEl = document.getElementById('act-sat');
+    satEl.textContent = sat ? 'YES — gradient dying' : 'no';
+    satEl.style.color = sat ? '#f87171' : '#34d399';
+  }
+
+  /* ── Interaction ── */
+  canvas.addEventListener('mousemove', e => {
+    const r = canvas.getBoundingClientRect();
+    dragX = Math.max(-xRange, Math.min(xRange, pixelToX(e.clientX - r.left)));
+    draw();
+  });
+  canvas.addEventListener('mouseleave', () => { dragX = null; draw(); });
+
+  document.querySelectorAll('.tab-btn[data-act]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn[data-act]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      actName = btn.dataset.act;
+      const leakyGroup = document.getElementById('leaky-alpha-group');
+      leakyGroup.style.display = actName === 'leaky' ? '' : 'none';
+      document.getElementById('act-hud-title').textContent = btn.textContent;
+      draw();
+    });
+  });
+  document.getElementById('act-range').addEventListener('input', function(){
+    xRange = parseInt(this.value);
+    document.getElementById('act-range-val').textContent = '±' + xRange;
+    draw();
+  });
+  document.getElementById('leaky-alpha').addEventListener('input', function(){
+    leakyAlpha = parseFloat(this.value);
+    document.getElementById('leaky-alpha-val').textContent = leakyAlpha.toFixed(2);
+    draw();
+  });
+
+  resize(); window.addEventListener('resize', resize);
+})();
+
+/* ════════════════════════════════════════
+   NEURAL NETWORK FORWARD PASS VIZ
+════════════════════════════════════════ */
+(function(){
+  const canvas = document.getElementById('nn-canvas');
+  const ctx    = canvas.getContext('2d');
+  let W, H;
+
+  // Architecture: 2 → 4 → 4 → 1
+  const DIMS = [2, 4, 4, 1];
+  let weights = [], biases = [];
+
+  function randn(){ return (Math.random() + Math.random() + Math.random() - 1.5) * 0.8; }
+  function initWeights(){
+    weights = []; biases = [];
+    for(let l = 0; l < DIMS.length - 1; l++){
+      const W_ = Array.from({length: DIMS[l]}, () => Array.from({length: DIMS[l+1]}, randn));
+      const b_ = Array.from({length: DIMS[l+1]}, () => 0.0);
+      weights.push(W_); biases.push(b_);
+    }
+  }
+
+  function relu(x){ return Math.max(0, x); }
+  function sigmoid(x){ return 1/(1+Math.exp(-x)); }
+
+  function forward(x1, x2){
+    let acts = [[x1, x2]];
+    for(let l = 0; l < weights.length; l++){
+      const prev = acts[acts.length - 1];
+      const next = weights[l][0].map((_, n) => {
+        let sum = biases[l][n];
+        prev.forEach((v, m) => { sum += v * weights[l][m][n]; });
+        // ReLU on hidden layers, identity on last
+        return l < weights.length - 1 ? relu(sum) : sum;
+      });
+      acts.push(next);
+    }
+    return acts;
+  }
+
+  function resize(){
+    W = canvas.parentElement.clientWidth || 700;
+    H = 380;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    ctx.scale(dpr, dpr);
+    render();
+  }
+
+  function neuronColor(val){
+    // val: raw activation. Map to color.
+    if(val <= 0) return '#1e2a4a'; // dead (relu zero)
+    const t = Math.min(val / 2, 1);
+    const r = Math.round(34 + t * (56 - 34));
+    const g = Math.round(t * 211);
+    const b = Math.round(Math.max(0, 100 * (1-t)));
+    return `rgb(${r},${g},${b})`;
+  }
+
+  function render(){
+    if(!W) return;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#09090f'; ctx.fillRect(0, 0, W, H);
+
+    const x1 = parseFloat(document.getElementById('nn-x1').value);
+    const x2 = parseFloat(document.getElementById('nn-x2').value);
+    const acts = forward(x1, x2);
+
+    const nLayers = DIMS.length;
+    const layerXs = DIMS.map((_, l) => pad(W, l, nLayers));
+    function pad(W, l, nL){ return 70 + l * (W - 140) / (nL - 1); }
+    function neuronY(n, total){ return H / 2 + (n - (total-1)/2) * 65; }
+
+    // Draw weights (lines)
+    for(let l = 0; l < weights.length; l++){
+      for(let m = 0; m < DIMS[l]; m++){
+        for(let n = 0; n < DIMS[l+1]; n++){
+          const w = weights[l][m][n];
+          const x1_ = layerXs[l], y1_ = neuronY(m, DIMS[l]);
+          const x2_ = layerXs[l+1], y2_ = neuronY(n, DIMS[l+1]);
+          const alpha = Math.min(Math.abs(w) / 1.5, 0.8);
+          ctx.globalAlpha = alpha;
+          ctx.strokeStyle = w > 0 ? '#3b82f6' : '#ef4444';
+          ctx.lineWidth = Math.min(Math.abs(w) * 2, 3);
+          ctx.beginPath(); ctx.moveTo(x1_, y1_); ctx.lineTo(x2_, y2_); ctx.stroke();
+        }
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    // Draw neurons
+    for(let l = 0; l < nLayers; l++){
+      for(let n = 0; n < DIMS[l]; n++){
+        const nx = layerXs[l], ny = neuronY(n, DIMS[l]);
+        const val = acts[l][n];
+        const r = 20;
+        // Glow for active neurons
+        if(val > 0){
+          ctx.beginPath(); ctx.arc(nx, ny, r + 5, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(34,197,94,.12)'; ctx.fill();
+        }
+        ctx.beginPath(); ctx.arc(nx, ny, r, 0, Math.PI * 2);
+        ctx.fillStyle = neuronColor(val); ctx.fill();
+        ctx.strokeStyle = val > 0 ? '#22c55e' : '#1e3a5f'; ctx.lineWidth = 2;
+        ctx.stroke();
+        // Value label
+        ctx.fillStyle = '#f0f0f8'; ctx.font = '9px monospace'; ctx.textAlign = 'center';
+        const dispVal = Math.abs(val) < 10 ? val.toFixed(2) : val.toFixed(1);
+        ctx.fillText(dispVal, nx, ny + 3);
+      }
+    }
+
+    // Layer labels
+    const layerNames = ['Input', 'Hidden 1\n(ReLU)', 'Hidden 2\n(ReLU)', 'Output'];
+    layerXs.forEach((lx, l) => {
+      ctx.fillStyle = '#6060a0'; ctx.font = 'bold 10px monospace'; ctx.textAlign = 'center';
+      ctx.fillText(layerNames[l].split('\n')[0], lx, 18);
+      if(layerNames[l].includes('\n')) ctx.fillText(layerNames[l].split('\n')[1], lx, 30);
+      ctx.fillStyle = '#404060'; ctx.font = '9px monospace';
+      ctx.fillText(`(${DIMS[l]}d)`, lx, H - 12);
+    });
+
+    // HUD
+    document.getElementById('nn-l1').textContent = acts[1].map(v => v.toFixed(2)).join(', ');
+    document.getElementById('nn-l2').textContent = acts[2].map(v => v.toFixed(2)).join(', ');
+    document.getElementById('nn-out').textContent = acts[3][0].toFixed(4);
+  }
+
+  ['nn-x1','nn-x2'].forEach(id => {
+    document.getElementById(id).addEventListener('input', function(){
+      document.getElementById(id+'-val').textContent = parseFloat(this.value).toFixed(2);
+      render();
+    });
+  });
+  document.getElementById('nn-randomize').addEventListener('click', () => {
+    initWeights(); render();
+  });
+
+  initWeights(); resize(); window.addEventListener('resize', resize);
+})();
+
+/* ════════════════════════════════════════
+   LOSS FUNCTION COMPARISON
+════════════════════════════════════════ */
+(function(){
+  const canvas = document.getElementById('lf-canvas');
+  const ctx    = canvas.getContext('2d');
+  let W, H, huberDelta = 1.0;
+  let active = { mse: true, mae: true, huber: true, bce: false };
+  let dragEps = 0;
+
+  function resize(){
+    W = canvas.parentElement.clientWidth || 700;
+    H = 380;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    ctx.scale(dpr, dpr);
+    draw();
+  }
+
+  const EPS_RANGE = 3.5;  // x-axis: error from -EPS_RANGE to +EPS_RANGE
+  const LOSS_MAX  = 8.0;  // y-axis max
+
+  const pad = { l: 50, r: 25, t: 20, b: 40 };
+  function epsToPixel(e){ return pad.l + (e + EPS_RANGE) / (2 * EPS_RANGE) * (W - pad.l - pad.r); }
+  function lossToPixel(l){ return pad.t + (1 - Math.min(l, LOSS_MAX) / LOSS_MAX) * (H - pad.t - pad.b); }
+  function pixelToEps(px){ return (px - pad.l) / (W - pad.l - pad.r) * 2 * EPS_RANGE - EPS_RANGE; }
+
+  // Loss functions of error e = y_pred - y_true
+  function mse(e)  { return 0.5 * e * e; }
+  function dmse(e) { return e; }
+  function mae(e)  { return Math.abs(e); }
+  function dmae(e) { return Math.sign(e); }
+  function huber(e){ const a=Math.abs(e); return a<=huberDelta ? 0.5*e*e : huberDelta*(a - 0.5*huberDelta); }
+  function dhuber(e){ return Math.abs(e)<=huberDelta ? e : huberDelta*Math.sign(e); }
+  // BCE: treat e as p - y where p=sigmoid(logit). Rephrase: loss vs logit error.
+  // For BCE viz: x-axis = log-odds error, loss = -y*log(sigmoid(x)) - (1-y)*log(1-sigmoid(x))
+  // Simplified: assume y=1, x = logit, BCE(x) = log(1+exp(-x)) = softplus(-x)
+  function bce(e)  { const x=e; return Math.log(1 + Math.exp(-x)) + (x < 0 ? -x : 0); }
+  // Actually: for y=1, BCE = -log(sigmoid(x)) = log(1+e^-x). Let's be precise.
+  function bce_precise(e){ return e < 0 ? -e + Math.log(1+Math.exp(e)) : Math.log(1+Math.exp(-e)); }
+  function dbce(e) { return -1/(1+Math.exp(e)); } // d/de of -log(sigmoid(e))
+
+  const FUNCS = {
+    mse:   { f: mse,          df: dmse,    color: '#38bdf8', name: 'MSE' },
+    mae:   { f: mae,          df: dmae,    color: '#4ade80', name: 'MAE' },
+    huber: { f: huber,        df: dhuber,  color: '#facc15', name: 'Huber' },
+    bce:   { f: bce_precise,  df: dbce,    color: '#f87171', name: 'BCE (y=1)' },
+  };
+
+  function draw(){
+    if(!W) return;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#09090f'; ctx.fillRect(0, 0, W, H);
+
+    // Grid
+    ctx.strokeStyle = '#1e1e38'; ctx.lineWidth = 1;
+    [0,2,4,6,8].forEach(l => {
+      const py = lossToPixel(l);
+      if(py < pad.t || py > H - pad.b) return;
+      ctx.beginPath(); ctx.moveTo(pad.l, py); ctx.lineTo(W - pad.r, py); ctx.stroke();
+      ctx.fillStyle = '#404060'; ctx.font = '10px monospace'; ctx.textAlign = 'right';
+      ctx.fillText(l, pad.l - 5, py + 4);
+    });
+    for(let e = -3; e <= 3; e++){
+      const px = epsToPixel(e);
+      ctx.beginPath(); ctx.moveTo(px, pad.t); ctx.lineTo(px, H - pad.b); ctx.stroke();
+      ctx.fillStyle = '#404060'; ctx.font = '10px monospace'; ctx.textAlign = 'center';
+      ctx.fillText(e, px, H - pad.b + 14);
+    }
+    // Axes labels
+    ctx.fillStyle = '#6060a0'; ctx.font = 'bold 10px monospace'; ctx.textAlign = 'center';
+    ctx.fillText('error ε = ŷ − y', W / 2, H - 5);
+    ctx.save(); ctx.translate(14, H/2); ctx.rotate(-Math.PI/2);
+    ctx.fillText('loss L(ε)', 0, 0); ctx.restore();
+
+    // Draw Huber delta marker
+    if(active.huber){
+      const pxD = epsToPixel(huberDelta);
+      const pxDN = epsToPixel(-huberDelta);
+      ctx.strokeStyle = 'rgba(250,204,21,.25)'; ctx.lineWidth = 1; ctx.setLineDash([3,4]);
+      ctx.beginPath(); ctx.moveTo(pxD, pad.t); ctx.lineTo(pxD, H-pad.b); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(pxDN, pad.t); ctx.lineTo(pxDN, H-pad.b); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // Draw curves
+    Object.entries(FUNCS).forEach(([key, {f, color}]) => {
+      if(!active[key]) return;
+      ctx.strokeStyle = color; ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      let first = true;
+      for(let px = pad.l; px <= W - pad.r; px++){
+        const e = pixelToEps(px);
+        const l = f(e);
+        const py = lossToPixel(l);
+        if(first){ ctx.moveTo(px, py); first = false; } else { ctx.lineTo(px, py); }
+      }
+      ctx.stroke();
+    });
+
+    // Drag line
+    const pxD = epsToPixel(dragEps);
+    ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 1.5; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(pxD, pad.t); ctx.lineTo(pxD, H-pad.b); ctx.stroke();
+    ctx.setLineDash([]);
+    // Dots on each active curve
+    Object.entries(FUNCS).forEach(([key, {f, color}]) => {
+      if(!active[key]) return;
+      const l = f(dragEps);
+      const py = lossToPixel(l);
+      ctx.beginPath(); ctx.arc(pxD, py, 5, 0, Math.PI*2);
+      ctx.fillStyle = color; ctx.fill();
+    });
+
+    // HUD update
+    document.getElementById('lf-eps').textContent = dragEps.toFixed(3);
+    ['mse','mae','huber','bce'].forEach(key => {
+      const {f, df} = FUNCS[key];
+      const lv = active[key] ? f(dragEps).toFixed(4) : '—';
+      const gv = active[key] ? Math.abs(df(dragEps)).toFixed(4) : '—';
+      document.getElementById('lf-'+key+'-v').textContent = lv;
+      document.getElementById('lf-'+key+'-g').textContent = gv;
+    });
+  }
+
+  // Drag interaction
+  canvas.addEventListener('mousemove', e => {
+    const r = canvas.getBoundingClientRect();
+    dragEps = Math.max(-EPS_RANGE, Math.min(EPS_RANGE, pixelToEps(e.clientX - r.left)));
+    draw();
+  });
+
+  // Toggle buttons
+  document.querySelectorAll('.lf-toggle[data-lf]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.lf;
+      active[key] = !active[key];
+      btn.classList.toggle('active', active[key]);
+      draw();
+    });
+  });
+
+  document.getElementById('lf-delta').addEventListener('input', function(){
+    huberDelta = parseFloat(this.value);
+    document.getElementById('lf-delta-val').textContent = huberDelta.toFixed(2);
+    draw();
+  });
+
+  resize(); window.addEventListener('resize', resize);
+})();
+</script>
+</body>
+</html>
