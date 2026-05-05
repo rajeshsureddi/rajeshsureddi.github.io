@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Singular Value Decomposition — The Geometry of Linear Maps</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>document.addEventListener('DOMContentLoaded',()=>hljs.highlightAll());</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0c0c14;color:#d4d4e0;line-height:1.75;}
+a{color:#38bdf8;}
+.article-body{max-width:900px;margin:0 auto;padding:3.5rem 1.5rem 5rem;}
+h1{font-size:2.4rem;font-weight:800;color:#f0f0f8;letter-spacing:-.03em;margin-bottom:.8rem;}
+h2{font-size:1.55rem;font-weight:700;color:#f0f0f8;margin:3.5rem 0 1.2rem;padding-bottom:.6rem;border-bottom:2px solid #1e1e30;}
+h3{font-size:1.05rem;font-weight:600;color:#c0c0d8;margin:2rem 0 .7rem;}
+p{margin-bottom:1.3rem;color:#a0a0b8;}
+ul,ol{padding-left:1.6rem;margin-bottom:1.3rem;}
+li{margin-bottom:.45rem;color:#a0a0b8;}
+strong{color:#d4d4e8;}
+em{color:#c0c0d8;}
+.graphic-container{background:#09090f;border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5);margin:2rem 0;border:1px solid #1a1a28;}
+.canvas-wrapper{position:relative;width:100%;user-select:none;}
+.controls{background:#0f0f1e;border-top:1px solid #1a1a28;padding:16px 20px;}
+.ctrl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:11px 20px;}
+.ctrl-group{display:flex;flex-direction:column;gap:4px;}
+.ctrl-group label{font-size:.79rem;font-weight:600;color:#7070a0;display:flex;justify-content:space-between;}
+.ctrl-group label span.val{color:#38bdf8;font-family:monospace;}
+input[type=range]{-webkit-appearance:none;width:100%;background:transparent;cursor:pointer;}
+input[type=range]::-webkit-slider-runnable-track{height:4px;background:#1e1e38;border-radius:2px;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#38bdf8;margin-top:-5px;box-shadow:0 0 6px rgba(56,189,248,.5);}
+.math-box{background:#0f0f1e;border:1px solid #1e1e38;border-radius:10px;padding:1.2rem 1.4rem;margin:1.2rem 0;text-align:center;overflow-x:auto;}
+.math-box .katex{color:#d4d4f0;}
+.tab-row{display:flex;gap:6px;flex-wrap:wrap;padding:12px 16px;background:#0f0f1e;border-bottom:1px solid #1a1a28;}
+.tab-btn{background:#111128;border:1.5px solid #252545;color:#9090b0;padding:5px 13px;border-radius:7px;font-size:.79rem;font-weight:600;cursor:pointer;transition:all .15s;}
+.tab-btn:hover{border-color:#38bdf8;color:#38bdf8;}
+.tab-btn.active{background:#0d1a2e;border-color:#38bdf8;color:#38bdf8;box-shadow:0 0 8px rgba(56,189,248,.2);}
+.hud{position:absolute;background:rgba(6,6,18,.92);backdrop-filter:blur(10px);border:1px solid #252540;border-radius:9px;padding:10px 12px;pointer-events:none;z-index:10;}
+.hud-title{font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#38bdf8;border-bottom:1px solid #252540;padding-bottom:6px;margin-bottom:7px;}
+.hud-row{display:flex;justify-content:space-between;gap:10px;font-size:.75rem;margin-bottom:3px;color:#8080a8;}
+.hud-row span.val{color:#f0f0f8;font-family:monospace;}
+.callout{border-radius:10px;padding:13px 17px;margin:1.2rem 0;}
+.callout.green{background:#061410;border:1.5px solid #1a4a28;}
+.callout.blue{background:#04101a;border:1.5px solid #1a3a58;}
+.callout.amber{background:#140e04;border:1.5px solid #4a3810;}
+.callout.red{background:#140606;border:1.5px solid #4a1818;}
+.callout .ct{font-size:.69rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;}
+.callout.green .ct{color:#34d399;}.callout.blue .ct{color:#38bdf8;}.callout.amber .ct{color:#facc15;}.callout.red .ct{color:#f87171;}
+.callout p{font-size:.83rem;color:#8080a8;margin:0;}
+.callout p+p{margin-top:.5rem;}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:1.2rem 0;}
+@media(max-width:640px){.info-grid{grid-template-columns:1fr;}}
+.info-card{background:#0f0f1e;border:1px solid #1a1a28;border-radius:10px;padding:13px 15px;}
+.info-card h4{font-size:.85rem;font-weight:700;color:#c0c0d8;margin-bottom:6px;}
+.info-card p{font-size:.8rem;color:#7070a0;margin:0;}
+.code-block{background:#0d0d1a;border:1px solid #1e1e38;border-radius:10px;overflow:hidden;margin:1.4rem 0;}
+.code-header{background:#111128;padding:6px 14px;font-size:.72rem;color:#6060a0;font-weight:700;text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid #1e1e38;display:flex;justify-content:space-between;align-items:center;}
+.code-header .tag{color:#38bdf8;}
+pre{margin:0;padding:1rem 1.2rem;overflow-x:auto;}
+code.hljs{background:transparent;font-size:.82rem;line-height:1.65;}
+code:not(.hljs){font-family:'Fira Code','JetBrains Mono',Consolas,monospace;font-size:.83rem;background:#111128;padding:1px 5px;border-radius:4px;color:#c084fc;}
+.complexity-table{width:100%;border-collapse:collapse;margin:1.2rem 0;font-size:.81rem;}
+.complexity-table th{background:#111128;color:#6060a0;font-size:.71rem;text-transform:uppercase;letter-spacing:.07em;padding:8px 12px;border:1px solid #1e1e38;text-align:left;}
+.complexity-table td{padding:7px 12px;border:1px solid #1e1e38;color:#9090b0;font-family:monospace;}
+.complexity-table tr:nth-child(2n){background:#0a0a16;}
+.complexity-table .hl{color:#38bdf8;}.complexity-table .good{color:#34d399;}.complexity-table .mid{color:#facc15;}
+.section-label{font-size:.77rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#6060a0;margin-bottom:.4rem;}
+.nav-back{display:inline-flex;align-items:center;gap:6px;color:#6060a0;font-size:.8rem;text-decoration:none;margin-bottom:1.5rem;}
+.nav-back:hover{color:#38bdf8;}
+.mat-display{display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 20px;background:#0a0a16;border-top:1px solid #1a1a28;font-family:monospace;font-size:.8rem;flex-wrap:wrap;}
+.mat-wrap{display:inline-flex;flex-direction:column;border-left:2px solid #404070;border-right:2px solid #404070;padding:4px 10px;gap:5px;}
+.mat-row{display:flex;gap:14px;}
+.mat-cell{width:48px;text-align:right;color:#c0c0e0;}
+.mat-label{font-size:.7rem;color:#6060a0;text-align:center;margin-bottom:3px;}
+.mat-op{color:#404060;font-size:1.1rem;align-self:center;}
+.step-bar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:#0f0f1e;border-top:1px solid #1a1a28;flex-wrap:wrap;}
+.step-label{font-size:.75rem;color:#6060a0;flex:1;min-width:200px;}
+.split-row{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #1a1a28;}
+@media(max-width:600px){.split-row{grid-template-columns:1fr;}}
+.split-pane{position:relative;}
+.split-pane+.split-pane{border-left:1px solid #1a1a28;}
+</style>
+</head>
+<body>
+<main class="article-body">
+
+<a href="../learning.html" class="nav-back">← LearningMyself</a>
+
+<header style="margin-bottom:2.8rem;">
+  <p class="section-label">Linear Algebra · Visual Guide</p>
+  <h1>Singular Value Decomposition</h1>
+  <p style="font-size:1.05rem;color:#7070a0;max-width:640px;margin-bottom:0;">Every matrix is secretly three simple operations: rotate, stretch, rotate back. SVD reveals them — and unlocks image compression, PCA, pseudoinverses, and recommender systems.</p>
+</header>
+
+<p>A matrix transforms space — it stretches, rotates, and shears vectors. The Singular Value Decomposition (SVD) breaks any matrix into three interpretable pieces: a rotation in input space, a coordinate-wise scaling, and a rotation in output space. This factorization works for <em>any</em> real or complex matrix, square or rectangular, invertible or singular. It is arguably the most important matrix decomposition in applied mathematics.</p>
+
+<!-- ══════════════════════════════════════════════════
+     SECTION 1 — THE FACTORIZATION
+══════════════════════════════════════════════════ -->
+<h2>1. The Factorization A = UΣVᵀ</h2>
+
+<p>For any real $m \times n$ matrix $A$ of rank $r$, the SVD states:</p>
+
+<div class="math-box">
+$$\underbrace{A}_{m\times n} = \underbrace{U}_{m\times m}\;\underbrace{\Sigma}_{m\times n}\;\underbrace{V^\top}_{n\times n}$$
+</div>
+
+<p>Each factor has a precise meaning:</p>
+
+<div class="info-grid">
+  <div class="info-card">
+    <h4>U — Left Singular Vectors</h4>
+    <p>An $m\times m$ orthogonal matrix ($UU^\top = I$). Its columns $\mathbf{u}_1,\dots,\mathbf{u}_m$ are an orthonormal basis for $\mathbb{R}^m$ — they span the <em>output</em> space.</p>
+  </div>
+  <div class="info-card">
+    <h4>Σ — Singular Values</h4>
+    <p>An $m\times n$ diagonal matrix. The diagonal entries $\sigma_1 \ge \sigma_2 \ge \cdots \ge \sigma_r > 0 = \sigma_{r+1} = \cdots$ are the <strong>singular values</strong> — always real and non-negative.</p>
+  </div>
+  <div class="info-card">
+    <h4>V — Right Singular Vectors</h4>
+    <p>An $n\times n$ orthogonal matrix ($VV^\top = I$). Its columns $\mathbf{v}_1,\dots,\mathbf{v}_n$ are an orthonormal basis for $\mathbb{R}^n$ — they span the <em>input</em> space.</p>
+  </div>
+  <div class="info-card">
+    <h4>The Fundamental Relations</h4>
+    <p>$A\mathbf{v}_i = \sigma_i \mathbf{u}_i$ — the matrix maps each right singular vector to $\sigma_i$ times the corresponding left singular vector. $A^\top \mathbf{u}_i = \sigma_i \mathbf{v}_i$ for the reverse direction.</p>
+  </div>
+</div>
+
+<p>Written as a sum of rank-1 outer products, the SVD is:</p>
+
+<div class="math-box">$$A = \sum_{i=1}^{r} \sigma_i\, \mathbf{u}_i \mathbf{v}_i^\top$$</div>
+
+<p>Each term $\sigma_i \mathbf{u}_i \mathbf{v}_i^\top$ is a rank-1 matrix. The singular values $\sigma_i$ tell you how much each "layer" contributes — the first term is the most important, the last is the least. This is the foundation of low-rank approximation.</p>
+
+<div class="callout blue">
+  <div class="ct">Existence &amp; Uniqueness</div>
+  <p>SVD exists for <em>every</em> real or complex matrix — no symmetry, invertibility, or square shape required. The singular values are unique. The singular vectors are unique when all singular values are distinct; otherwise there is freedom within the eigenspaces of equal $\sigma_i$.</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SECTION 2 — GEOMETRIC INTERPRETATION
+══════════════════════════════════════════════════ -->
+<h2>2. Geometry: Rotate → Stretch → Rotate</h2>
+
+<p>Any linear map sends a unit sphere to an ellipsoid. SVD tells you exactly how: first rotate the sphere by $V^\top$ (so the "interesting axes" align with the coordinate axes), then stretch each axis by the corresponding singular value via $\Sigma$, then rotate the ellipsoid into its final orientation via $U$. The singular values are the <strong>semi-axes lengths</strong> of the output ellipsoid.</p>
+
+<p>In 2D: a unit circle maps to an ellipse. The interactive below shows each step. Drag the sliders to change the matrix $A = \bigl[\begin{smallmatrix}a & b \\ c & d\end{smallmatrix}\bigr]$, then click <strong>Play</strong> to watch the three-stage animation. The <strong>left panel</strong> always shows the input circle with right singular vectors $\mathbf{v}_1$ (red) and $\mathbf{v}_2$ (blue). The <strong>right panel</strong> animates the transformation.</p>
+
+<!-- Viz 1: SVD Geometric Explorer -->
+<div class="graphic-container" id="geo-container">
+  <canvas id="svd-geo" style="width:100%;display:block;" height="360"></canvas>
+  <div class="mat-display">
+    <div>
+      <div class="mat-label">A</div>
+      <div class="mat-wrap" id="svd-mat-A">
+        <div class="mat-row"><span class="mat-cell" id="mA00">1.00</span><span class="mat-cell" id="mA01">0.50</span></div>
+        <div class="mat-row"><span class="mat-cell" id="mA10">0.30</span><span class="mat-cell" id="mA11">1.20</span></div>
+      </div>
+    </div>
+    <span class="mat-op">=</span>
+    <div>
+      <div class="mat-label">U</div>
+      <div class="mat-wrap" id="svd-mat-U">
+        <div class="mat-row"><span class="mat-cell" id="mU00">—</span><span class="mat-cell" id="mU01">—</span></div>
+        <div class="mat-row"><span class="mat-cell" id="mU10">—</span><span class="mat-cell" id="mU11">—</span></div>
+      </div>
+    </div>
+    <span class="mat-op">·</span>
+    <div>
+      <div class="mat-label">Σ</div>
+      <div class="mat-wrap" id="svd-mat-S">
+        <div class="mat-row"><span class="mat-cell" id="mS00">—</span><span class="mat-cell" id="mS01">0.00</span></div>
+        <div class="mat-row"><span class="mat-cell" id="mS10">0.00</span><span class="mat-cell" id="mS11">—</span></div>
+      </div>
+    </div>
+    <span class="mat-op">·</span>
+    <div>
+      <div class="mat-label">Vᵀ</div>
+      <div class="mat-wrap" id="svd-mat-VT">
+        <div class="mat-row"><span class="mat-cell" id="mVT00">—</span><span class="mat-cell" id="mVT01">—</span></div>
+        <div class="mat-row"><span class="mat-cell" id="mVT10">—</span><span class="mat-cell" id="mVT11">—</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="step-bar">
+    <button class="tab-btn" id="geo-step0">⬤ Source</button>
+    <button class="tab-btn" id="geo-step1">1 — Vᵀ</button>
+    <button class="tab-btn" id="geo-step2">2 — ΣVᵀ</button>
+    <button class="tab-btn active" id="geo-step3">3 — UΣVᵀ</button>
+    <button class="tab-btn" id="geo-play" style="margin-left:auto;background:#0d1a2e;border-color:#38bdf8;color:#38bdf8;">▶ Play</button>
+    <span class="step-label" id="geo-step-label" style="text-align:right;font-size:.75rem;color:#6060a0;"></span>
+  </div>
+  <div class="controls">
+    <div class="ctrl-grid">
+      <div class="ctrl-group"><label>a <span class="val" id="va">1.0</span></label><input type="range" id="geo-a" min="-2.5" max="2.5" step="0.05" value="1.0"></div>
+      <div class="ctrl-group"><label>b <span class="val" id="vb">0.5</span></label><input type="range" id="geo-b" min="-2.5" max="2.5" step="0.05" value="0.5"></div>
+      <div class="ctrl-group"><label>c <span class="val" id="vc">0.3</span></label><input type="range" id="geo-c" min="-2.5" max="2.5" step="0.05" value="0.3"></div>
+      <div class="ctrl-group"><label>d <span class="val" id="vd">1.2</span></label><input type="range" id="geo-d" min="-2.5" max="2.5" step="0.05" value="1.2"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+      <span style="font-size:.73rem;color:#505070;align-self:center;">Presets:</span>
+      <button class="tab-btn" id="pre-rot">Rotation 45°</button>
+      <button class="tab-btn" id="pre-scale">Scale 2×0.5</button>
+      <button class="tab-btn" id="pre-shear">Shear</button>
+      <button class="tab-btn" id="pre-gen">General</button>
+      <button class="tab-btn" id="pre-reflect">Reflection</button>
+    </div>
+  </div>
+</div>
+
+<p>Notice: in Step 1 the unit circle <em>stays circular</em> — rotations preserve shape. Only in Step 2 does the stretching occur. The singular values $\sigma_1, \sigma_2$ are the semi-axis lengths of the final ellipse. When $\det(A) = 0$, one singular value collapses to zero, flattening the ellipse to a line.</p>
+
+<!-- ══════════════════════════════════════════════════
+     SECTION 3 — EIGENVALUES vs SINGULAR VALUES
+══════════════════════════════════════════════════ -->
+<h2>3. Eigenvalues vs Singular Values</h2>
+
+<p>Eigenvalues and singular values measure fundamentally different things. <strong>Eigenvalues</strong> describe how $A$ acts on its own invariant subspaces — they can be negative or complex even for real matrices. <strong>Singular values</strong> measure the "stretching power" of $A$ in any direction — they are always real and non-negative.</p>
+
+<h3>3.1 The AᵀA Connection</h3>
+
+<p>Substitute $A = U\Sigma V^\top$ into $A^\top A$:</p>
+
+<div class="math-box">$$A^\top A = (U\Sigma V^\top)^\top(U\Sigma V^\top) = V\Sigma^\top U^\top U \Sigma V^\top = V\underbrace{(\Sigma^\top\Sigma)}_{\text{diag}(\sigma_i^2)}V^\top$$</div>
+
+<p>This is the eigendecomposition of $A^\top A$! The columns of $V$ are eigenvectors of $A^\top A$, and the eigenvalues are $\lambda_i = \sigma_i^2$. Similarly, $AA^\top = U\Sigma\Sigma^\top U^\top$, so columns of $U$ are eigenvectors of $AA^\top$ with the same non-zero eigenvalues. Therefore:</p>
+
+<div class="callout amber">
+  <div class="ct">The Key Relation</div>
+  <p>$\sigma_i(A) = \sqrt{\lambda_i(A^\top A)}$. Singular values are square roots of eigenvalues of $A^\top A$ (or equivalently $AA^\top$). Since $A^\top A$ is symmetric positive semi-definite, its eigenvalues are always $\ge 0$, making the square root well-defined.</p>
+  <p style="margin-top:6px;">For a <strong>symmetric PSD</strong> matrix: eigenvalues = singular values (both equal $\lambda_i \ge 0$). For a <strong>symmetric indefinite</strong> matrix: $\sigma_i = |\lambda_i|$ (singular values are absolute values of eigenvalues).</p>
+</div>
+
+<h3>3.2 Why Eigenvalues Fail for General Matrices</h3>
+
+<p>Consider a 90° rotation matrix $R = \bigl[\begin{smallmatrix}0 & -1 \\ 1 & 0\end{smallmatrix}\bigr]$. Its eigenvalues are $\pm i$ (complex) — useless for understanding how much it stretches space. But its singular values are both $1$ (it preserves all lengths). SVD handles this correctly; eigendecomposition cannot.</p>
+
+<!-- Viz 2: Eigenvalue vs Singular Value Spectrum -->
+<div class="graphic-container">
+  <canvas id="svd-spec" style="width:100%;display:block;" height="320"></canvas>
+  <div class="controls">
+    <div class="ctrl-grid">
+      <div class="ctrl-group"><label>a <span class="val" id="spa">1.0</span></label><input type="range" id="sp-a" min="-2.5" max="2.5" step="0.05" value="1.0"></div>
+      <div class="ctrl-group"><label>b <span class="val" id="spb">0.5</span></label><input type="range" id="sp-b" min="-2.5" max="2.5" step="0.05" value="0.5"></div>
+      <div class="ctrl-group"><label>c <span class="val" id="spc">-0.5</span></label><input type="range" id="sp-c" min="-2.5" max="2.5" step="0.05" value="-0.5"></div>
+      <div class="ctrl-group"><label>d <span class="val" id="spd">1.5</span></label><input type="range" id="sp-d" min="-2.5" max="2.5" step="0.05" value="1.5"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+      <span style="font-size:.73rem;color:#505070;align-self:center;">Presets:</span>
+      <button class="tab-btn" id="sp-sym">Symmetric PD</button>
+      <button class="tab-btn" id="sp-rot">Rotation</button>
+      <button class="tab-btn" id="sp-shear">Shear</button>
+      <button class="tab-btn" id="sp-indef">Indefinite</button>
+    </div>
+  </div>
+</div>
+
+<p>The visualization above shows three spectra simultaneously: eigenvalues of $A$ (which can be complex, shown on the Argand plane), eigenvalues of $A^\top A$ (always real and non-negative), and singular values of $A$ (= $\sqrt{\lambda_i(A^\top A)}$). Try the <em>Rotation</em> preset — the eigenvalues of $R$ are $\pm i$ (purely imaginary) yet the singular values are both exactly $1$.</p>
+
+<!-- ══════════════════════════════════════════════════
+     SECTION 4 — LOW-RANK APPROXIMATION
+══════════════════════════════════════════════════ -->
+<h2>4. Low-Rank Approximation — The Eckart–Young Theorem</h2>
+
+<p>The SVD's most powerful property: it gives the <em>best possible</em> low-rank approximation. Truncate after $k$ terms:</p>
+
+<div class="math-box">$$A_k = \sum_{i=1}^{k} \sigma_i \mathbf{u}_i \mathbf{v}_i^\top = U_k \Sigma_k V_k^\top$$</div>
+
+<p><strong>Eckart–Young–Mirsky theorem (1936):</strong> Among all rank-$k$ matrices $B$, the truncated SVD minimizes both the Frobenius norm error and the spectral norm error:</p>
+
+<div class="math-box">$$\|A - A_k\|_F^2 = \sum_{i=k+1}^{r}\sigma_i^2 \qquad \|A - A_k\|_2 = \sigma_{k+1}$$</div>
+
+<p>The fraction of "energy" (variance) captured by the rank-$k$ approximation is $\sum_{i=1}^k \sigma_i^2 \,/\, \sum_{i=1}^r \sigma_i^2$. Natural signals (images, text, sensor data) typically have <strong>rapidly decaying singular values</strong> — a small $k$ captures most of the energy. The visualization below demonstrates this on a synthetic image generated with an offscreen canvas.</p>
+
+<!-- Viz 3: Image Compression -->
+<div class="graphic-container">
+  <div class="split-row">
+    <div class="split-pane" style="padding:16px;text-align:center;">
+      <div style="font-size:.72rem;color:#6060a0;margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em;">Original</div>
+      <canvas id="img-original" width="192" height="192" style="border-radius:6px;image-rendering:pixelated;"></canvas>
+    </div>
+    <div class="split-pane" style="padding:16px;text-align:center;">
+      <div style="font-size:.72rem;color:#6060a0;margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em;">Rank-<span id="rank-k-label">1</span> Approximation</div>
+      <canvas id="img-approx" width="192" height="192" style="border-radius:6px;image-rendering:pixelated;"></canvas>
+    </div>
+  </div>
+  <canvas id="img-spectrum" style="width:100%;display:block;" height="120"></canvas>
+  <div class="controls">
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+      <div class="ctrl-group" style="flex:1;min-width:200px;">
+        <label>rank k = <span class="val" id="rank-k-val">1</span> &nbsp;|&nbsp; energy captured: <span class="val" id="energy-pct">—</span></label>
+        <input type="range" id="rank-slider" min="1" max="48" step="1" value="1">
+      </div>
+      <div style="font-size:.78rem;color:#505070;min-width:180px;" id="img-status">Computing SVD…</div>
+    </div>
+  </div>
+</div>
+
+<p>Watch how the first few singular values encode the coarse structure (overall brightness, main shapes), while later components add progressively finer detail. Most images are well-approximated by surprisingly few singular values — this is why JPEG uses a related transform (DCT) and why neural network weight matrices can often be compressed without much accuracy loss.</p>
+
+<div class="code-block">
+  <div class="code-header"><span>low_rank_approx.py</span><span class="tag">NumPy</span></div>
+<pre><code class="language-python">import numpy as np
+
+def low_rank_approx(A: np.ndarray, k: int) -> np.ndarray:
+    """Best rank-k approximation of A (Eckart-Young theorem)."""
+    U, s, Vt = np.linalg.svd(A, full_matrices=False)
+    return (U[:, :k] * s[:k]) @ Vt[:k, :]
+
+def energy_fraction(A: np.ndarray, k: int) -> float:
+    """Fraction of Frobenius energy captured by rank-k approximation."""
+    _, s, _ = np.linalg.svd(A, full_matrices=False)
+    return (s[:k]**2).sum() / (s**2).sum()
+
+A = np.random.randn(100, 80)
+A5 = low_rank_approx(A, k=5)
+print(f"Error ||A - A5||_F / ||A||_F = {np.linalg.norm(A-A5)/np.linalg.norm(A):.4f}")
+print(f"Energy captured at k=5: {energy_fraction(A, 5)*100:.1f}%")
+</code></pre>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SECTION 5 — PCA VIA SVD
+══════════════════════════════════════════════════ -->
+<h2>5. PCA via SVD</h2>
+
+<p>Principal Component Analysis (PCA) finds the directions of maximum variance in a dataset. It is exactly equivalent to SVD of the centered data matrix.</p>
+
+<h3>5.1 The Derivation</h3>
+
+<p>Let $X \in \mathbb{R}^{n\times d}$ be $n$ data points in $d$ dimensions. Center the data: $\tilde{X} = X - \bar{X}$. The sample covariance matrix is $C = \tilde{X}^\top \tilde{X} / (n-1)$. PCA finds the eigendecomposition $C = Q\Lambda Q^\top$.</p>
+
+<p>Now apply SVD to $\tilde{X} = U\Sigma V^\top$. Then:</p>
+
+<div class="math-box">$$C = \frac{\tilde{X}^\top \tilde{X}}{n-1} = \frac{V \Sigma^\top \Sigma V^\top}{n-1} = V \underbrace{\frac{\Sigma^2}{n-1}}_{\Lambda} V^\top$$</div>
+
+<p>The right singular vectors $V$ <em>are</em> the PCA loading vectors (principal directions). The variance explained by the $k$-th principal component is $\lambda_k = \sigma_k^2 / (n-1)$. The scores (coordinates of data in PC space) are $\tilde{X}V = U\Sigma$.</p>
+
+<div class="callout green">
+  <div class="ct">SVD vs Eigendecomposition for PCA</div>
+  <p>Computing eigendecomposition of $C = \tilde{X}^\top\tilde{X}/(n-1)$ squares the condition number: if $A$ has condition number $\kappa$, then $A^\top A$ has $\kappa^2$. Applying SVD directly to $\tilde{X}$ is numerically more stable. For $n \ll d$ (more features than samples), SVD of the $n\times d$ matrix is also more efficient.</p>
+</div>
+
+<!-- Viz 4: PCA scatter -->
+<div class="graphic-container">
+  <canvas id="svd-pca" style="width:100%;display:block;" height="360"></canvas>
+  <div class="controls">
+    <div class="ctrl-grid">
+      <div class="ctrl-group">
+        <label>Correlation ρ <span class="val" id="pca-corr-val">0.80</span></label>
+        <input type="range" id="pca-corr" min="-0.98" max="0.98" step="0.02" value="0.80">
+      </div>
+      <div class="ctrl-group">
+        <label>Spread ratio σ₁/σ₂ <span class="val" id="pca-ratio-val">2.0</span></label>
+        <input type="range" id="pca-ratio" min="1.0" max="5.0" step="0.1" value="2.0">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+      <button class="tab-btn" id="pca-rand">↻ Resample</button>
+      <button class="tab-btn" id="pca-proj" style="background:#0d1a2e;border-color:#38bdf8;color:#38bdf8;">Show Projections</button>
+    </div>
+  </div>
+</div>
+
+<div class="code-block">
+  <div class="code-header"><span>pca_via_svd.py</span><span class="tag">NumPy</span></div>
+<pre><code class="language-python">import numpy as np
+
+def pca_via_svd(X: np.ndarray, n_components: int):
+    """PCA using SVD — numerically preferred over covariance eigendecomposition."""
+    X_c = X - X.mean(axis=0)                 # center
+    U, s, Vt = np.linalg.svd(X_c, full_matrices=False)
+
+    # Principal directions: rows of Vt (= columns of V)
+    components = Vt[:n_components]            # (n_components, d)
+
+    # Scores: projection of each sample onto each PC
+    scores = X_c @ components.T              # (n, n_components)
+
+    # Variance explained per PC
+    explained_var = s[:n_components]**2 / (len(X) - 1)
+    explained_ratio = explained_var / (s**2 / (len(X)-1)).sum()
+
+    return scores, components, explained_ratio
+
+# Example
+rng = np.random.default_rng(42)
+X = rng.multivariate_normal([0,0], [[4,3],[3,3]], size=200)
+scores, pcs, ratios = pca_via_svd(X, n_components=2)
+print(f"PC1 explains {ratios[0]*100:.1f}%, PC2 explains {ratios[1]*100:.1f}%")
+</code></pre>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SECTION 6 — APPLICATIONS
+══════════════════════════════════════════════════ -->
+<h2>6. Applications</h2>
+
+<h3>6.1 Pseudoinverse and Least Squares</h3>
+
+<p>For a system $A\mathbf{x} = \mathbf{b}$ with no exact solution (overdetermined or underdetermined), the minimum-norm least-squares solution is $\mathbf{x}^* = A^+ \mathbf{b}$, where $A^+$ is the Moore–Penrose pseudoinverse:</p>
+
+<div class="math-box">$$A^+ = V\Sigma^+ U^\top \qquad \text{where } \Sigma^+_{ii} = \begin{cases}1/\sigma_i & \sigma_i > 0 \\ 0 & \sigma_i = 0\end{cases}$$</div>
+
+<p>This gracefully handles rank-deficient matrices: directions in the null space of $A$ (where $\sigma_i = 0$) contribute nothing to $\mathbf{x}^*$, giving the minimum-norm solution among all least-squares solutions.</p>
+
+<h3>6.2 Condition Number</h3>
+
+<p>The <strong>condition number</strong> $\kappa(A) = \sigma_{\max} / \sigma_{\min}$ measures how much $A$ amplifies perturbations. A large $\kappa$ means a tiny change in $\mathbf{b}$ can cause a large change in the solution $\mathbf{x}$. An orthogonal matrix has $\kappa = 1$ (perfectly conditioned). A near-singular matrix has $\kappa \to \infty$.</p>
+
+<h3>6.3 Latent Semantic Analysis</h3>
+
+<p>Given a term–document matrix $T$ (rows = words, columns = documents, entries = TF-IDF weights), the truncated SVD $T_k = U_k\Sigma_k V_k^\top$ discovers latent topics. Documents with similar $\Sigma_k V_k^\top$ rows are semantically related even if they share no words. This is the foundation of modern embedding-based information retrieval.</p>
+
+<h3>6.4 Matrix Completion &amp; Recommender Systems</h3>
+
+<p>Netflix ratings, user–item interactions, and sensor grids are naturally low-rank matrices with many missing entries. Algorithms like SVD++ and ALS factorize the observed entries into $U\Sigma V^\top$, then predict missing values from the low-rank completion. The singular values control the effective rank (complexity) of the learned model.</p>
+
+<h3>6.5 Noise Reduction via Truncation</h3>
+
+<p>A noisy observation $\tilde{A} = A + N$ (signal + noise) tends to have large singular values for the signal components and small singular values for noise (since Gaussian noise spreads its energy across all singular values equally). Hard-thresholding: set $\sigma_i = 0$ if $\sigma_i < \tau$, then reconstruct. This is the basis of optimal hard-threshold algorithms (Gavish–Donoho 2014).</p>
+
+<div class="code-block">
+  <div class="code-header"><span>applications.py</span><span class="tag">NumPy</span></div>
+<pre><code class="language-python">import numpy as np
+
+# ── Pseudoinverse ────────────────────────────────────────────────────────
+def pseudoinverse(A: np.ndarray, tol: float = 1e-10) -> np.ndarray:
+    U, s, Vt = np.linalg.svd(A, full_matrices=False)
+    s_inv = np.where(s > tol, 1.0 / s, 0.0)
+    return (Vt.T * s_inv) @ U.T   # V · Σ⁺ · Uᵀ
+
+# ── Condition number ─────────────────────────────────────────────────────
+def condition_number(A: np.ndarray) -> float:
+    s = np.linalg.svd(A, compute_uv=False)
+    return s[0] / s[-1] if s[-1] > 1e-14 else float('inf')
+
+# ── Noise reduction via singular value hard-thresholding ─────────────────
+def denoise(A_noisy: np.ndarray, threshold: float) -> np.ndarray:
+    U, s, Vt = np.linalg.svd(A_noisy, full_matrices=False)
+    s_thresh = np.where(s > threshold, s, 0.0)
+    return (U * s_thresh) @ Vt
+
+# Example: 50×50 matrix = rank-5 signal + Gaussian noise
+rng = np.random.default_rng(0)
+A_true = rng.randn(50, 5) @ rng.randn(5, 50)   # rank-5
+A_noisy = A_true + 0.5 * rng.randn(50, 50)
+
+s_noisy = np.linalg.svd(A_noisy, compute_uv=False)
+A_clean = denoise(A_noisy, threshold=s_noisy[5])  # keep top 5
+
+print(f"Recovery error: {np.linalg.norm(A_clean - A_true)/np.linalg.norm(A_true):.4f}")
+</code></pre>
+</div>
+
+<div class="callout green">
+  <div class="ct">Summary</div>
+  <p>SVD = the complete story of a linear map: $A = U\Sigma V^\top$. Right singular vectors $V$ span input space, left singular vectors $U$ span output space, and singular values $\Sigma$ are the stretch factors. Every important tool — PCA, pseudoinverse, low-rank approximation, condition number — flows from this single factorization.</p>
+  <p>The singular values always tell the truth: how much a matrix stretches, how close it is to singular, how much energy is in each "mode." Eigenvalues only tell that story for symmetric matrices. For everything else, reach for SVD.</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     JAVASCRIPT — VIZ 1: SVD GEOMETRIC EXPLORER
+══════════════════════════════════════════════════ -->
+<script>
+(() => {
+  const canvas = document.getElementById('svd-geo');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+
+  let matA = [1.0, 0.5, 0.3, 1.2];
+  let animT = 3.0;
+  let animRAF = null;
+  let isPlaying = false;
+
+  function resize() {
+    const W = canvas.parentElement.clientWidth;
+    const H = 360;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    ctx.scale(dpr, dpr);
+    draw();
+  }
+
+  function svd2x2(a, b, c, d) {
+    const p = a*a + c*c, q = a*b + c*d, r = b*b + d*d;
+    const tr = p + r;
+    const disc = Math.max(0, (p-r)*(p-r) + 4*q*q);
+    const sq = Math.sqrt(disc);
+    const lam1 = Math.max(0, (tr + sq) * 0.5);
+    const lam2 = Math.max(0, (tr - sq) * 0.5);
+    const s1 = Math.sqrt(lam1), s2 = Math.sqrt(lam2);
+
+    let v1x, v1y, v2x, v2y;
+    if (Math.abs(q) > 1e-9) {
+      const vx = lam1 - r, vy = q, nn = Math.sqrt(vx*vx + vy*vy);
+      v1x = vx/nn; v1y = vy/nn;
+      v2x = -v1y;  v2y = v1x;
+    } else if (p >= r) {
+      v1x=1;v1y=0;v2x=0;v2y=1;
+    } else {
+      v1x=0;v1y=1;v2x=1;v2y=0;
+    }
+
+    let u1x, u1y, u2x, u2y;
+    if (s1 > 1e-10) {
+      u1x=(a*v1x+b*v1y)/s1; u1y=(c*v1x+d*v1y)/s1;
+    } else { u1x=1;u1y=0; }
+    if (s2 > 1e-10) {
+      u2x=(a*v2x+b*v2y)/s2; u2y=(c*v2x+d*v2y)/s2;
+    } else { u2x=-u1y;u2y=u1x; }
+
+    return {s1,s2, v1:[v1x,v1y], v2:[v2x,v2y], u1:[u1x,u1y], u2:[u2x,u2y]};
+  }
+
+  function matLerp(A, B, t) {
+    return [A[0]+(B[0]-A[0])*t, A[1]+(B[1]-A[1])*t,
+            A[2]+(B[2]-A[2])*t, A[3]+(B[3]-A[3])*t];
+  }
+
+  function getM(t) {
+    const [a,b,c,d] = matA;
+    const sv = svd2x2(a,b,c,d);
+    const {s1,s2,v1,v2} = sv;
+    const I   = [1,0,0,1];
+    const VT  = [v1[0],v1[1], v2[0],v2[1]];
+    const SVT = [s1*v1[0], s1*v1[1], s2*v2[0], s2*v2[1]];
+    const AA  = [a,b,c,d];
+    if (t <= 1) return {m: matLerp(I, VT, t), sv};
+    if (t <= 2) return {m: matLerp(VT, SVT, t-1), sv};
+    return {m: matLerp(SVT, AA, t-2), sv};
+  }
+
+  function drawGrid(cx, cy, scale, M, alpha) {
+    ctx.save();
+    ctx.strokeStyle = `rgba(80,80,160,${alpha})`;
+    ctx.lineWidth = 0.6;
+    for (let g = -3; g <= 3; g++) {
+      ctx.beginPath();
+      const x1=M[0]*(-3)+M[1]*g, y1=M[2]*(-3)+M[3]*g;
+      const x2=M[0]*3+M[1]*g,   y2=M[2]*3+M[3]*g;
+      ctx.moveTo(cx+x1*scale, cy-y1*scale);
+      ctx.lineTo(cx+x2*scale, cy-y2*scale);
+      ctx.stroke();
+      ctx.beginPath();
+      const x3=M[0]*g+M[1]*(-3), y3=M[2]*g+M[3]*(-3);
+      const x4=M[0]*g+M[1]*3,   y4=M[2]*g+M[3]*3;
+      ctx.moveTo(cx+x3*scale, cy-y3*scale);
+      ctx.lineTo(cx+x4*scale, cy-y4*scale);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawAxes(cx, cy, scale, M, alpha) {
+    ctx.save();
+    ctx.strokeStyle = `rgba(120,120,200,${alpha})`;
+    ctx.lineWidth = 1.0;
+    // x axis
+    ctx.beginPath();
+    ctx.moveTo(cx+M[0]*(-2.8)*scale, cy-M[2]*(-2.8)*scale);
+    ctx.lineTo(cx+M[0]*2.8*scale,   cy-M[2]*2.8*scale);
+    ctx.stroke();
+    // y axis
+    ctx.beginPath();
+    ctx.moveTo(cx+M[1]*(-2.8)*scale, cy-M[3]*(-2.8)*scale);
+    ctx.lineTo(cx+M[1]*2.8*scale,   cy-M[3]*2.8*scale);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawCurve(cx, cy, scale, M, color, lw, filled) {
+    const N = 300;
+    ctx.beginPath();
+    for (let i = 0; i <= N; i++) {
+      const th = (i/N)*2*Math.PI;
+      const cos_t=Math.cos(th), sin_t=Math.sin(th);
+      const x=M[0]*cos_t+M[1]*sin_t, y=M[2]*cos_t+M[3]*sin_t;
+      const px=cx+x*scale, py=cy-y*scale;
+      i===0 ? ctx.moveTo(px,py) : ctx.lineTo(px,py);
+    }
+    ctx.closePath();
+    if (filled) {
+      ctx.fillStyle = color.replace(')', ',0.12)').replace('rgb','rgba');
+      ctx.fill();
+    }
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lw;
+    ctx.stroke();
+  }
+
+  function drawArrow(cx, cy, scale, vx, vy, len, color, label) {
+    const ex = cx + vx*len*scale, ey = cy - vy*len*scale;
+    ctx.save();
+    ctx.strokeStyle = color; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(ex,ey); ctx.stroke();
+    const ang = Math.atan2(ey-cy, ex-cx), al=10;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(ex, ey);
+    ctx.lineTo(ex-al*Math.cos(ang-0.4), ey-al*Math.sin(ang-0.4));
+    ctx.lineTo(ex-al*Math.cos(ang+0.4), ey-al*Math.sin(ang+0.4));
+    ctx.closePath(); ctx.fill();
+    if (label) {
+      ctx.font = 'bold 12px monospace';
+      ctx.fillStyle = color;
+      const off = 14;
+      ctx.fillText(label, ex+off*Math.cos(ang), ey+off*Math.sin(ang));
+    }
+    ctx.restore();
+  }
+
+  function getStepLabel(t) {
+    if (t < 0.05) return 'Input: unit circle in domain space';
+    if (t <= 1.0) return `Step 1 — Applying Vᵀ (rotate to right-singular-vector frame, t=${t.toFixed(2)})`;
+    if (t <= 2.0) return `Step 2 — Applying Σ (stretch by σ₁ and σ₂, t=${(t-1).toFixed(2)})`;
+    if (t < 3.0)  return `Step 3 — Applying U (rotate to output orientation, t=${(t-2).toFixed(2)})`;
+    return 'A = UΣVᵀ — transformation complete';
+  }
+
+  function updateMatDisplay(sv) {
+    const f = v => (v >= 0 ? ' ' : '') + v.toFixed(3);
+    document.getElementById('mA00').textContent = f(matA[0]);
+    document.getElementById('mA01').textContent = f(matA[1]);
+    document.getElementById('mA10').textContent = f(matA[2]);
+    document.getElementById('mA11').textContent = f(matA[3]);
+    document.getElementById('mU00').textContent = f(sv.u1[0]);
+    document.getElementById('mU01').textContent = f(sv.u2[0]);
+    document.getElementById('mU10').textContent = f(sv.u1[1]);
+    document.getElementById('mU11').textContent = f(sv.u2[1]);
+    document.getElementById('mS00').textContent = f(sv.s1);
+    document.getElementById('mS11').textContent = f(sv.s2);
+    document.getElementById('mVT00').textContent = f(sv.v1[0]);
+    document.getElementById('mVT01').textContent = f(sv.v1[1]);
+    document.getElementById('mVT10').textContent = f(sv.v2[0]);
+    document.getElementById('mVT11').textContent = f(sv.v2[1]);
+  }
+
+  function draw() {
+    const CW = canvas.width/dpr, CH = canvas.height/dpr;
+    ctx.clearRect(0,0,CW,CH);
+
+    const halfW = CW/2;
+    const midY  = CH/2;
+    const scale = Math.min(halfW*0.38, CH*0.38);
+
+    const cxL = halfW*0.5, cxR = halfW + halfW*0.5;
+
+    // Separator line
+    ctx.strokeStyle = '#202038'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(halfW,0); ctx.lineTo(halfW,CH); ctx.stroke();
+
+    // Panel labels
+    ctx.font = '11px monospace'; ctx.textAlign = 'center';
+    ctx.fillStyle = '#404060';
+    ctx.fillText('INPUT SPACE', cxL, 18);
+    ctx.fillText('OUTPUT SPACE', cxR, 18);
+
+    // ── LEFT PANEL: static unit circle with v1, v2 ──
+    const Imat = [1,0,0,1];
+    drawGrid(cxL, midY, scale, Imat, 0.18);
+    drawAxes(cxL, midY, scale, Imat, 0.5);
+    // unit disk (faint fill)
+    drawCurve(cxL, midY, scale, Imat, '#38bdf8', 1.5, true);
+    // v1 arrow (red)
+    const {m, sv} = getM(animT);
+    drawArrow(cxL, midY, scale, sv.v1[0], sv.v1[1], 1.0, '#f87171', 'v₁');
+    // v2 arrow (blue)
+    drawArrow(cxL, midY, scale, sv.v2[0], sv.v2[1], 1.0, '#60a5fa', 'v₂');
+
+    // ── RIGHT PANEL: animated transformation ──
+    drawGrid(cxR, midY, scale, m, 0.22);
+    drawAxes(cxR, midY, scale, m, 0.5);
+    drawCurve(cxR, midY, scale, m, '#a78bfa', 2, true);
+
+    // Draw u1, u2 arrows when near final state
+    if (animT > 2.3) {
+      const alpha2 = Math.min(1, (animT-2.3)/0.5);
+      const col1 = `rgba(248,113,113,${alpha2})`;
+      const col2 = `rgba(96,165,250,${alpha2})`;
+      drawArrow(cxR, midY, scale, sv.u1[0]*sv.s1, sv.u1[1]*sv.s1, 1.0, col1, animT>2.8?'u₁·σ₁':'');
+      drawArrow(cxR, midY, scale, sv.u2[0]*sv.s2, sv.u2[1]*sv.s2, 1.0, col2, animT>2.8?'u₂·σ₂':'');
+    }
+
+    // Sigma labels when in stretch phase
+    if (animT > 1.1 && animT <= 2.8) {
+      const ta = Math.min(1, (animT-1.1)/0.4);
+      ctx.save();
+      ctx.globalAlpha = ta;
+      ctx.font = '12px monospace';
+      ctx.fillStyle = '#facc15';
+      ctx.textAlign = 'left';
+      const ex1 = cxR + m[0]*scale;
+      const ey1 = midY - m[2]*scale;
+      ctx.fillText(`σ₁=${sv.s1.toFixed(2)}`, ex1+6, ey1);
+      const ex2 = cxR + m[1]*scale;
+      const ey2 = midY - m[3]*scale;
+      ctx.fillText(`σ₂=${sv.s2.toFixed(2)}`, ex2+6, ey2);
+      ctx.restore();
+    }
+
+    // Step label overlay
+    const lbl = getStepLabel(animT);
+    ctx.fillStyle = '#38bdf8'; ctx.font = '11px monospace'; ctx.textAlign = 'center';
+    ctx.fillText(lbl, CW/2, CH-10);
+
+    updateMatDisplay(sv);
+    document.getElementById('geo-step-label').textContent = `σ₁=${sv.s1.toFixed(3)}  σ₂=${sv.s2.toFixed(3)}`;
+  }
+
+  function setStep(t) {
+    stopAnim();
+    animT = t;
+    ['geo-step0','geo-step1','geo-step2','geo-step3'].forEach((id,i)=>{
+      document.getElementById(id).classList.toggle('active', Math.abs(t - i) < 0.01);
+    });
+    draw();
+  }
+
+  function stopAnim() {
+    if (animRAF) { cancelAnimationFrame(animRAF); animRAF=null; }
+    isPlaying = false;
+    document.getElementById('geo-play').textContent = '▶ Play';
+  }
+
+  function startAnim() {
+    if (isPlaying) { stopAnim(); return; }
+    isPlaying = true;
+    document.getElementById('geo-play').textContent = '⏹ Stop';
+    animT = 0;
+    let start = null;
+    const dur = 3500;
+    function frame(ts) {
+      if (!start) start = ts;
+      animT = Math.min(3, ((ts-start)/dur)*3);
+      ['geo-step0','geo-step1','geo-step2','geo-step3'].forEach((id,i)=>{
+        document.getElementById(id).classList.toggle('active', animT >= i && animT < i+1);
+      });
+      draw();
+      if (animT < 3) animRAF = requestAnimationFrame(frame);
+      else { stopAnim(); animT=3; draw(); }
+    }
+    animRAF = requestAnimationFrame(frame);
+  }
+
+  document.getElementById('geo-step0').addEventListener('click', ()=>setStep(0));
+  document.getElementById('geo-step1').addEventListener('click', ()=>setStep(1));
+  document.getElementById('geo-step2').addEventListener('click', ()=>setStep(2));
+  document.getElementById('geo-step3').addEventListener('click', ()=>setStep(3));
+  document.getElementById('geo-play').addEventListener('click', startAnim);
+
+  function setSliderLabel(id, valId, val) {
+    document.getElementById(valId).textContent = parseFloat(val).toFixed(1);
+  }
+
+  ['a','b','c','d'].forEach((ch,i) => {
+    const sl = document.getElementById(`geo-${ch}`);
+    const vl = document.getElementById(`v${ch}`);
+    sl.addEventListener('input', () => {
+      matA[i] = parseFloat(sl.value);
+      vl.textContent = matA[i].toFixed(1);
+      draw();
+    });
+  });
+
+  function setPreset(a,b,c,d) {
+    matA=[a,b,c,d];
+    const ids=['geo-a','geo-b','geo-c','geo-d'], labels=['va','vb','vc','vd'];
+    [a,b,c,d].forEach((v,i)=>{
+      document.getElementById(ids[i]).value=v;
+      document.getElementById(labels[i]).textContent=v.toFixed(1);
+    });
+    draw();
+  }
+
+  const c45=Math.cos(Math.PI/4), s45=Math.sin(Math.PI/4);
+  document.getElementById('pre-rot').addEventListener('click',     ()=>setPreset(c45,-s45,s45,c45));
+  document.getElementById('pre-scale').addEventListener('click',   ()=>setPreset(2,0,0,0.5));
+  document.getElementById('pre-shear').addEventListener('click',   ()=>setPreset(1,1.2,0,1));
+  document.getElementById('pre-gen').addEventListener('click',     ()=>setPreset(1.0,0.5,0.3,1.2));
+  document.getElementById('pre-reflect').addEventListener('click', ()=>setPreset(1,0,0,-1));
+
+  window.addEventListener('resize', resize);
+  resize();
+})();
+</script>
+
+<!-- ══════════════════════════════════════════════════
+     JAVASCRIPT — VIZ 2: EIGENVALUE vs SINGULAR VALUE
+══════════════════════════════════════════════════ -->
+<script>
+(() => {
+  const canvas = document.getElementById('svd-spec');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  let matB = [1.0, 0.5, -0.5, 1.5];
+
+  function resize() {
+    const W = canvas.parentElement.clientWidth, H = 320;
+    canvas.style.width=W+'px'; canvas.style.height=H+'px';
+    canvas.width=W*dpr; canvas.height=H*dpr;
+    ctx.scale(dpr,dpr); draw();
+  }
+
+  function svd2x2s(a,b,c,d) {
+    const p=a*a+c*c, q=a*b+c*d, r=b*b+d*d;
+    const tr=p+r, disc=(p-r)*(p-r)+4*q*q;
+    const sq=Math.sqrt(Math.max(0,disc));
+    return [Math.sqrt(Math.max(0,(tr+sq)/2)), Math.sqrt(Math.max(0,(tr-sq)/2))];
+  }
+
+  function eigenvalues2x2(a,b,c,d) {
+    const tr=a+d, det=a*d-b*c;
+    const disc=tr*tr-4*det;
+    if (disc >= 0) {
+      const sq=Math.sqrt(disc);
+      return [{re:(tr+sq)/2,im:0},{re:(tr-sq)/2,im:0}];
+    } else {
+      const im=Math.sqrt(-disc)/2;
+      return [{re:tr/2,im:im},{re:tr/2,im:-im}];
+    }
+  }
+
+  function draw() {
+    const CW=canvas.width/dpr, CH=canvas.height/dpr;
+    ctx.clearRect(0,0,CW,CH);
+    const [a,b,c,d]=matB;
+    const [s1,s2]=svd2x2s(a,b,c,d);
+    const eigs=eigenvalues2x2(a,b,c,d);
+    const isReal=eigs[0].im===0;
+
+    const panW=CW/3;
+
+    // ── Panel 1: Eigenvalues of A (complex plane) ──
+    const p1cx=panW*0.5, p1cy=CH/2;
+    ctx.fillStyle='#0a0a18'; ctx.fillRect(0,0,panW,CH);
+    ctx.fillStyle='#404060'; ctx.font='10px monospace'; ctx.textAlign='center';
+    ctx.fillText('Eigenvalues of A', panW*0.5, 16);
+    ctx.fillText('(Argand plane)', panW*0.5, 28);
+
+    const range=Math.max(2.5, Math.abs(eigs[0].re)+1, Math.abs(eigs[0].im)+1);
+    const sc=Math.min(panW,CH-60)*0.38/range;
+
+    // Grid
+    ctx.strokeStyle='#1a1a30'; ctx.lineWidth=0.5;
+    for(let g=-3;g<=3;g++) {
+      ctx.beginPath(); ctx.moveTo(p1cx+g*sc,p1cy-3*sc); ctx.lineTo(p1cx+g*sc,p1cy+3*sc); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(p1cx-3*sc,p1cy+g*sc); ctx.lineTo(p1cx+3*sc,p1cy+g*sc); ctx.stroke();
+    }
+    // Axes
+    ctx.strokeStyle='#303060'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(p1cx-range*sc,p1cy); ctx.lineTo(p1cx+range*sc,p1cy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(p1cx,p1cy-range*sc); ctx.lineTo(p1cx,p1cy+range*sc); ctx.stroke();
+    ctx.fillStyle='#404060'; ctx.font='9px sans-serif';
+    ctx.fillText('Re',p1cx+range*sc-8,p1cy-4);
+    ctx.fillText('Im',p1cx+6,p1cy-range*sc+10);
+
+    // Unit circle reference
+    ctx.beginPath(); ctx.arc(p1cx,p1cy,sc,0,2*Math.PI);
+    ctx.strokeStyle='#1a1a38'; ctx.lineWidth=0.8; ctx.stroke();
+
+    // Eigenvalue dots
+    eigs.forEach((e,i) => {
+      const px=p1cx+e.re*sc, py=p1cy-e.im*sc;
+      ctx.beginPath(); ctx.arc(px,py,6,0,2*Math.PI);
+      ctx.fillStyle=isReal?'#34d399':'#fb923c'; ctx.fill();
+      ctx.strokeStyle='#000'; ctx.lineWidth=1; ctx.stroke();
+      ctx.fillStyle=isReal?'#34d399':'#fb923c'; ctx.font='11px monospace'; ctx.textAlign='left';
+      const lbl=isReal?`λ${i+1}=${e.re.toFixed(2)}`:`λ${i+1}=${e.re.toFixed(2)}${e.im>=0?'+':'-'}${Math.abs(e.im).toFixed(2)}i`;
+      ctx.fillText(lbl, px+8, py-6);
+    });
+
+    // Legend
+    ctx.font='9px monospace'; ctx.textAlign='left';
+    ctx.fillStyle=isReal?'#34d399':'#fb923c';
+    ctx.fillText(isReal?'Real eigenvalues':'Complex eigenvalues', 8, CH-8);
+
+    // ── Panel 2: Eigenvalues of AᵀA ──
+    const p2x=panW;
+    ctx.fillStyle='#0c0c1e'; ctx.fillRect(p2x,0,panW,CH);
+    ctx.fillStyle='#404060'; ctx.font='10px monospace'; ctx.textAlign='center';
+    ctx.fillText('Eigenvalues of AᵀA', p2x+panW*0.5, 16);
+    ctx.fillText('= σ² (always ≥ 0)', p2x+panW*0.5, 28);
+
+    const ata_lam=[s1*s1, s2*s2];
+    const maxL=Math.max(ata_lam[0]*1.1, 1);
+    const barH=34, barY1=CH*0.3, barY2=CH*0.62;
+    const barX=p2x+panW*0.12, barMaxW=panW*0.76;
+
+    [0,1].forEach(i => {
+      const lam=ata_lam[i], by=i===0?barY1:barY2;
+      const bw=Math.max(2,(lam/maxL)*barMaxW);
+      ctx.fillStyle='rgba(251,146,60,0.15)'; ctx.fillRect(barX,by-barH/2,barMaxW,barH);
+      ctx.fillStyle='#fb923c'; ctx.fillRect(barX,by-barH/2,bw,barH);
+      ctx.fillStyle='#fbd38d'; ctx.font='11px monospace'; ctx.textAlign='left';
+      ctx.fillText(`λ${i+1}(AᵀA) = ${lam.toFixed(3)}`, barX+bw+6, by+4);
+      ctx.fillStyle='#604020'; ctx.font='10px monospace';
+      ctx.fillText(`σ${i+1}² = ${lam.toFixed(3)}`, barX+4, by+4);
+    });
+
+    // Arrow showing σ = √λ
+    ctx.fillStyle='#fbd38d'; ctx.font='11px monospace'; ctx.textAlign='center';
+    ctx.fillText('σᵢ = √λᵢ(AᵀA)', p2x+panW*0.5, CH-10);
+
+    // ── Panel 3: Singular values ──
+    const p3x=panW*2;
+    ctx.fillStyle='#0a0a18'; ctx.fillRect(p3x,0,panW,CH);
+    ctx.fillStyle='#404060'; ctx.font='10px monospace'; ctx.textAlign='center';
+    ctx.fillText('Singular Values of A', p3x+panW*0.5, 16);
+    ctx.fillText('σ = √(eigenvalues of AᵀA)', p3x+panW*0.5, 28);
+
+    const svals=[s1,s2];
+    const maxS=Math.max(svals[0]*1.1, 1);
+
+    [0,1].forEach(i => {
+      const sv=svals[i], by=i===0?barY1:barY2;
+      const bw=Math.max(2,(sv/maxS)*barMaxW);
+      const bx=p3x+panW*0.12;
+      ctx.fillStyle='rgba(56,189,248,0.15)'; ctx.fillRect(bx,by-barH/2,barMaxW,barH);
+      ctx.fillStyle='#38bdf8'; ctx.fillRect(bx,by-barH/2,bw,barH);
+      ctx.fillStyle='#e0f2fe'; ctx.font='11px monospace'; ctx.textAlign='left';
+      ctx.fillText(`σ${i+1} = ${sv.toFixed(3)}`, bx+bw+6, by+4);
+    });
+
+    // Connection note
+    ctx.fillStyle='#38bdf8'; ctx.font='11px monospace'; ctx.textAlign='center';
+    const note = isReal
+      ? (Math.abs(eigs[0].im)<1e-9 && Math.abs(eigs[1].im)<1e-9
+        ? `|λ₁|=${Math.abs(eigs[0].re).toFixed(2)}, |λ₂|=${Math.abs(eigs[1].re).toFixed(2)} vs σ: ${s1.toFixed(2)},${s2.toFixed(2)}`
+        : '')
+      : `|λ|=${Math.sqrt(eigs[0].re**2+eigs[0].im**2).toFixed(2)}, σ: ${s1.toFixed(2)},${s2.toFixed(2)}`;
+    ctx.fillText(note, p3x+panW*0.5, CH-10);
+
+    // Dividers
+    ctx.strokeStyle='#1a1a30'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(panW,0); ctx.lineTo(panW,CH); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(panW*2,0); ctx.lineTo(panW*2,CH); ctx.stroke();
+  }
+
+  ['a','b','c','d'].forEach((ch,i) => {
+    const sl=document.getElementById(`sp-${ch}`);
+    const vl=document.getElementById(`sp${ch}`);
+    sl.addEventListener('input',()=>{
+      matB[i]=parseFloat(sl.value);
+      vl.textContent=matB[i].toFixed(1);
+      draw();
+    });
+  });
+
+  function setPresetB(a,b,c,d) {
+    matB=[a,b,c,d];
+    const ids=['sp-a','sp-b','sp-c','sp-d'], labs=['spa','spb','spc','spd'];
+    [a,b,c,d].forEach((v,i)=>{
+      document.getElementById(ids[i]).value=v;
+      document.getElementById(labs[i]).textContent=v.toFixed(1);
+    });
+    draw();
+  }
+
+  document.getElementById('sp-sym').addEventListener('click',   ()=>setPresetB(2,1,1,1.5));
+  document.getElementById('sp-rot').addEventListener('click',   ()=>{const c=Math.cos(1),s=Math.sin(1);setPresetB(c,-s,s,c);});
+  document.getElementById('sp-shear').addEventListener('click', ()=>setPresetB(1,2,0,1));
+  document.getElementById('sp-indef').addEventListener('click', ()=>setPresetB(1,2,-1,-1));
+
+  window.addEventListener('resize', resize);
+  resize();
+})();
+</script>
+
+<!-- ══════════════════════════════════════════════════
+     JAVASCRIPT — VIZ 3: IMAGE COMPRESSION
+══════════════════════════════════════════════════ -->
+<script>
+(() => {
+  const N = 48;
+  const origCanvas = document.getElementById('img-original');
+  const approxCanvas = document.getElementById('img-approx');
+  const specCanvas = document.getElementById('img-spectrum');
+  const ctxO = origCanvas.getContext('2d');
+  const ctxA = approxCanvas.getContext('2d');
+  const ctxS = specCanvas.getContext('2d');
+
+  let svdResult = null;
+  let origData = null;
+  let allEnergies = null;
+
+  function generateFaceImage() {
+    const oc = document.createElement('canvas');
+    oc.width = N; oc.height = N;
+    const cx2 = oc.getContext('2d');
+
+    cx2.fillStyle = '#0f0f2e'; cx2.fillRect(0,0,N,N);
+
+    const cx=N*0.5, cy=N*0.48, r=N*0.36;
+
+    // Face
+    const g = cx2.createRadialGradient(cx,cy*0.85,r*0.05,cx,cy,r);
+    g.addColorStop(0,'#ffe0b0'); g.addColorStop(0.75,'#f0c068'); g.addColorStop(1,'#b07030');
+    cx2.beginPath(); cx2.arc(cx,cy,r,0,2*Math.PI);
+    cx2.fillStyle=g; cx2.fill();
+
+    // Hair
+    cx2.beginPath();
+    cx2.arc(cx,cy,r+N*0.01,Math.PI*1.12,Math.PI*1.88);
+    cx2.strokeStyle='#2a1006'; cx2.lineWidth=N*0.1; cx2.stroke();
+
+    // Eyes
+    const eyeY=cy-r*0.2;
+    [{ex:cx-r*0.3},{ex:cx+r*0.3}].forEach(({ex})=>{
+      cx2.beginPath(); cx2.ellipse(ex,eyeY,r*0.13,r*0.09,0,0,2*Math.PI);
+      cx2.fillStyle='#f8f8f8'; cx2.fill();
+      cx2.beginPath(); cx2.arc(ex,eyeY,r*0.075,0,2*Math.PI);
+      cx2.fillStyle='#2060a0'; cx2.fill();
+      cx2.beginPath(); cx2.arc(ex,eyeY,r*0.038,0,2*Math.PI);
+      cx2.fillStyle='#060610'; cx2.fill();
+    });
+
+    // Eyebrows
+    cx2.strokeStyle='#3a1a08'; cx2.lineWidth=N*0.025;
+    [cx-r*0.3, cx+r*0.3].forEach((ex,i)=>{
+      const sgn=i===0?-1:1;
+      cx2.beginPath();
+      cx2.moveTo(ex-r*0.16,eyeY-r*0.2); cx2.lineTo(ex+sgn*r*0.16,eyeY-r*0.12);
+      cx2.stroke();
+    });
+
+    // Nose
+    cx2.beginPath();
+    cx2.moveTo(cx-N*0.04,cy+N*0.06); cx2.lineTo(cx,cy+N*0.12);
+    cx2.lineTo(cx+N*0.04,cy+N*0.06);
+    cx2.strokeStyle='#b07040'; cx2.lineWidth=N*0.02; cx2.stroke();
+
+    // Mouth
+    cx2.beginPath();
+    cx2.arc(cx,cy+r*0.22,r*0.28,0.12*Math.PI,0.88*Math.PI);
+    cx2.strokeStyle='#b03020'; cx2.lineWidth=N*0.028; cx2.stroke();
+
+    // Lips highlight
+    cx2.beginPath(); cx2.arc(cx,cy+r*0.22,r*0.28,0.12*Math.PI,0.5*Math.PI);
+    cx2.strokeStyle='#e04030'; cx2.lineWidth=N*0.014; cx2.stroke();
+
+    const imgData = cx2.getImageData(0,0,N,N);
+    const out = new Float64Array(N*N);
+    for (let i=0;i<N*N;i++) {
+      out[i]=(imgData.data[i*4]*0.299+imgData.data[i*4+1]*0.587+imgData.data[i*4+2]*0.114)/255;
+    }
+    return out;
+  }
+
+  function drawGray(ctx2, data, canvasEl) {
+    const imgData = ctx2.createImageData(N,N);
+    for (let i=0;i<N*N;i++) {
+      const v = Math.max(0,Math.min(1,data[i]));
+      const c = Math.round(v*255);
+      imgData.data[i*4]=c; imgData.data[i*4+1]=c;
+      imgData.data[i*4+2]=c; imgData.data[i*4+3]=255;
+    }
+    const oc2=document.createElement('canvas');
+    oc2.width=N; oc2.height=N;
+    oc2.getContext('2d').putImageData(imgData,0,0);
+    ctx2.clearRect(0,0,192,192);
+    ctx2.drawImage(oc2,0,0,192,192);
+  }
+
+  function powerSVD(data) {
+    const A=[];
+    for(let i=0;i<N;i++){A.push(new Float64Array(N));for(let j=0;j<N;j++)A[i][j]=data[i*N+j];}
+    const U=[],S=[],V=[];
+    for(let k=0;k<N;k++){
+      let v=new Float64Array(N);
+      for(let j=0;j<N;j++) v[j]=Math.random()-0.5;
+      let nv=0; for(let j=0;j<N;j++) nv+=v[j]*v[j]; nv=Math.sqrt(nv);
+      for(let j=0;j<N;j++) v[j]/=nv;
+      let u=new Float64Array(N), sigma=0;
+      for(let iter=0;iter<120;iter++){
+        u.fill(0);
+        for(let i=0;i<N;i++) for(let j=0;j<N;j++) u[i]+=A[i][j]*v[j];
+        sigma=0; for(let i=0;i<N;i++) sigma+=u[i]*u[i]; sigma=Math.sqrt(sigma);
+        if(sigma<1e-14) break;
+        for(let i=0;i<N;i++) u[i]/=sigma;
+        v.fill(0);
+        for(let i=0;i<N;i++) for(let j=0;j<N;j++) v[j]+=A[i][j]*u[i];
+        nv=0; for(let j=0;j<N;j++) nv+=v[j]*v[j]; nv=Math.sqrt(nv);
+        if(nv<1e-14) break;
+        for(let j=0;j<N;j++) v[j]/=nv;
+      }
+      U.push(Float64Array.from(u));
+      S.push(sigma);
+      V.push(Float64Array.from(v));
+      for(let i=0;i<N;i++) for(let j=0;j<N;j++) A[i][j]-=sigma*u[i]*v[j];
+    }
+    return {U,S,V};
+  }
+
+  function reconstruct(k) {
+    const out=new Float64Array(N*N);
+    for(let c=0;c<k;c++){
+      const s=svdResult.S[c];
+      if(s<1e-12) continue;
+      for(let i=0;i<N;i++) for(let j=0;j<N;j++) out[i*N+j]+=s*svdResult.U[c][i]*svdResult.V[c][j];
+    }
+    return out;
+  }
+
+  function drawSpectrum(k) {
+    const SW = specCanvas.parentElement.clientWidth;
+    const SH = 120;
+    specCanvas.style.width=SW+'px'; specCanvas.style.height=SH+'px';
+    specCanvas.width=SW*(window.devicePixelRatio||1);
+    specCanvas.height=SH*(window.devicePixelRatio||1);
+    const sdpr=window.devicePixelRatio||1;
+    ctxS.scale(sdpr,sdpr);
+
+    ctxS.clearRect(0,0,SW,SH);
+    ctxS.fillStyle='#09090f'; ctxS.fillRect(0,0,SW,SH);
+
+    const svals=svdResult.S;
+    const maxS=svals[0];
+    const barW=Math.max(1,(SW-40)/N);
+    const maxH=SH-36;
+
+    // Energy line (cumulative)
+    const totalE=allEnergies[N-1];
+    ctxS.beginPath();
+    let prevX=20, prevY=SH-20;
+    for(let i=0;i<N;i++){
+      const ex=20+(i+0.5)*barW;
+      const frac=allEnergies[i]/totalE;
+      const ey=SH-20-frac*maxH;
+      i===0?ctxS.moveTo(ex,ey):ctxS.lineTo(ex,ey);
+      prevX=ex; prevY=ey;
+    }
+    ctxS.strokeStyle='rgba(250,204,21,0.6)'; ctxS.lineWidth=1.5; ctxS.stroke();
+
+    // Bars
+    for(let i=0;i<N;i++){
+      const bh=Math.max(1,(svals[i]/maxS)*maxH);
+      const bx=20+i*barW, by=SH-20-bh;
+      ctxS.fillStyle = i<k ? '#38bdf8' : '#1a2a3a';
+      ctxS.fillRect(bx, by, Math.max(1,barW-1), bh);
+    }
+
+    // k marker
+    const mx=20+k*barW;
+    ctxS.strokeStyle='#f87171'; ctxS.lineWidth=1.5;
+    ctxS.setLineDash([3,3]);
+    ctxS.beginPath(); ctxS.moveTo(mx,0); ctxS.lineTo(mx,SH); ctxS.stroke();
+    ctxS.setLineDash([]);
+
+    ctxS.fillStyle='#404060'; ctxS.font='9px monospace'; ctxS.textAlign='left';
+    ctxS.fillText('Singular values (bars) + Cumulative energy % (yellow line)', 22, 12);
+    ctxS.fillStyle='#f87171';
+    ctxS.fillText(`k=${k}`, mx+3, 22);
+  }
+
+  function updateViz(k) {
+    document.getElementById('rank-k-label').textContent = k;
+    document.getElementById('rank-k-val').textContent = k;
+    const e = (allEnergies[k-1]/allEnergies[N-1]*100).toFixed(1);
+    document.getElementById('energy-pct').textContent = e + '%';
+    const approx = reconstruct(k);
+    drawGray(ctxA, approx, approxCanvas);
+    drawSpectrum(k);
+  }
+
+  // Init
+  origData = generateFaceImage();
+  drawGray(ctxO, origData, origCanvas);
+
+  document.getElementById('img-status').textContent = 'Computing SVD (48 components)…';
+
+  // Defer SVD to not block render
+  setTimeout(() => {
+    svdResult = powerSVD(origData);
+    allEnergies = new Float64Array(N);
+    let cumE = 0;
+    for(let i=0;i<N;i++){cumE+=svdResult.S[i]*svdResult.S[i]; allEnergies[i]=cumE;}
+    document.getElementById('img-status').textContent = `SVD complete. σ₁=${svdResult.S[0].toFixed(2)}, σ₂=${svdResult.S[1].toFixed(2)}, …, σ₄₈=${svdResult.S[N-1].toFixed(4)}`;
+    document.getElementById('rank-slider').disabled = false;
+    updateViz(1);
+  }, 50);
+
+  document.getElementById('rank-slider').disabled = true;
+  document.getElementById('rank-slider').addEventListener('input', function() {
+    if (!svdResult) return;
+    updateViz(parseInt(this.value));
+  });
+
+  window.addEventListener('resize', () => {
+    if (svdResult) drawSpectrum(parseInt(document.getElementById('rank-slider').value));
+  });
+})();
+</script>
+
+<!-- ══════════════════════════════════════════════════
+     JAVASCRIPT — VIZ 4: PCA VIA SVD
+══════════════════════════════════════════════════ -->
+<script>
+(() => {
+  const canvas = document.getElementById('svd-pca');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+
+  let points = [];
+  let showProj = true;
+  let rho = 0.80, ratio = 2.0;
+  const N_pts = 80;
+
+  function randn() {
+    const u=Math.random(), v=Math.random();
+    return Math.sqrt(-2*Math.log(Math.max(1e-15,u)))*Math.cos(2*Math.PI*v);
+  }
+
+  function generate() {
+    points = [];
+    for (let i=0;i<N_pts;i++) {
+      const z1=randn(), z2=randn();
+      const x = ratio * z1;
+      const y = rho*z1 + Math.sqrt(Math.max(0,1-rho*rho))*z2;
+      points.push([x,y]);
+    }
+    draw();
+  }
+
+  function computePCA() {
+    const n=points.length;
+    const mx=points.reduce((s,p)=>s+p[0],0)/n;
+    const my=points.reduce((s,p)=>s+p[1],0)/n;
+    let sxx=0,sxy=0,syy=0;
+    for(const p of points){
+      const dx=p[0]-mx,dy=p[1]-my;
+      sxx+=dx*dx; sxy+=dx*dy; syy+=dy*dy;
+    }
+    sxx/=(n-1); sxy/=(n-1); syy/=(n-1);
+    const mid=(sxx+syy)/2;
+    const disc=Math.sqrt(Math.max(0,(sxx-syy)**2/4+sxy**2));
+    const lam1=mid+disc, lam2=mid-disc;
+    let e1x,e1y,e2x,e2y;
+    if(Math.abs(sxy)>1e-12){
+      const vx=lam1-syy, vy=sxy, nn=Math.sqrt(vx*vx+vy*vy);
+      e1x=vx/nn;e1y=vy/nn;e2x=-e1y;e2y=e1x;
+    } else if(sxx>=syy){
+      e1x=1;e1y=0;e2x=0;e2y=1;
+    } else {
+      e1x=0;e1y=1;e2x=1;e2y=0;
+    }
+    const tot=lam1+lam2;
+    return {mean:[mx,my],pc1:[e1x,e1y],pc2:[e2x,e2y],
+            var1:lam1,var2:lam2,exp1:tot>0?lam1/tot:1,exp2:tot>0?lam2/tot:0};
+  }
+
+  function resize() {
+    const W=canvas.parentElement.clientWidth, H=360;
+    canvas.style.width=W+'px'; canvas.style.height=H+'px';
+    canvas.width=W*dpr; canvas.height=H*dpr;
+    ctx.scale(dpr,dpr); draw();
+  }
+
+  function draw() {
+    const CW=canvas.width/dpr, CH=canvas.height/dpr;
+    ctx.clearRect(0,0,CW,CH);
+    ctx.fillStyle='#09090f'; ctx.fillRect(0,0,CW,CH);
+
+    if(!points.length) return;
+    const pca=computePCA();
+
+    // Data range
+    const xs=points.map(p=>p[0]), ys=points.map(p=>p[1]);
+    const xmin=Math.min(...xs)-1, xmax=Math.max(...xs)+1;
+    const ymin=Math.min(...ys)-1, ymax=Math.max(...ys)+1;
+    const xrange=Math.max(xmax-xmin, ymax-ymin)*1.1;
+    const cx=CW/2, cy=CH/2;
+    const sc=Math.min(CW,CH)*0.36/xrange;
+
+    function toScrX(x){return cx+(x-pca.mean[0])*sc;}
+    function toScrY(y){return cy-(y-pca.mean[1])*sc;}
+
+    // Grid
+    ctx.strokeStyle='#14142a'; ctx.lineWidth=0.6;
+    const gstep=1;
+    for(let gx=Math.floor(pca.mean[0]-xrange);gx<=pca.mean[0]+xrange;gx+=gstep){
+      ctx.beginPath();ctx.moveTo(toScrX(gx),0);ctx.lineTo(toScrX(gx),CH);ctx.stroke();
+    }
+    for(let gy=Math.floor(pca.mean[1]-xrange);gy<=pca.mean[1]+xrange;gy+=gstep){
+      ctx.beginPath();ctx.moveTo(0,toScrY(gy));ctx.lineTo(CW,toScrY(gy));ctx.stroke();
+    }
+    // Axes
+    ctx.strokeStyle='#252545'; ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(0,toScrY(0));ctx.lineTo(CW,toScrY(0));ctx.stroke();
+    ctx.beginPath();ctx.moveTo(toScrX(0),0);ctx.lineTo(toScrX(0),CH);ctx.stroke();
+
+    const mx=toScrX(pca.mean[0]), my=toScrY(pca.mean[1]);
+
+    // Projection lines (PC1)
+    if (showProj) {
+      ctx.strokeStyle='rgba(248,113,113,0.18)'; ctx.lineWidth=0.8;
+      for(const p of points){
+        const dx=p[0]-pca.mean[0], dy=p[1]-pca.mean[1];
+        const proj=dx*pca.pc1[0]+dy*pca.pc1[1];
+        const px=pca.mean[0]+proj*pca.pc1[0];
+        const py=pca.mean[1]+proj*pca.pc1[1];
+        ctx.beginPath();
+        ctx.moveTo(toScrX(p[0]),toScrY(p[1]));
+        ctx.lineTo(toScrX(px),toScrY(py));
+        ctx.stroke();
+      }
+    }
+
+    // Points
+    for(const p of points){
+      ctx.beginPath(); ctx.arc(toScrX(p[0]),toScrY(p[1]),3.5,0,2*Math.PI);
+      ctx.fillStyle='#38bdf8'; ctx.globalAlpha=0.65; ctx.fill();
+      ctx.globalAlpha=1;
+    }
+
+    // PC arrows
+    const arrowLen1=Math.sqrt(pca.var1)*sc*2;
+    const arrowLen2=Math.sqrt(pca.var2)*sc*2;
+
+    function drawPCArrow(dir,len,color,label,lxOff,lyOff){
+      const ex=mx+dir[0]*len, ey=my-dir[1]*len;
+      const ex2=mx-dir[0]*len, ey2=my+dir[1]*len;
+      ctx.beginPath();ctx.moveTo(ex2,ey2);ctx.lineTo(ex,ey);
+      ctx.strokeStyle=color;ctx.lineWidth=2.5;ctx.stroke();
+      const ang=Math.atan2(ey-my,ex-mx),al=12;
+      ctx.beginPath();
+      ctx.moveTo(ex,ey);
+      ctx.lineTo(ex-al*Math.cos(ang-0.4),ey-al*Math.sin(ang-0.4));
+      ctx.lineTo(ex-al*Math.cos(ang+0.4),ey-al*Math.sin(ang+0.4));
+      ctx.closePath();ctx.fillStyle=color;ctx.fill();
+      ctx.fillStyle=color;ctx.font='bold 12px monospace';
+      ctx.textAlign='center';
+      ctx.fillText(label,ex+lxOff,ey+lyOff);
+    }
+    drawPCArrow(pca.pc1,arrowLen1,'#f87171',`PC1 (${(pca.exp1*100).toFixed(0)}%)`,0,-14);
+    drawPCArrow(pca.pc2,arrowLen2,'#34d399',`PC2 (${(pca.exp2*100).toFixed(0)}%)`,-8,16);
+
+    // Mean dot
+    ctx.beginPath();ctx.arc(mx,my,5,0,2*Math.PI);
+    ctx.fillStyle='#facc15';ctx.fill();
+
+    // HUD
+    ctx.fillStyle='rgba(6,6,18,0.88)';
+    ctx.strokeStyle='#252540';ctx.lineWidth=1;
+    const hudW=200,hudH=72;
+    ctx.beginPath();ctx.roundRect(12,12,hudW,hudH,8);
+    ctx.fill();ctx.stroke();
+    ctx.fillStyle='#38bdf8';ctx.font='700 9px monospace';ctx.textAlign='left';
+    ctx.fillText('PCA via SVD', 20, 28);
+    ctx.fillStyle='#f87171';ctx.font='11px monospace';
+    ctx.fillText(`PC1: ${(pca.exp1*100).toFixed(1)}% variance`, 20, 46);
+    ctx.fillStyle='#34d399';
+    ctx.fillText(`PC2: ${(pca.exp2*100).toFixed(1)}% variance`, 20, 62);
+    ctx.fillStyle='#6060a0';ctx.font='9px monospace';
+    ctx.fillText(`ρ=${rho.toFixed(2)}  n=${N_pts}`, 20, 78);
+  }
+
+  document.getElementById('pca-corr').addEventListener('input', function(){
+    rho=parseFloat(this.value);
+    document.getElementById('pca-corr-val').textContent=rho.toFixed(2);
+    generate();
+  });
+  document.getElementById('pca-ratio').addEventListener('input', function(){
+    ratio=parseFloat(this.value);
+    document.getElementById('pca-ratio-val').textContent=ratio.toFixed(1);
+    generate();
+  });
+  document.getElementById('pca-rand').addEventListener('click', generate);
+  document.getElementById('pca-proj').addEventListener('click', function(){
+    showProj=!showProj;
+    this.textContent=showProj?'Hide Projections':'Show Projections';
+    draw();
+  });
+
+  window.addEventListener('resize', resize);
+  resize();
+  generate();
+})();
+</script>
+
+</main>
+</body>
+</html>
