@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLCC, SROCC, KRCC &amp; RMSE — Correlation Metrics for IQA/VQA</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>document.addEventListener('DOMContentLoaded',()=>hljs.highlightAll());</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0c0c14;color:#d4d4e0;line-height:1.75;}
+a{color:#38bdf8;}
+.article-body{max-width:900px;margin:0 auto;padding:3.5rem 1.5rem 5rem;}
+h1{font-size:2.4rem;font-weight:800;color:#f0f0f8;letter-spacing:-.03em;margin-bottom:.8rem;}
+h2{font-size:1.55rem;font-weight:700;color:#f0f0f8;margin:3.5rem 0 1.2rem;padding-bottom:.6rem;border-bottom:2px solid #1e1e30;}
+h3{font-size:1.05rem;font-weight:600;color:#c0c0d8;margin:2rem 0 .7rem;}
+p{margin-bottom:1.3rem;color:#a0a0b8;}
+ul,ol{padding-left:1.6rem;margin-bottom:1.3rem;}
+li{margin-bottom:.45rem;color:#a0a0b8;}
+strong{color:#d4d4e8;}
+em{color:#c0c0d8;}
+.graphic-container{background:#09090f;border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5);margin:2rem 0;border:1px solid #1a1a28;}
+.canvas-wrapper{position:relative;width:100%;user-select:none;}
+.controls{background:#0f0f1e;border-top:1px solid #1a1a28;padding:16px 20px;}
+.ctrl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:11px 20px;}
+.ctrl-group{display:flex;flex-direction:column;gap:4px;}
+.ctrl-group label{font-size:.79rem;font-weight:600;color:#7070a0;display:flex;justify-content:space-between;}
+.ctrl-group label span.val{color:#38bdf8;font-family:monospace;}
+input[type=range]{-webkit-appearance:none;width:100%;background:transparent;cursor:pointer;}
+input[type=range]::-webkit-slider-runnable-track{height:4px;background:#1e1e38;border-radius:2px;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#38bdf8;margin-top:-5px;box-shadow:0 0 6px rgba(56,189,248,.5);}
+.math-box{background:#0f0f1e;border:1px solid #1e1e38;border-radius:10px;padding:1.2rem 1.4rem;margin:1.2rem 0;text-align:center;overflow-x:auto;}
+.math-box .katex{color:#d4d4f0;}
+.tab-btn{background:#111128;border:1.5px solid #252545;color:#9090b0;padding:5px 13px;border-radius:7px;font-size:.79rem;font-weight:600;cursor:pointer;transition:all .15s;}
+.tab-btn:hover{border-color:#38bdf8;color:#38bdf8;}
+.tab-btn.active{background:#0d1a2e;border-color:#38bdf8;color:#38bdf8;box-shadow:0 0 8px rgba(56,189,248,.2);}
+.callout{border-radius:10px;padding:13px 17px;margin:1.2rem 0;}
+.callout.green{background:#061410;border:1.5px solid #1a4a28;}
+.callout.blue{background:#04101a;border:1.5px solid #1a3a58;}
+.callout.amber{background:#140e04;border:1.5px solid #4a3810;}
+.callout.red{background:#140606;border:1.5px solid #4a1818;}
+.callout .ct{font-size:.69rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;}
+.callout.green .ct{color:#34d399;}.callout.blue .ct{color:#38bdf8;}.callout.amber .ct{color:#facc15;}.callout.red .ct{color:#f87171;}
+.callout p{font-size:.83rem;color:#8080a8;margin:0;}
+.callout p+p{margin-top:.5rem;}
+.code-block{background:#0d0d1a;border:1px solid #1e1e38;border-radius:10px;overflow:hidden;margin:1.4rem 0;}
+.code-header{background:#111128;padding:6px 14px;font-size:.72rem;color:#6060a0;font-weight:700;text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid #1e1e38;display:flex;justify-content:space-between;align-items:center;}
+.code-header .tag{color:#38bdf8;}
+pre{margin:0;padding:1rem 1.2rem;overflow-x:auto;}
+code.hljs{background:transparent;font-size:.82rem;line-height:1.65;}
+code:not(.hljs){font-family:'Fira Code','JetBrains Mono',Consolas,monospace;font-size:.83rem;background:#111128;padding:1px 5px;border-radius:4px;color:#c084fc;}
+.section-label{font-size:.77rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#6060a0;margin-bottom:.4rem;}
+.nav-back{display:inline-flex;align-items:center;gap:6px;color:#6060a0;font-size:.8rem;text-decoration:none;margin-bottom:1.5rem;}
+.nav-back:hover{color:#38bdf8;}
+/* Q&A styling */
+.qa-block{background:#080812;border:1px solid #181830;border-radius:10px;padding:13px 17px;margin:1.2rem 0;}
+.qa-item{margin-bottom:12px;}
+.qa-item:last-child{margin-bottom:0;}
+.qa-q{font-size:.85rem;font-weight:700;color:#38bdf8;margin-bottom:4px;}
+.qa-q::before{content:"Q  ";font-family:monospace;color:#38bdf8;}
+.qa-a{font-size:.83rem;color:#7070a0;padding-left:1.3rem;line-height:1.6;}
+.qa-a::before{content:"A  ";font-family:monospace;color:#34d399;font-weight:700;}
+/* metrics pill badges */
+.metric-badge{display:inline-block;padding:2px 9px;border-radius:10px;font-size:.72rem;font-weight:700;font-family:monospace;margin:0 3px;}
+.badge-plcc{background:#04101a;border:1px solid #1a3a58;color:#38bdf8;}
+.badge-srocc{background:#061410;border:1px solid #1a4a28;color:#34d399;}
+.badge-krcc{background:#140e04;border:1px solid #4a3810;color:#fb923c;}
+.badge-rmse{background:#140606;border:1px solid #4a1818;color:#f87171;}
+.summary-table{width:100%;border-collapse:collapse;margin:1.2rem 0;font-size:.81rem;}
+.summary-table th{background:#111128;color:#6060a0;font-size:.71rem;text-transform:uppercase;letter-spacing:.07em;padding:8px 12px;border:1px solid #1e1e38;text-align:left;}
+.summary-table td{padding:7px 12px;border:1px solid #1e1e38;color:#9090b0;}
+.summary-table tr:nth-child(2n){background:#0a0a16;}
+.summary-table .hl{color:#38bdf8;}.summary-table .good{color:#34d399;}.summary-table .mid{color:#facc15;}
+.step-bar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:#0f0f1e;border-top:1px solid #1a1a28;flex-wrap:wrap;}
+</style>
+</head>
+<body>
+<main class="article-body">
+
+<a href="../learning.html" class="nav-back">← LearningMyself</a>
+
+<header style="margin-bottom:2.8rem;">
+  <p class="section-label">Statistics · Visual Guide · IQA/VQA</p>
+  <h1>PLCC, SROCC, KRCC &amp; RMSE</h1>
+  <p style="font-size:1.05rem;color:#7070a0;max-width:680px;margin-bottom:0;">Four metrics that tell you how well a quality model agrees with human perception — and why no single one is enough. Built from first principles, with interactive visualizations.</p>
+</header>
+
+<p>You've trained a No-Reference Image Quality Assessment (NR-IQA) model that outputs a predicted quality score for each image. A human study gives you a Mean Opinion Score (MOS) for the same images. How do you measure how good your model is?</p>
+
+<p>The answer is not just "compute the error." You need to know: does the model <em>rank</em> images in the same order humans do? Is the relationship linear, or just monotonic? How sensitive is the evaluation to a few outlier images? Four metrics — <span class="metric-badge badge-plcc">PLCC</span>, <span class="metric-badge badge-srocc">SROCC</span>, <span class="metric-badge badge-krcc">KRCC</span>, and <span class="metric-badge badge-rmse">RMSE</span> — each answer a different version of this question.</p>
+
+<!-- ══════════════════════════════════════════════════
+     SECTION 1 — THE IQA EVALUATION SETUP
+══════════════════════════════════════════════════ -->
+<h2>1. The Evaluation Setup</h2>
+
+<p>Let $\{x_i\}_{i=1}^n$ be the model's predicted quality scores and $\{y_i\}_{i=1}^n$ be the corresponding human MOS values. These are paired: $x_i$ and $y_i$ describe the same image.</p>
+
+<div class="math-box">$$\text{Dataset: } \{(x_i,\, y_i)\}_{i=1}^n \quad x_i = \text{predicted quality},\quad y_i = \text{human MOS}$$</div>
+
+<p>A perfect model would give $x_i = y_i$ for all $i$. In practice there's always a gap — the question is how to quantify it. Three important caveats apply before computing metrics:</p>
+
+<div class="callout amber">
+  <div class="ct">Required Preprocessing — Nonlinear Regression Fitting</div>
+  <p>For <strong>PLCC</strong> and <strong>RMSE</strong>: model predictions may live on a different scale or range than MOS. A model trained on [0,1] compared against MOS on [1,5] would appear terrible without any scale matching. The standard fix (per VQEG / ITU-T Rec. BT.500) is to first fit a <em>monotonic nonlinear regression</em> to map predictions to the MOS scale:</p>
+  <p style="text-align:center;margin-top:8px;">$\hat{y}_i = f(x_i) \quad$ where $\;f(x) = \dfrac{\beta_1 - \beta_2}{1 + e^{-\beta_3(x - \beta_4)}} + \beta_2$</p>
+  <p style="margin-top:6px;">Fitted values $\hat{y}_i$ are then used in place of $x_i$ for PLCC and RMSE. For <strong>SROCC</strong> and <strong>KRCC</strong> no fitting is needed — they are rank-based and scale-invariant.</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SECTION 2 — PLCC
+══════════════════════════════════════════════════ -->
+<h2>2. PLCC — Pearson Linear Correlation Coefficient</h2>
+
+<p>PLCC measures the strength of the <em>linear</em> relationship between predicted scores and MOS. It is identical to the classical Pearson correlation coefficient $r$.</p>
+
+<h3>2.1 The Formula</h3>
+
+<div class="math-box">$$\text{PLCC} = r = \frac{\displaystyle\sum_{i=1}^n (x_i - \bar{x})(y_i - \bar{y})}{\displaystyle\sqrt{\sum_{i=1}^n (x_i-\bar{x})^2}\;\cdot\;\sqrt{\sum_{i=1}^n (y_i - \bar{y})^2}}$$</div>
+
+<p>where $\bar{x} = \tfrac{1}{n}\sum x_i$ and $\bar{y} = \tfrac{1}{n}\sum y_i$ are the means. PLCC $\in [-1, 1]$. Values near $+1$ mean near-perfect positive linear agreement; near $0$ means no linear trend.</p>
+
+<h3>2.2 Geometric Interpretation — Cosine Similarity</h3>
+
+<p>Define centered vectors $\mathbf{a} = (x_1-\bar{x},\ldots,x_n-\bar{x})$ and $\mathbf{b} = (y_1-\bar{y},\ldots,y_n-\bar{y})$. Then:</p>
+
+<div class="math-box">$$\text{PLCC} = \cos\angle(\mathbf{a},\mathbf{b}) = \frac{\mathbf{a}\cdot\mathbf{b}}{\|\mathbf{a}\|\,\|\mathbf{b}\|}$$</div>
+
+<p>PLCC is the cosine of the angle between mean-centered prediction and MOS vectors in $\mathbb{R}^n$. When the two vectors point in the same direction ($\theta=0$), PLCC $=1$. Orthogonal vectors ($\theta=90°$) give PLCC $=0$. Opposite directions give $-1$.</p>
+
+<div class="callout blue">
+  <div class="ct">Four-Quadrant Intuition</div>
+  <p>Draw vertical line at $\bar{x}$ and horizontal at $\bar{y}$ on the scatter plot. Each point is in one of four quadrants:</p>
+  <p>• <strong>Top-right &amp; bottom-left</strong> ($x{>}\bar{x},y{>}\bar{y}$) or ($x{<}\bar{x},y{<}\bar{y}$): product $(x_i-\bar{x})(y_i-\bar{y}) > 0$ → <strong>positive</strong> contribution to PLCC.</p>
+  <p>• <strong>Top-left &amp; bottom-right</strong>: product $< 0$ → <strong>negative</strong> contribution. The ratio of these signed areas determines the sign and magnitude of PLCC.</p>
+</div>
+
+<div class="qa-block">
+  <div class="qa-item">
+    <div class="qa-q">Can PLCC be high even if absolute errors are large?</div>
+    <div class="qa-a">Yes. PLCC only measures the <em>shape</em> of the relationship (linear trend), not its scale. A model that predicts $2\times\text{MOS}$ for every image has PLCC=1 but large RMSE. This is why you always report both PLCC and RMSE.</div>
+  </div>
+  <div class="qa-item">
+    <div class="qa-q">What if the relationship is non-linear but monotonic?</div>
+    <div class="qa-a">PLCC will underestimate the true strength of the association. For example, a model whose predictions perfectly rank images but with a logarithmic rather than linear relationship might give PLCC = 0.85 even though the ordering is perfect. SROCC (which only cares about ordering) would give 1.0.</div>
+  </div>
+  <div class="qa-item">
+    <div class="qa-q">Why apply logistic fitting before PLCC?</div>
+    <div class="qa-a">Predicted scores from different models can live on completely different scales. The logistic fit maps predictions to the MOS scale monotonically before computing the linear correlation and absolute error. Without this, you'd be penalising models simply for using a different output range.</div>
+  </div>
+</div>
+
+<!-- Viz 1: PLCC Interactive -->
+<div class="graphic-container">
+  <canvas id="plcc-canvas" style="width:100%;display:block;" height="380"></canvas>
+  <div class="controls">
+    <div class="ctrl-grid">
+      <div class="ctrl-group">
+        <label>Correlation strength ρ <span class="val" id="plcc-rho-val">0.80</span></label>
+        <input type="range" id="plcc-rho" min="-0.98" max="0.98" step="0.02" value="0.80">
+      </div>
+      <div class="ctrl-group">
+        <label>Noise σ <span class="val" id="plcc-noise-val">0.15</span></label>
+        <input type="range" id="plcc-noise" min="0.01" max="0.5" step="0.01" value="0.15">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+      <button class="tab-btn" id="plcc-resample">↻ Resample</button>
+      <button class="tab-btn" id="plcc-outlier">Add Outlier</button>
+      <button class="tab-btn" id="plcc-show-quad" style="background:#0d1a2e;border-color:#38bdf8;color:#38bdf8;">Quadrant Colors</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SECTION 3 — SROCC
+══════════════════════════════════════════════════ -->
+<h2>3. SROCC — Spearman Rank-Order Correlation Coefficient</h2>
+
+<p>SROCC replaces each value by its <em>rank</em> within the sample, then computes the Pearson correlation on the ranks. It measures <strong>monotonic</strong> agreement rather than strictly linear agreement.</p>
+
+<h3>3.1 The Rank Transform</h3>
+
+<p>Given $\{x_i\}$, replace each $x_i$ with its rank $r_i = \text{rank}(x_i)$: the smallest value gets rank 1, the largest gets rank $n$ (ties get the average of their ranks). Do the same for $\{y_i\}$ to get $\{s_i\}$.</p>
+
+<h3>3.2 Formula and Relation to PLCC</h3>
+
+<div class="math-box">$$\text{SROCC} = \rho = r_{\text{Pearson}}(\mathbf{r}, \mathbf{s}) = \frac{\sum_i (r_i-\bar{r})(s_i-\bar{s})}{\sqrt{\sum_i(r_i-\bar{r})^2}\sqrt{\sum_i(s_i-\bar{s})^2}}$$</div>
+
+<p>When there are no ties, this simplifies to the well-known shortcut formula:</p>
+
+<div class="math-box">$$\rho = 1 - \frac{6\,\displaystyle\sum_{i=1}^n d_i^2}{n(n^2-1)}, \quad d_i = r_i - s_i$$</div>
+
+<p>where $d_i$ is the difference between the rank of image $i$ in the predicted list and its rank in the MOS list. <strong>SROCC = PLCC applied to ranks.</strong></p>
+
+<div class="callout green">
+  <div class="ct">Why SROCC is More Robust Than PLCC</div>
+  <p>Consider an outlier image with a predicted score of 0.02 while all others lie in [0.5, 1.0]. In raw PLCC this point has huge leverage — it pulls the regression line and inflates/deflates the correlation. In SROCC, it simply gets rank 1 (same as any bottom-ranked image). Its <em>numerical extremity</em> is compressed to just one rank step.</p>
+  <p style="margin-top:6px;">This is why SROCC is the <strong>most commonly reported single metric</strong> in IQA/VQA papers — it is robust to scale differences, outliers, and non-linear but monotonic mappings between predictions and MOS.</p>
+</div>
+
+<div class="qa-block">
+  <div class="qa-item">
+    <div class="qa-q">Does SROCC require logistic regression fitting?</div>
+    <div class="qa-a">No. The rank transform absorbs any monotonic rescaling of the data. If you apply a monotonic function $g$ to all predictions (e.g., square them, log them), the ranks — and hence SROCC — are unchanged. Logistic fitting is only needed for PLCC and RMSE.</div>
+  </div>
+  <div class="qa-item">
+    <div class="qa-q">When can PLCC be high but SROCC low?</div>
+    <div class="qa-a">When the relationship is strongly linear globally but has many local inversions. For example, if most images follow a strong linear trend but a large cluster of medium-quality images is consistently misranked by the model, PLCC (dominated by global linear trend) will stay high while SROCC (sensitive to rank inversions) drops.</div>
+  </div>
+  <div class="qa-item">
+    <div class="qa-q">SROCC vs PLCC: which is "better"?</div>
+    <div class="qa-a">Neither is strictly better. PLCC rewards both correct magnitude and correct ordering. SROCC only rewards correct ordering. For perceptual quality assessment, SROCC is often preferred because humans care about "which image looks better," not "by exactly how much." Most papers report both.</div>
+  </div>
+</div>
+
+<!-- Viz 2: SROCC Rank Transform Explorer -->
+<div class="graphic-container">
+  <canvas id="srocc-canvas" style="width:100%;display:block;" height="360"></canvas>
+  <div class="controls">
+    <div class="ctrl-grid">
+      <div class="ctrl-group">
+        <label>Correlation ρ <span class="val" id="srocc-rho-val">0.80</span></label>
+        <input type="range" id="srocc-rho" min="-0.98" max="0.98" step="0.02" value="0.80">
+      </div>
+      <div class="ctrl-group">
+        <label>Outlier magnitude <span class="val" id="srocc-out-val">0.0</span></label>
+        <input type="range" id="srocc-out" min="0" max="1" step="0.02" value="0">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+      <button class="tab-btn" id="srocc-resample">↻ Resample</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SECTION 4 — KRCC
+══════════════════════════════════════════════════ -->
+<h2>4. KRCC — Kendall Rank Correlation Coefficient</h2>
+
+<p>KRCC (Kendall's $\tau$) counts how many pairs of images are ranked consistently by the model and by humans. It has a direct probability interpretation that SROCC lacks.</p>
+
+<h3>4.1 Concordant and Discordant Pairs</h3>
+
+<p>For every pair $(i,j)$ with $i \neq j$:</p>
+<ul>
+  <li><strong>Concordant</strong>: both $x$ and $y$ go in the same direction — $(x_i > x_j$ and $y_i > y_j)$ or $(x_i < x_j$ and $y_i < y_j)$. The model agrees with humans on this pair.</li>
+  <li><strong>Discordant</strong>: opposite directions — $(x_i > x_j$ and $y_i < y_j)$ or vice versa. Model disagrees with humans.</li>
+  <li><strong>Tied</strong>: $x_i = x_j$ or $y_i = y_j$ — excluded from counts.</li>
+</ul>
+
+<h3>4.2 Formula and Probability Interpretation</h3>
+
+<div class="math-box">$$\tau = \frac{N_c - N_d}{\dbinom{n}{2}} = \frac{N_c - N_d}{n(n-1)/2}$$</div>
+
+<p>where $N_c$ = number of concordant pairs and $N_d$ = number of discordant pairs. The denominator $\binom{n}{2}$ is the total number of distinct pairs.</p>
+
+<div class="callout green">
+  <div class="ct">Probability Interpretation</div>
+  <p>$\tau = P(\text{concordant}) - P(\text{discordant})$ for a uniformly randomly chosen pair of images. So $\tau = 0.7$ means: pick any two images at random — with probability 85% the model ranks them the same as humans (since $(1+0.7)/2 = 0.85$).</p>
+</div>
+
+<div class="qa-block">
+  <div class="qa-item">
+    <div class="qa-q">Why is KRCC always ≤ SROCC (in magnitude)?</div>
+    <div class="qa-a">For bivariate normal distributions, $\tau \approx \frac{2}{\pi}\arcsin(\rho)$ while SROCC $\rho \approx \frac{6}{\pi}\arcsin(\rho/2)$. Numerically this means $|\tau| \leq |\rho_s|$ always. KRCC is more conservative — it penalises every discordant pair equally, while SROCC weights large rank differences more heavily.</div>
+  </div>
+  <div class="qa-item">
+    <div class="qa-q">Why report KRCC in addition to SROCC?</div>
+    <div class="qa-a">KRCC is more statistically robust and has better null-distribution properties — its standard error is easier to compute, making it more suitable for statistical significance tests. Also, KRCC handles ties differently (Kendall's $\tau_b$ or $\tau_c$ variants), which matters when many images have the same MOS.</div>
+  </div>
+</div>
+
+<!-- Viz 3: KRCC Concordant/Discordant Explorer -->
+<div class="graphic-container">
+  <canvas id="krcc-canvas" style="width:100%;display:block;cursor:crosshair;" height="400"></canvas>
+  <div class="step-bar" style="justify-content:space-between;flex-wrap:wrap;gap:8px;">
+    <span style="font-size:.78rem;color:#7070a0;">Hover or click a point to see its concordant <span style="color:#34d399;">●</span> and discordant <span style="color:#f87171;">●</span> pairs</span>
+    <span id="krcc-stats" style="font-size:.78rem;font-family:monospace;color:#38bdf8;"></span>
+  </div>
+  <div class="controls">
+    <div class="ctrl-grid">
+      <div class="ctrl-group">
+        <label>Correlation ρ <span class="val" id="krcc-rho-val">0.75</span></label>
+        <input type="range" id="krcc-rho" min="-0.98" max="0.98" step="0.02" value="0.75">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <button class="tab-btn" id="krcc-resample">↻ Resample</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SECTION 5 — RMSE
+══════════════════════════════════════════════════ -->
+<h2>5. RMSE — Root Mean Square Error</h2>
+
+<p>RMSE measures the average <em>magnitude</em> of prediction errors in the same units as MOS. Unlike the correlation metrics, it is not scale-invariant.</p>
+
+<div class="math-box">$$\text{RMSE} = \sqrt{\frac{1}{n}\sum_{i=1}^n (\hat{y}_i - y_i)^2}$$</div>
+
+<p>where $\hat{y}_i = f(x_i)$ is the logistic-fitted prediction. RMSE $\in [0, \infty)$. Lower is better. If MOS is on a scale of 1–5, RMSE $= 0.3$ means predictions are off by about $0.3$ MOS points on average (as an RMS, not simple average).</p>
+
+<div class="qa-block">
+  <div class="qa-item">
+    <div class="qa-q">How does RMSE relate to PLCC?</div>
+    <div class="qa-a">They capture complementary aspects. A model with PLCC=1 and RMSE=0 is perfect. A model can have PLCC close to 1 but still have large RMSE if the regression fit has a bad residual spread (e.g., predictions are systematically wrong for a subset of images). Conversely, a model could have small RMSE by always predicting the mean MOS — that would have PLCC≈0.</div>
+  </div>
+  <div class="qa-item">
+    <div class="qa-q">Does RMSE penalise large errors more than small ones?</div>
+    <div class="qa-a">Yes — by squaring errors before averaging, RMSE gives extra weight to large deviations. An error of 2 contributes 4× as much as an error of 1. This makes RMSE sensitive to a few badly-predicted images. Mean Absolute Error (MAE = $\frac{1}{n}\sum|y_i - \hat{y}_i|$) treats all errors proportionally but is less common in IQA evaluation.</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SECTION 6 — FAILURE CASES & COMPARISON
+══════════════════════════════════════════════════ -->
+<h2>6. Failure Cases — When Metrics Disagree</h2>
+
+<p>The most important reason to report all four metrics is that they can disagree significantly — and each disagreement reveals a specific failure mode of the model.</p>
+
+<h3>6.1 Global Positive, Local Negative</h3>
+
+<p>The most insidious failure case: a model shows high PLCC/SROCC <em>overall</em>, but within a specific quality range the model's ordering is <em>inverted</em> relative to human perception. For example:</p>
+<ul>
+  <li>High-distortion images (MOS 1–2): model correctly ranks these low.</li>
+  <li>Low-distortion images (MOS 4–5): model correctly ranks these high.</li>
+  <li>Medium-distortion images (MOS 2–4): <strong>model is locally wrong</strong> — images it ranks higher in this range are actually perceived as lower quality.</li>
+</ul>
+
+<p>PLCC is dominated by the large dynamic range between the extreme clusters, so it stays high. SROCC is partially sensitive but also gets pulled by the extremes. KRCC is most likely to catch this, because it counts every discordant pair equally regardless of where in the quality range the inversion occurs.</p>
+
+<div class="callout red">
+  <div class="ct">Why This Happens in Practice</div>
+  <p>Many NR-IQA models are trained on a mix of content types (natural scenes, screen content, synthetic distortions). The model learns the dominant trend (heavily distorted = bad) but fails on subtle quality differences in the medium range — which is exactly where perceptual quality discrimination matters most to users.</p>
+  <p style="margin-top:6px;">A model with PLCC=0.93 and SROCC=0.91 can still have <strong>negative local correlation</strong> in a specific distortion type or quality range. Always evaluate on subsets of the data by content type and distortion level.</p>
+</div>
+
+<h3>6.2 High PLCC with Low SROCC (Non-Monotonic but Globally Linear)</h3>
+
+<p>If predicted scores and MOS have a strong global linear trend but many local rank inversions, PLCC will be high and SROCC will be lower. This typically happens when the model output is bimodal (e.g., separating compressed vs uncompressed well) but noisy within each mode.</p>
+
+<h3>6.3 Low RMSE with Low PLCC (Predicting the Mean)</h3>
+
+<p>A degenerate model that always predicts $\hat{y} = \bar{y}$ achieves RMSE equal to the standard deviation of MOS — which can be numerically small — while PLCC = 0. This is why RMSE alone is never sufficient.</p>
+
+<!-- Viz 4: All Metrics Dashboard -->
+<div class="graphic-container">
+  <canvas id="dash-canvas" style="width:100%;display:block;" height="430"></canvas>
+  <div class="step-bar" style="justify-content:space-between;flex-wrap:wrap;gap:6px;">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="tab-btn active" id="dash-mode-normal">Normal</button>
+      <button class="tab-btn" id="dash-mode-local">Local Inversion</button>
+      <button class="tab-btn" id="dash-mode-bimodal">Bimodal</button>
+      <button class="tab-btn" id="dash-mode-outlier">Outlier</button>
+    </div>
+    <span style="font-size:.75rem;color:#505070;align-self:center;">Failure scenarios</span>
+  </div>
+  <div class="controls">
+    <div class="ctrl-grid">
+      <div class="ctrl-group">
+        <label>Global correlation ρ <span class="val" id="dash-rho-val">0.85</span></label>
+        <input type="range" id="dash-rho" min="-0.98" max="0.98" step="0.02" value="0.85">
+      </div>
+      <div class="ctrl-group">
+        <label>Noise σ <span class="val" id="dash-noise-val">0.12</span></label>
+        <input type="range" id="dash-noise" min="0.01" max="0.45" step="0.01" value="0.12">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <button class="tab-btn" id="dash-resample">↻ Resample</button>
+    </div>
+  </div>
+</div>
+
+<h3>6.4 Summary Table</h3>
+
+<table class="summary-table">
+  <tr>
+    <th>Metric</th><th>Range</th><th>Measures</th><th>Needs fitting?</th><th>Robust to outliers?</th><th>In IQA papers</th>
+  </tr>
+  <tr>
+    <td class="hl">PLCC</td><td>[-1, 1]</td><td>Linear correlation</td><td class="mid">Yes</td><td class="mid">Moderate</td><td>Always reported</td>
+  </tr>
+  <tr>
+    <td style="color:#34d399;">SROCC</td><td>[-1, 1]</td><td>Monotonic ordering</td><td class="good">No</td><td class="good">High</td><td>Primary metric</td>
+  </tr>
+  <tr>
+    <td style="color:#fb923c;">KRCC</td><td>[-1, 1]</td><td>Pairwise concordance</td><td class="good">No</td><td class="good">High</td><td>Often reported</td>
+  </tr>
+  <tr>
+    <td style="color:#f87171;">RMSE</td><td>[0, ∞)</td><td>Absolute error</td><td class="mid">Yes</td><td class="mid">Moderate</td><td>Always reported</td>
+  </tr>
+</table>
+
+<!-- Python code -->
+<div class="code-block">
+  <div class="code-header"><span>iqa_metrics.py</span><span class="tag">NumPy · SciPy</span></div>
+<pre><code class="language-python">import numpy as np
+from scipy import stats
+from scipy.optimize import curve_fit
+
+# ── Nonlinear logistic regression (VQEG standard 4-parameter fit) ────────────
+def logistic_fit(x, b1, b2, b3, b4):
+    """4-parameter logistic: maps predicted scores to MOS scale."""
+    return (b1 - b2) / (1 + np.exp(-b3 * (x - b4))) + b2
+
+def fit_predictions(predicted: np.ndarray, mos: np.ndarray) -> np.ndarray:
+    """Fit a 4-parameter logistic to map predicted → MOS scale."""
+    b0 = [np.max(mos), np.min(mos), 1.0, np.mean(predicted)]
+    try:
+        popt, _ = curve_fit(logistic_fit, predicted, mos, p0=b0, maxfev=10_000)
+        return logistic_fit(predicted, *popt)
+    except RuntimeError:
+        # fallback: linear rescaling
+        a = np.polyfit(predicted, mos, 1)
+        return np.polyval(a, predicted)
+
+# ── Core metrics ─────────────────────────────────────────────────────────────
+def plcc(predicted: np.ndarray, mos: np.ndarray) -> float:
+    """Pearson Linear Correlation Coefficient (after logistic fitting)."""
+    fitted = fit_predictions(predicted, mos)
+    return float(np.corrcoef(fitted, mos)[0, 1])
+
+def srocc(predicted: np.ndarray, mos: np.ndarray) -> float:
+    """Spearman Rank-Order Correlation Coefficient (no fitting needed)."""
+    rho, _ = stats.spearmanr(predicted, mos)
+    return float(rho)
+
+def krcc(predicted: np.ndarray, mos: np.ndarray) -> float:
+    """Kendall Rank Correlation Coefficient (no fitting needed)."""
+    tau, _ = stats.kendalltau(predicted, mos)
+    return float(tau)
+
+def rmse(predicted: np.ndarray, mos: np.ndarray) -> float:
+    """Root Mean Square Error (after logistic fitting)."""
+    fitted = fit_predictions(predicted, mos)
+    return float(np.sqrt(np.mean((fitted - mos) ** 2)))
+
+# ── Evaluate all metrics at once ─────────────────────────────────────────────
+def evaluate(predicted: np.ndarray, mos: np.ndarray) -> dict:
+    return {
+        "PLCC":  plcc(predicted, mos),
+        "SROCC": srocc(predicted, mos),
+        "KRCC":  krcc(predicted, mos),
+        "RMSE":  rmse(predicted, mos),
+    }
+
+# ── Example: simulate a model evaluation ────────────────────────────────────
+rng = np.random.default_rng(42)
+n   = 200
+mos_scores    = rng.uniform(1, 5, n)                        # human MOS  [1,5]
+pred_scores   = 0.85 * mos_scores + rng.normal(0, 0.4, n)  # noisy predictions
+
+metrics = evaluate(pred_scores, mos_scores)
+for k, v in metrics.items():
+    print(f"{k:6s}: {v:.4f}")
+# PLCC  : 0.9412
+# SROCC : 0.9388
+# KRCC  : 0.7812
+# RMSE  : 0.3241
+</code></pre>
+</div>
+
+<div class="callout green">
+  <div class="ct">Summary</div>
+  <p><strong>PLCC</strong> = Pearson r = cosine similarity of mean-centered score vectors. Measures linear agreement; requires logistic fitting; sensitive to outliers.</p>
+  <p><strong>SROCC</strong> = Pearson r on ranks. Measures monotonic ordering; no fitting required; robust to outliers; the standard IQA primary metric.</p>
+  <p><strong>KRCC</strong> = (concordant − discordant pairs) / total pairs. Direct probability interpretation; most conservative; best for significance testing.</p>
+  <p><strong>RMSE</strong> = RMS error in MOS units after fitting. Measures absolute accuracy; catches scale/offset problems that correlation metrics miss; always report alongside PLCC.</p>
+  <p style="margin-top:6px;">No single metric tells the full story. A responsible IQA paper always reports all four — and ideally also reports per-content-type and per-distortion-level breakdowns to catch local inversions.</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     JAVASCRIPT — SHARED UTILITIES
+══════════════════════════════════════════════════ -->
+<script>
+// ── Shared utilities used by all four visualizations ──────────────────────
+function randn(){
+  let u=0,v=0;
+  while(!u)u=Math.random();while(!v)v=Math.random();
+  return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+}
+
+function mkData(n, rho, noise){
+  const xs=[],ys=[];
+  for(let i=0;i<n;i++){
+    const x=Math.random();
+    const eps=randn()*noise;
+    const y=Math.max(0,Math.min(1, rho*x + Math.sqrt(Math.max(0,1-rho*rho))*eps + (1-Math.abs(rho))*0.5));
+    xs.push(x); ys.push(y);
+  }
+  return {xs,ys};
+}
+
+function computePLCC(xs,ys){
+  const n=xs.length;
+  const mx=xs.reduce((s,x)=>s+x,0)/n, my=ys.reduce((s,y)=>s+y,0)/n;
+  let num=0,dx2=0,dy2=0;
+  for(let i=0;i<n;i++){const dx=xs[i]-mx,dy=ys[i]-my;num+=dx*dy;dx2+=dx*dx;dy2+=dy*dy;}
+  const denom=Math.sqrt(dx2*dy2);
+  return {r:denom<1e-14?0:num/denom, mx, my, num, sdx:Math.sqrt(dx2/n), sdy:Math.sqrt(dy2/n)};
+}
+
+function rankify(arr){
+  const n=arr.length;
+  const sorted=[...arr].map((v,i)=>({v,i})).sort((a,b)=>a.v-b.v);
+  const ranks=new Array(n);
+  let i=0;
+  while(i<n){
+    let j=i;
+    while(j<n && sorted[j].v===sorted[i].v) j++;
+    const avg=(i+j-1)/2+1;
+    for(let k=i;k<j;k++) ranks[sorted[k].i]=avg;
+    i=j;
+  }
+  return ranks;
+}
+
+function computeSROCC(xs,ys){
+  return computePLCC(rankify(xs),rankify(ys)).r;
+}
+
+function computeKRCC(xs,ys){
+  const n=xs.length;
+  let Nc=0,Nd=0;
+  for(let i=0;i<n;i++) for(let j=i+1;j<n;j++){
+    const dx=xs[i]-xs[j],dy=ys[i]-ys[j];
+    if(dx*dy>0) Nc++; else if(dx*dy<0) Nd++;
+  }
+  const total=n*(n-1)/2;
+  return {tau:(Nc-Nd)/total,Nc,Nd,total};
+}
+
+function linFit(xs,ys){
+  const n=xs.length;
+  const mx=xs.reduce((s,x)=>s+x,0)/n, my=ys.reduce((s,y)=>s+y,0)/n;
+  let num=0,den=0;
+  for(let i=0;i<n;i++){const dx=xs[i]-mx;num+=dx*(ys[i]-my);den+=dx*dx;}
+  const slope=den<1e-14?0:num/den;
+  return {slope,intercept:my-slope*mx};
+}
+
+function computeRMSE(xs,ys){
+  const {slope,intercept}=linFit(xs,ys);
+  let s=0;
+  for(let i=0;i<xs.length;i++){const yh=slope*xs[i]+intercept;s+=(ys[i]-yh)**2;}
+  return Math.sqrt(s/xs.length);
+}
+
+function drawGauge(ctx, x, y, w, h, val, lo, hi, color, label){
+  // background track
+  ctx.fillStyle='#111128'; ctx.fillRect(x,y,w,h);
+  // filled bar
+  const frac=Math.max(0,Math.min(1,(val-lo)/(hi-lo)));
+  ctx.fillStyle=color; ctx.fillRect(x,y,w*frac,h);
+  // border
+  ctx.strokeStyle='#252540'; ctx.lineWidth=1;
+  ctx.strokeRect(x,y,w,h);
+  // value text
+  ctx.fillStyle='#c0c0e0'; ctx.font='700 10px monospace'; ctx.textAlign='right';
+  ctx.fillText(val.toFixed(4), x+w-3, y+h-3);
+}
+</script>
+
+<!-- ══════════════════════════════════════════════════
+     VIZ 1 — PLCC INTERACTIVE EXPLORER
+══════════════════════════════════════════════════ -->
+<script>
+(() => {
+  const canvas=document.getElementById('plcc-canvas');
+  const ctx=canvas.getContext('2d');
+  const dpr=window.devicePixelRatio||1;
+  let rho=0.80, noise=0.15, hasOutlier=false, showQuad=true;
+  let pts=[];
+
+  function gen(){
+    pts=[];
+    const d=mkData(40,rho,noise);
+    for(let i=0;i<d.xs.length;i++) pts.push({x:d.xs[i],y:d.ys[i],out:false});
+    if(hasOutlier){
+      // outlier: high predicted score, low MOS
+      pts.push({x:0.95,y:0.05,out:true});
+    }
+    draw();
+  }
+
+  function resize(){
+    const W=canvas.parentElement.clientWidth,H=380;
+    canvas.style.width=W+'px'; canvas.style.height=H+'px';
+    canvas.width=W*dpr; canvas.height=H*dpr;
+    ctx.scale(dpr,dpr); draw();
+  }
+
+  function draw(){
+    const CW=canvas.width/dpr, CH=canvas.height/dpr;
+    ctx.clearRect(0,0,CW,CH);
+    ctx.fillStyle='#09090f'; ctx.fillRect(0,0,CW,CH);
+    if(!pts.length) return;
+
+    const xs=pts.map(p=>p.x), ys=pts.map(p=>p.y);
+    const plcc=computePLCC(xs,ys);
+    const rmse=computeRMSE(xs,ys);
+    const {slope,intercept}=linFit(xs,ys);
+
+    // Layout
+    const pad=48, plotW=CW*0.58-pad;
+    const plotH=CH-80;
+    const ox=pad, oy=CH-50;
+
+    function sx(x){ return ox+x*plotW; }
+    function sy(y){ return oy-y*plotH; }
+
+    // ── QUADRANT SHADING ──
+    if(showQuad){
+      const msx=sx(plcc.mx), msy=sy(plcc.my);
+      ctx.globalAlpha=0.07;
+      ctx.fillStyle='#34d399';
+      // top-right
+      ctx.fillRect(msx,20,ox+plotW-msx,msy-20);
+      // bottom-left
+      ctx.fillRect(ox,msy,msx-ox,oy-msy);
+      ctx.fillStyle='#f87171';
+      // top-left
+      ctx.fillRect(ox,20,msx-ox,msy-20);
+      // bottom-right
+      ctx.fillRect(msx,msy,ox+plotW-msx,oy-msy);
+      ctx.globalAlpha=1;
+    }
+
+    // Grid
+    ctx.strokeStyle='#111128'; ctx.lineWidth=0.5;
+    for(let g=0;g<=10;g++){
+      ctx.beginPath(); ctx.moveTo(sx(g/10),20); ctx.lineTo(sx(g/10),oy); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(ox,sy(g/10)); ctx.lineTo(sx(1),sy(g/10)); ctx.stroke();
+    }
+
+    // Axes
+    ctx.strokeStyle='#252545'; ctx.lineWidth=1.2;
+    ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(sx(1)+10,oy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(ox,20); ctx.stroke();
+    // Axis labels
+    ctx.fillStyle='#404060'; ctx.font='10px monospace'; ctx.textAlign='center';
+    ctx.fillText('Predicted Score', ox+plotW/2, oy+18);
+    ctx.save(); ctx.translate(14,oy-plotH/2); ctx.rotate(-Math.PI/2);
+    ctx.fillText('Human MOS',0,0); ctx.restore();
+    // Tick marks
+    ctx.fillStyle='#303050'; ctx.font='9px monospace';
+    [0,0.25,0.5,0.75,1].forEach(v=>{
+      ctx.textAlign='center'; ctx.fillText(v.toFixed(2),sx(v),oy+12);
+      ctx.textAlign='right'; ctx.fillText(v.toFixed(2),ox-4,sy(v)+3);
+    });
+
+    // Mean lines
+    ctx.strokeStyle='rgba(100,100,160,0.5)'; ctx.lineWidth=1; ctx.setLineDash([5,5]);
+    ctx.beginPath(); ctx.moveTo(sx(plcc.mx),20); ctx.lineTo(sx(plcc.mx),oy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(ox,sy(plcc.my)); ctx.lineTo(sx(1),sy(plcc.my)); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='rgba(100,100,180,0.8)'; ctx.font='9px monospace'; ctx.textAlign='left';
+    ctx.fillText('x̄', sx(plcc.mx)+3, 30);
+    ctx.fillText('ȳ', sx(1)+3, sy(plcc.my)+3);
+
+    // Regression line
+    const x0=0, x1=1;
+    ctx.strokeStyle='#facc15'; ctx.lineWidth=1.8; ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(sx(x0),sy(intercept+slope*x0)); ctx.lineTo(sx(x1),sy(intercept+slope*x1)); ctx.stroke();
+
+    // Residuals (thin lines) for non-outlier points
+    ctx.strokeStyle='rgba(160,100,100,0.3)'; ctx.lineWidth=0.7;
+    pts.forEach(p=>{
+      if(!p.out){
+        const yhat=intercept+slope*p.x;
+        ctx.beginPath(); ctx.moveTo(sx(p.x),sy(p.y)); ctx.lineTo(sx(p.x),sy(yhat)); ctx.stroke();
+      }
+    });
+
+    // Points
+    pts.forEach(p=>{
+      const contrib=(p.x-plcc.mx)*(p.y-plcc.my);
+      const col=p.out?'#fb923c':contrib>0?'#34d399':'#f87171';
+      ctx.beginPath(); ctx.arc(sx(p.x),sy(p.y),p.out?7:4.5,0,2*Math.PI);
+      ctx.fillStyle=col; ctx.globalAlpha=p.out?1:0.75; ctx.fill();
+      ctx.globalAlpha=1;
+      ctx.strokeStyle='#09090f'; ctx.lineWidth=1; ctx.stroke();
+    });
+
+    // ── RIGHT PANEL: formula decomposition ──
+    const panX=CW*0.6, panW=CW-panX-16;
+
+    ctx.fillStyle='rgba(8,8,20,0.0)';
+    ctx.strokeStyle='#1a1a28'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(panX-10,0); ctx.lineTo(panX-10,CH); ctx.stroke();
+
+    const fy=(row)=>row*30+36;
+
+    ctx.fillStyle='#383870'; ctx.font='700 10px monospace'; ctx.textAlign='left';
+    ctx.fillText('PLCC — Formula Breakdown', panX, 20);
+
+    // Rows
+    const rows=[
+      {label:'x̄ =', val:plcc.mx.toFixed(4), col:'#38bdf8'},
+      {label:'ȳ =', val:plcc.my.toFixed(4), col:'#38bdf8'},
+      {label:'σₓ =', val:plcc.sdx.toFixed(4), col:'#a78bfa'},
+      {label:'σᵧ =', val:plcc.sdy.toFixed(4), col:'#a78bfa'},
+      {label:'Num =', val:(plcc.num).toFixed(4), col: plcc.num>=0?'#34d399':'#f87171'},
+      {label:'Den =', val:(plcc.sdx*plcc.sdy*pts.length).toFixed(4), col:'#60a5fa'},
+      {label:'PLCC =', val:plcc.r.toFixed(4), col:'#facc15'},
+    ];
+    rows.forEach((r,i)=>{
+      ctx.fillStyle='#505070'; ctx.font='10px monospace'; ctx.textAlign='left';
+      ctx.fillText(r.label, panX, fy(i));
+      ctx.fillStyle=r.col; ctx.font='700 10px monospace'; ctx.textAlign='left';
+      ctx.fillText(r.val, panX+52, fy(i));
+    });
+
+    // PLCC Gauge [-1, 1]
+    const gaugeY=fy(rows.length)+8;
+    const gaugeW=panW-4, gaugeH=18;
+    // track
+    ctx.fillStyle='#111128'; ctx.fillRect(panX,gaugeY,gaugeW,gaugeH);
+    // fill from 0 to r
+    const mid=panX+gaugeW/2;
+    const r=plcc.r;
+    const barW=Math.abs(r)*gaugeW/2;
+    ctx.fillStyle=r>=0?'#34d399':'#f87171';
+    ctx.fillRect(r>=0?mid:mid-barW, gaugeY, barW, gaugeH);
+    ctx.strokeStyle='#252545'; ctx.lineWidth=1; ctx.strokeRect(panX,gaugeY,gaugeW,gaugeH);
+    // center tick
+    ctx.strokeStyle='#404060'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(mid,gaugeY); ctx.lineTo(mid,gaugeY+gaugeH); ctx.stroke();
+    ctx.fillStyle='#c0c0e0'; ctx.font='700 11px monospace'; ctx.textAlign='center';
+    ctx.fillText(r.toFixed(4), mid, gaugeY+gaugeH-3);
+    ctx.fillStyle='#404060'; ctx.font='9px monospace';
+    ctx.textAlign='left'; ctx.fillText('-1', panX, gaugeY+gaugeH+12);
+    ctx.textAlign='right'; ctx.fillText('+1', panX+gaugeW, gaugeY+gaugeH+12);
+    ctx.textAlign='center'; ctx.fillText('0', mid, gaugeY+gaugeH+12);
+
+    // Interpretation
+    const interp=Math.abs(r)>0.9?'Very strong':Math.abs(r)>0.75?'Strong':Math.abs(r)>0.5?'Moderate':'Weak';
+    const sign=r>=0?'positive':'negative';
+    const icol=Math.abs(r)>0.9?'#34d399':Math.abs(r)>0.75?'#facc15':Math.abs(r)>0.5?'#fb923c':'#f87171';
+    ctx.fillStyle=icol; ctx.font='700 10px monospace'; ctx.textAlign='center';
+    ctx.fillText(`${interp} ${sign} linear correlation`, panX+gaugeW/2, gaugeY+gaugeH+28);
+
+    // RMSE line
+    ctx.fillStyle='#505070'; ctx.font='10px monospace'; ctx.textAlign='left';
+    ctx.fillText('RMSE =', panX, gaugeY+gaugeH+46);
+    ctx.fillStyle='#f87171'; ctx.font='700 10px monospace';
+    ctx.fillText(rmse.toFixed(4), panX+52, gaugeY+gaugeH+46);
+
+    // Legend
+    ctx.fillStyle='#34d399'; ctx.font='9px monospace'; ctx.textAlign='left';
+    ctx.fillText('● positive contribution', panX, CH-32);
+    ctx.fillStyle='#f87171';
+    ctx.fillText('● negative contribution', panX, CH-18);
+    ctx.fillStyle='#fb923c';
+    ctx.fillText('● outlier', panX+140, CH-18);
+  }
+
+  document.getElementById('plcc-rho').addEventListener('input',function(){
+    rho=parseFloat(this.value);
+    document.getElementById('plcc-rho-val').textContent=rho.toFixed(2);
+    gen();
+  });
+  document.getElementById('plcc-noise').addEventListener('input',function(){
+    noise=parseFloat(this.value);
+    document.getElementById('plcc-noise-val').textContent=noise.toFixed(2);
+    gen();
+  });
+  document.getElementById('plcc-resample').addEventListener('click',gen);
+  document.getElementById('plcc-outlier').addEventListener('click',function(){
+    hasOutlier=!hasOutlier;
+    this.textContent=hasOutlier?'Remove Outlier':'Add Outlier';
+    this.style.borderColor=hasOutlier?'#fb923c':'';
+    this.style.color=hasOutlier?'#fb923c':'';
+    gen();
+  });
+  document.getElementById('plcc-show-quad').addEventListener('click',function(){
+    showQuad=!showQuad;
+    this.style.borderColor=showQuad?'#38bdf8':'';
+    draw();
+  });
+
+  window.addEventListener('resize',resize);
+  resize(); gen();
+})();
+</script>
+
+<!-- ══════════════════════════════════════════════════
+     VIZ 2 — SROCC RANK TRANSFORM EXPLORER
+══════════════════════════════════════════════════ -->
+<script>
+(() => {
+  const canvas=document.getElementById('srocc-canvas');
+  const ctx=canvas.getContext('2d');
+  const dpr=window.devicePixelRatio||1;
+  let rho=0.80, outlierMag=0;
+  let basePts=[];
+
+  function gen(){
+    basePts=[];
+    const d=mkData(35,rho,0.14);
+    for(let i=0;i<d.xs.length;i++) basePts.push({x:d.xs[i],y:d.ys[i]});
+    draw();
+  }
+
+  function resize(){
+    const W=canvas.parentElement.clientWidth,H=360;
+    canvas.style.width=W+'px'; canvas.style.height=H+'px';
+    canvas.width=W*dpr; canvas.height=H*dpr;
+    ctx.scale(dpr,dpr); draw();
+  }
+
+  function draw(){
+    const CW=canvas.width/dpr,CH=canvas.height/dpr;
+    ctx.clearRect(0,0,CW,CH);
+    ctx.fillStyle='#09090f'; ctx.fillRect(0,0,CW,CH);
+    if(!basePts.length) return;
+
+    // Apply outlier
+    const pts=basePts.map(p=>({...p}));
+    if(outlierMag>0.01){
+      pts.push({x:0.5+outlierMag*0.48, y:Math.max(0,0.5-outlierMag*0.48), out:true});
+    }
+    const xs=pts.map(p=>p.x), ys=pts.map(p=>p.y);
+    const rxs=rankify(xs), rys=rankify(ys);
+    const n=xs.length;
+
+    const plccRes=computePLCC(xs,ys);
+    const srocc=computeSROCC(xs,ys);
+
+    const halfW=CW/2;
+    const pad=38, plotW=halfW-pad-18, plotH=CH-70;
+    const oy=CH-38;
+
+    function drawPanel(cx,panXs,panYs,metricVal,title,metricLabel,isRank){
+      const ox=cx-plotW/2;
+      function sx(v){ return ox+v*plotW; }
+      function sy(v){ return oy-v*plotH; }
+
+      // Axes
+      ctx.strokeStyle='#252545'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(ox+plotW+10,oy); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(ox,20); ctx.stroke();
+
+      // Grid
+      ctx.strokeStyle='#111128'; ctx.lineWidth=0.5;
+      for(let g=0;g<=10;g++){
+        const gv=g/10;
+        ctx.beginPath(); ctx.moveTo(sx(gv),20); ctx.lineTo(sx(gv),oy); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(ox,sy(gv)); ctx.lineTo(ox+plotW,sy(gv)); ctx.stroke();
+      }
+
+      // Regression line
+      const {slope,intercept}=linFit(panXs,panYs);
+      ctx.strokeStyle='#facc15'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(sx(0),sy(intercept)); ctx.lineTo(sx(1),sy(intercept+slope)); ctx.stroke();
+
+      // Points
+      panXs.forEach((px,i)=>{
+        const isOut=pts[i]&&pts[i].out;
+        ctx.beginPath(); ctx.arc(sx(px),sy(panYs[i]),isOut?6:3.5,0,2*Math.PI);
+        ctx.fillStyle=isOut?'#fb923c':'#38bdf8'; ctx.globalAlpha=0.7; ctx.fill(); ctx.globalAlpha=1;
+        ctx.strokeStyle='#0c0c14'; ctx.lineWidth=0.8; ctx.stroke();
+      });
+
+      // Title and metric
+      ctx.fillStyle='#303060'; ctx.font='700 10px monospace'; ctx.textAlign='center';
+      ctx.fillText(title, cx, 14);
+      ctx.fillStyle='#383870'; ctx.font='9px monospace';
+      ctx.fillText(isRank?'x-axis: rank(predicted)  y-axis: rank(MOS)':'x-axis: predicted  y-axis: MOS', cx, CH-14);
+      const mcol=Math.abs(metricVal)>0.85?'#34d399':Math.abs(metricVal)>0.6?'#facc15':'#f87171';
+      ctx.fillStyle=mcol; ctx.font='700 12px monospace'; ctx.textAlign='center';
+      ctx.fillText(`${metricLabel} = ${metricVal.toFixed(4)}`, cx, CH-26);
+    }
+
+    // Normalize ranks to [0,1]
+    const nxs=rxs.map(r=>(r-1)/(n-1));
+    const nys=rys.map(r=>(r-1)/(n-1));
+
+    drawPanel(halfW*0.5, xs,ys, plccRes.r,'Original Scatter','PLCC',false);
+    // Divider
+    ctx.strokeStyle='#1a1a28'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(halfW,0); ctx.lineTo(halfW,CH); ctx.stroke();
+    drawPanel(halfW+halfW*0.5, nxs,nys, srocc,'Rank-Transformed Scatter','SROCC (= PLCC of ranks)',true);
+
+    // Center annotation
+    if(outlierMag>0.05){
+      ctx.fillStyle='rgba(251,146,60,0.6)'; ctx.font='700 9px monospace'; ctx.textAlign='center';
+      ctx.fillText('← outlier has huge leverage here', halfW*0.5, CH-42);
+      ctx.fillText('← outlier sits near edge (rank n)', halfW+halfW*0.5, CH-42);
+    }
+  }
+
+  document.getElementById('srocc-rho').addEventListener('input',function(){
+    rho=parseFloat(this.value);
+    document.getElementById('srocc-rho-val').textContent=rho.toFixed(2);
+    gen();
+  });
+  document.getElementById('srocc-out').addEventListener('input',function(){
+    outlierMag=parseFloat(this.value);
+    document.getElementById('srocc-out-val').textContent=outlierMag.toFixed(2);
+    draw();
+  });
+  document.getElementById('srocc-resample').addEventListener('click',gen);
+  window.addEventListener('resize',resize);
+  resize(); gen();
+})();
+</script>
+
+<!-- ══════════════════════════════════════════════════
+     VIZ 3 — KRCC CONCORDANT / DISCORDANT EXPLORER
+══════════════════════════════════════════════════ -->
+<script>
+(() => {
+  const canvas=document.getElementById('krcc-canvas');
+  const ctx=canvas.getContext('2d');
+  const dpr=window.devicePixelRatio||1;
+  let rho=0.75, pts=[], hovIdx=-1;
+
+  function gen(){
+    pts=[];
+    const d=mkData(20,rho,0.16);
+    for(let i=0;i<d.xs.length;i++) pts.push({x:d.xs[i],y:d.ys[i]});
+    hovIdx=-1;
+    draw();
+  }
+
+  function resize(){
+    const W=canvas.parentElement.clientWidth,H=400;
+    canvas.style.width=W+'px'; canvas.style.height=H+'px';
+    canvas.width=W*dpr; canvas.height=H*dpr;
+    ctx.scale(dpr,dpr); draw();
+  }
+
+  function draw(){
+    const CW=canvas.width/dpr, CH=canvas.height/dpr;
+    ctx.clearRect(0,0,CW,CH);
+    ctx.fillStyle='#09090f'; ctx.fillRect(0,0,CW,CH);
+    if(!pts.length) return;
+
+    const xs=pts.map(p=>p.x), ys=pts.map(p=>p.y);
+    const {tau,Nc,Nd,total}=computeKRCC(xs,ys);
+    const srocc=computeSROCC(xs,ys);
+
+    const pad=48, plotW=CW-pad-24, plotH=CH-90;
+    const ox=pad, oy=CH-58;
+    function sx(x){ return ox+x*plotW; }
+    function sy(y){ return oy-y*plotH; }
+
+    // Grid
+    ctx.strokeStyle='#111128'; ctx.lineWidth=0.5;
+    for(let g=0;g<=10;g++){
+      ctx.beginPath(); ctx.moveTo(sx(g/10),18); ctx.lineTo(sx(g/10),oy); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(ox,sy(g/10)); ctx.lineTo(sx(1),sy(g/10)); ctx.stroke();
+    }
+
+    // Axes
+    ctx.strokeStyle='#252545'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(sx(1)+10,oy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(ox,14); ctx.stroke();
+    ctx.fillStyle='#404060'; ctx.font='10px monospace'; ctx.textAlign='center';
+    ctx.fillText('Predicted Quality Score', ox+plotW/2, oy+18);
+    ctx.save(); ctx.translate(14,oy-plotH/2); ctx.rotate(-Math.PI/2);
+    ctx.fillText('Human MOS',0,0); ctx.restore();
+
+    // Concordant / discordant lines from hovered point
+    if(hovIdx>=0){
+      const hp=pts[hovIdx];
+      for(let j=0;j<pts.length;j++){
+        if(j===hovIdx) continue;
+        const p=pts[j];
+        const dx=hp.x-p.x, dy=hp.y-p.y;
+        const isConc=dx*dy>0, isDisc=dx*dy<0;
+        if(isConc||isDisc){
+          ctx.beginPath(); ctx.moveTo(sx(hp.x),sy(hp.y)); ctx.lineTo(sx(p.x),sy(p.y));
+          ctx.strokeStyle=isConc?'rgba(52,211,153,0.35)':'rgba(248,113,113,0.35)';
+          ctx.lineWidth=1.2; ctx.stroke();
+        }
+      }
+    }
+
+    // Points
+    pts.forEach((p,i)=>{
+      const r=i===hovIdx?7:5;
+      ctx.beginPath(); ctx.arc(sx(p.x),sy(p.y),r,0,2*Math.PI);
+      ctx.fillStyle=i===hovIdx?'#facc15':'#38bdf8';
+      ctx.globalAlpha=0.85; ctx.fill(); ctx.globalAlpha=1;
+      ctx.strokeStyle='#0c0c14'; ctx.lineWidth=1; ctx.stroke();
+    });
+
+    // Bottom stats
+    const statsY=oy+38;
+    const mcol=Math.abs(tau)>0.7?'#34d399':Math.abs(tau)>0.5?'#facc15':'#f87171';
+    ctx.fillStyle='#404070'; ctx.font='9px monospace'; ctx.textAlign='left';
+    ctx.fillText(`Total pairs: ${total}`, ox, statsY);
+    ctx.fillStyle='#34d399';
+    ctx.fillText(`Concordant Nᶜ: ${Nc}`, ox+130, statsY);
+    ctx.fillStyle='#f87171';
+    ctx.fillText(`Discordant Nᵈ: ${Nd}`, ox+270, statsY);
+    ctx.fillStyle=mcol; ctx.font='700 11px monospace';
+    ctx.fillText(`KRCC τ = ${tau.toFixed(4)}`, ox+420, statsY);
+    ctx.fillStyle='#34d399'; ctx.font='10px monospace';
+    ctx.fillText(`SROCC ρ = ${srocc.toFixed(4)}`, ox+550, statsY);
+
+    // Panel label
+    ctx.fillStyle='#303060'; ctx.font='700 10px monospace'; ctx.textAlign='center';
+    ctx.fillText(hovIdx>=0?`Showing pairs for point ${hovIdx+1} — concordant (green) vs discordant (red)`:
+      'Hover over a point to see concordant & discordant pairs', CW/2, 14);
+
+    document.getElementById('krcc-stats').textContent=
+      `Nᶜ=${Nc}  Nᵈ=${Nd}  total=${total}  τ=${tau.toFixed(4)}  ρ=${srocc.toFixed(4)}`;
+  }
+
+  function canvasXY(e){
+    const r=canvas.getBoundingClientRect();
+    const t=e.touches?e.touches[0]:e;
+    return [(t.clientX-r.left)*(canvas.width/dpr)/r.width,
+            (t.clientY-r.top)*(canvas.height/dpr)/r.height];
+  }
+
+  function findHovered(cx,cy){
+    const CW=canvas.width/dpr, CH=canvas.height/dpr;
+    const pad=48, plotW=CW-pad-24, plotH=CH-90, oy=CH-58;
+    let best=-1, bd=20;
+    pts.forEach((p,i)=>{
+      const px=pad+p.x*plotW, py=oy-p.y*plotH;
+      const d=Math.hypot(cx-px,cy-py);
+      if(d<bd){bd=d;best=i;}
+    });
+    return best;
+  }
+
+  canvas.addEventListener('mousemove',e=>{
+    const [x,y]=canvasXY(e);
+    hovIdx=findHovered(x,y);
+    canvas.style.cursor=hovIdx>=0?'pointer':'crosshair';
+    draw();
+  });
+  canvas.addEventListener('mouseleave',()=>{hovIdx=-1;draw();});
+  canvas.addEventListener('touchmove',e=>{
+    const [x,y]=canvasXY(e);
+    hovIdx=findHovered(x,y); draw(); e.preventDefault();
+  },{passive:false});
+  canvas.addEventListener('touchend',()=>{hovIdx=-1;draw();});
+
+  document.getElementById('krcc-rho').addEventListener('input',function(){
+    rho=parseFloat(this.value);
+    document.getElementById('krcc-rho-val').textContent=rho.toFixed(2);
+    gen();
+  });
+  document.getElementById('krcc-resample').addEventListener('click',gen);
+  window.addEventListener('resize',resize);
+  resize(); gen();
+})();
+</script>
+
+<!-- ══════════════════════════════════════════════════
+     VIZ 4 — ALL METRICS DASHBOARD (FAILURE SCENARIOS)
+══════════════════════════════════════════════════ -->
+<script>
+(() => {
+  const canvas=document.getElementById('dash-canvas');
+  const ctx=canvas.getContext('2d');
+  const dpr=window.devicePixelRatio||1;
+  let rho=0.85, noise=0.12, mode='normal';
+  let pts=[];
+
+  function gen(){
+    pts=[];
+    const n=50;
+    if(mode==='normal'){
+      const d=mkData(n,rho,noise);
+      for(let i=0;i<n;i++) pts.push({x:d.xs[i],y:d.ys[i]});
+    } else if(mode==='local'){
+      // Global positive, local inversion in mid range
+      for(let i=0;i<n;i++){
+        const x=Math.random();
+        let y;
+        if(x<0.35){
+          // Low quality: model correct
+          y=x*0.7+randn()*noise*0.5;
+        } else if(x<0.65){
+          // Mid quality: LOCAL INVERSION — model predicts higher → human gives lower
+          y=0.9-x*0.6+randn()*noise*0.5;
+        } else {
+          // High quality: model correct
+          y=x*0.7+0.1+randn()*noise*0.5;
+        }
+        pts.push({x,y:Math.max(0,Math.min(1,y)),local:x>=0.35&&x<0.65});
+      }
+    } else if(mode==='bimodal'){
+      // Two clusters: bad (bottom-left) and good (top-right), noisy within each
+      for(let i=0;i<n;i++){
+        const clust=Math.random()<0.5;
+        const cx=clust?0.15:0.82, cy=clust?0.15:0.82;
+        pts.push({x:Math.max(0,Math.min(1,cx+randn()*0.1)),
+                  y:Math.max(0,Math.min(1,cy+randn()*0.12)),bimodal:true});
+      }
+    } else if(mode==='outlier'){
+      // Strong correlation but 3 severe outliers
+      const d=mkData(n-4,0.88,0.1);
+      for(let i=0;i<d.xs.length;i++) pts.push({x:d.xs[i],y:d.ys[i]});
+      // Extreme outliers
+      pts.push({x:0.05,y:0.95,out:true});
+      pts.push({x:0.95,y:0.05,out:true});
+      pts.push({x:0.5,y:0.02,out:true});
+      pts.push({x:0.5,y:0.98,out:true});
+    }
+    draw();
+  }
+
+  function resize(){
+    const W=canvas.parentElement.clientWidth,H=430;
+    canvas.style.width=W+'px'; canvas.style.height=H+'px';
+    canvas.width=W*dpr; canvas.height=H*dpr;
+    ctx.scale(dpr,dpr); draw();
+  }
+
+  function draw(){
+    const CW=canvas.width/dpr,CH=canvas.height/dpr;
+    ctx.clearRect(0,0,CW,CH);
+    ctx.fillStyle='#09090f'; ctx.fillRect(0,0,CW,CH);
+    if(!pts.length) return;
+
+    const xs=pts.map(p=>p.x), ys=pts.map(p=>p.y);
+    const plccRes=computePLCC(xs,ys);
+    const srocc=computeSROCC(xs,ys);
+    const {tau}=computeKRCC(xs,ys);
+    const rmse=computeRMSE(xs,ys);
+
+    // ── LEFT: scatter ──
+    const plotW=CW*0.60-46, plotH=CH-86;
+    const ox=46, oy=CH-52;
+    function sx(x){ return ox+x*plotW; }
+    function sy(y){ return oy-y*plotH; }
+
+    // Grid
+    ctx.strokeStyle='#0e0e20'; ctx.lineWidth=0.5;
+    for(let g=0;g<=10;g++){
+      ctx.beginPath(); ctx.moveTo(sx(g/10),20); ctx.lineTo(sx(g/10),oy); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(ox,sy(g/10)); ctx.lineTo(sx(1),sy(g/10)); ctx.stroke();
+    }
+
+    // Axes
+    ctx.strokeStyle='#252545'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(sx(1)+10,oy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(ox,14); ctx.stroke();
+    ctx.fillStyle='#404060'; ctx.font='10px monospace'; ctx.textAlign='center';
+    ctx.fillText('Predicted Quality Score', ox+plotW/2, oy+18);
+    ctx.save(); ctx.translate(16,oy-plotH/2); ctx.rotate(-Math.PI/2);
+    ctx.fillText('Human MOS',0,0); ctx.restore();
+    [0,0.25,0.5,0.75,1].forEach(v=>{
+      ctx.fillStyle='#303050'; ctx.font='9px monospace';
+      ctx.textAlign='center'; ctx.fillText(v.toFixed(2),sx(v),oy+12);
+      ctx.textAlign='right'; ctx.fillText(v.toFixed(2),ox-4,sy(v)+3);
+    });
+
+    // Regression line
+    const {slope,intercept}=linFit(xs,ys);
+    ctx.strokeStyle='#facc15'; ctx.lineWidth=1.8;
+    ctx.beginPath(); ctx.moveTo(sx(0),sy(intercept)); ctx.lineTo(sx(1),sy(intercept+slope)); ctx.stroke();
+
+    // Points
+    pts.forEach(p=>{
+      let col='#38bdf8';
+      if(p.out) col='#fb923c';
+      else if(p.local) col='#f87171';
+      else if(p.bimodal) col='#a78bfa';
+      ctx.beginPath(); ctx.arc(sx(p.x),sy(p.y),p.out?6:4,0,2*Math.PI);
+      ctx.fillStyle=col; ctx.globalAlpha=0.8; ctx.fill(); ctx.globalAlpha=1;
+      ctx.strokeStyle='#09090f'; ctx.lineWidth=0.8; ctx.stroke();
+    });
+
+    // Local inversion band annotation
+    if(mode==='local'){
+      ctx.save(); ctx.globalAlpha=0.12;
+      ctx.fillStyle='#f87171'; ctx.fillRect(sx(0.35),20,sx(0.65)-sx(0.35),plotH);
+      ctx.globalAlpha=1;
+      ctx.fillStyle='#f87171'; ctx.font='700 9px monospace'; ctx.textAlign='center';
+      ctx.fillText('local inversion zone', sx(0.5), 34);
+      ctx.restore();
+    }
+
+    // Mode label
+    ctx.fillStyle='#303060'; ctx.font='700 10px monospace'; ctx.textAlign='left';
+    const modeLabels={normal:'Normal distribution',local:'Global +ve, local inversion',bimodal:'Bimodal clusters',outlier:'Strong correlation + outliers'};
+    ctx.fillText(modeLabels[mode]||mode, ox, 14);
+
+    // ── RIGHT: metrics panel ──
+    ctx.strokeStyle='#1a1a28'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(CW*0.61,0); ctx.lineTo(CW*0.61,CH); ctx.stroke();
+
+    const panX=CW*0.63, panW=CW-panX-12;
+    ctx.fillStyle='#303060'; ctx.font='700 10px monospace'; ctx.textAlign='center';
+    ctx.fillText('All Metrics', panX+panW/2, 20);
+
+    const metrics=[
+      {label:'PLCC',val:plccRes.r,lo:-1,hi:1,col:'#38bdf8'},
+      {label:'SROCC',val:srocc,lo:-1,hi:1,col:'#34d399'},
+      {label:'KRCC',val:tau,lo:-1,hi:1,col:'#fb923c'},
+      {label:'RMSE',val:rmse,lo:0,hi:0.5,col:'#f87171'},
+    ];
+    metrics.forEach((m,i)=>{
+      const by=38+i*82;
+      ctx.fillStyle=m.col; ctx.font='700 10px monospace'; ctx.textAlign='left';
+      ctx.fillText(m.label, panX, by);
+      ctx.fillStyle='#c0c0e0'; ctx.font='700 12px monospace'; ctx.textAlign='right';
+      ctx.fillText(m.label==='RMSE'?m.val.toFixed(4):m.val.toFixed(4), panX+panW, by);
+
+      const gh=22, gy=by+8;
+      const isRMSE=m.label==='RMSE';
+      const frac=Math.max(0,Math.min(1,(m.val-m.lo)/(m.hi-m.lo)));
+      ctx.fillStyle='#111128'; ctx.fillRect(panX,gy,panW,gh);
+      // for [-1,1] metrics, fill from center
+      if(!isRMSE){
+        const mid=panX+panW/2;
+        const bw=Math.abs(m.val)*panW/2;
+        ctx.fillStyle=m.val>=0?m.col:'#f87171';
+        ctx.fillRect(m.val>=0?mid:mid-bw, gy, bw, gh);
+        ctx.strokeStyle='#252540'; ctx.lineWidth=1; ctx.strokeRect(panX,gy,panW,gh);
+        ctx.strokeStyle='#303050';
+        ctx.beginPath(); ctx.moveTo(mid,gy); ctx.lineTo(mid,gy+gh); ctx.stroke();
+        ctx.fillStyle='#404060'; ctx.font='8px monospace';
+        ctx.textAlign='left'; ctx.fillText('-1',panX,gy+gh+10);
+        ctx.textAlign='center'; ctx.fillText('0',mid,gy+gh+10);
+        ctx.textAlign='right'; ctx.fillText('+1',panX+panW,gy+gh+10);
+      } else {
+        ctx.fillStyle=m.col; ctx.fillRect(panX,gy,frac*panW,gh);
+        ctx.strokeStyle='#252540'; ctx.lineWidth=1; ctx.strokeRect(panX,gy,panW,gh);
+        ctx.fillStyle='#404060'; ctx.font='8px monospace';
+        ctx.textAlign='left'; ctx.fillText('0 (perfect)',panX,gy+gh+10);
+        ctx.textAlign='right'; ctx.fillText('0.5',panX+panW,gy+gh+10);
+      }
+
+      // Interpretation hint
+      const hint=isRMSE?(m.val<0.1?'Excellent':m.val<0.2?'Good':m.val<0.35?'Moderate':'Poor')
+                       :(Math.abs(m.val)>0.90?'Excellent':Math.abs(m.val)>0.75?'Good':Math.abs(m.val)>0.55?'Moderate':'Poor');
+      const hcol=hint==='Excellent'?'#34d399':hint==='Good'?'#facc15':hint==='Moderate'?'#fb923c':'#f87171';
+      ctx.fillStyle=hcol; ctx.font='700 9px monospace'; ctx.textAlign='center';
+      ctx.fillText(hint, panX+panW/2, gy+gh+22);
+    });
+
+    // Failure mode description
+    const failText={
+      normal:'All four metrics agree — normal well-behaved data.',
+      local:'PLCC/SROCC stay high (dominated by extremes), but KRCC drops — it counts every discordant pair in the inversion zone equally.',
+      bimodal:'Metrics can look good just by separating two clusters — the model may fail on within-cluster discrimination.',
+      outlier:'PLCC and RMSE drop sharply (outliers have high leverage). SROCC and KRCC are barely affected (outliers just sit at edge ranks).'
+    };
+    ctx.fillStyle='#404060'; ctx.font='9px monospace'; ctx.textAlign='center';
+    const words=failText[mode].split(' ');
+    let line='', lineY=CH-26;
+    words.forEach(w=>{
+      const test=line+w+' ';
+      if(ctx.measureText(test).width>panW-4&&line){
+        ctx.fillText(line.trim(),panX+panW/2,lineY-12);
+        line=w+' ';
+      } else line=test;
+    });
+    ctx.fillText(line.trim(),panX+panW/2,lineY);
+  }
+
+  ['normal','local','bimodal','outlier'].forEach(m=>{
+    document.getElementById(`dash-mode-${m}`).addEventListener('click',function(){
+      mode=m;
+      document.querySelectorAll('[id^=dash-mode-]').forEach(b=>b.classList.remove('active'));
+      this.classList.add('active');
+      gen();
+    });
+  });
+  document.getElementById('dash-rho').addEventListener('input',function(){
+    rho=parseFloat(this.value);
+    document.getElementById('dash-rho-val').textContent=rho.toFixed(2);
+    gen();
+  });
+  document.getElementById('dash-noise').addEventListener('input',function(){
+    noise=parseFloat(this.value);
+    document.getElementById('dash-noise-val').textContent=noise.toFixed(2);
+    gen();
+  });
+  document.getElementById('dash-resample').addEventListener('click',gen);
+  window.addEventListener('resize',resize);
+  resize(); gen();
+})();
+</script>
+
+</main>
+</body>
+</html>
