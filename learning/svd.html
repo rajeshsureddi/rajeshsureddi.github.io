@@ -195,6 +195,8 @@ $$\underbrace{A}_{m\times n} = \underbrace{U}_{m\times m}\;\underbrace{\Sigma}_{
     <button class="tab-btn" id="geo-play" style="margin-left:auto;background:#0d1a2e;border-color:#38bdf8;color:#38bdf8;">▶ Play</button>
     <span class="step-label" id="geo-step-label" style="text-align:right;font-size:.75rem;color:#6060a0;"></span>
   </div>
+  <!-- Per-step Q&A explanation panel — filled by JS -->
+  <div id="geo-explain" style="padding:13px 18px 15px;background:#07070e;border-top:1px solid #14142a;"></div>
   <div class="controls">
     <div class="ctrl-grid">
       <div class="ctrl-group"><label>a <span class="val" id="va">1.0</span></label><input type="range" id="geo-a" min="-2.5" max="2.5" step="0.05" value="1.0"></div>
@@ -574,6 +576,7 @@ print(f"Recovery error: {np.linalg.norm(A_clean - A_true)/np.linalg.norm(A_true)
   let isPlaying = false;
   let dragPt = [0.6, 0.3];
   let isDragging = false;
+  let lastExplainStep = -1;
 
   function resize() {
     const W = canvas.parentElement.clientWidth;
@@ -742,6 +745,87 @@ print(f"Recovery error: {np.linalg.norm(A_clean - A_true)/np.linalg.norm(A_true)
       `Ellipse semi-axes: σ₁=${s1.toFixed(3)} along u₁ (red arrow), σ₂=${s2.toFixed(3)} along u₂ (blue arrow). These are the only two quantities that stretch.`,
       'Story: Vᵀ rotated v₁,v₂ onto the axes → Σ stretched each axis → U rotated to final orientation. Axes never moved.'
     ];
+  }
+
+  function updateExplain(t) {
+    const step = t < 0.08 ? 0 : t <= 1.12 ? 1 : t <= 2.12 ? 2 : 3;
+    if (step === lastExplainStep) return;
+    lastExplainStep = step;
+    const el = document.getElementById('geo-explain');
+    if (!el) return;
+
+    const R  = (s,c='#38bdf8') => `<span style="color:${c};font-weight:700;">${s}</span>`;
+    const Q  = s => `<p style="margin:0 0 4px;"><span style="color:#c8c8e0;font-weight:600;">${s}</span></p>`;
+    const Ans= s => `<p style="margin:0 0 9px;color:#6a6a90;">${s}</p>`;
+    const li = s => `<li style="margin-bottom:4px;color:#6a6a90;">${s}</li>`;
+    const ul = (...items) => `<ul style="padding-left:1.15rem;margin:0;">${items.map(li).join('')}</ul>`;
+    const hd = (s,c) => `<div style="color:${c};font-weight:700;font-size:.68rem;text-transform:uppercase;letter-spacing:.09em;margin-bottom:7px;">${s}</div>`;
+
+    const panels = [
+      /* Step 0 — Source */
+      `<div style="font-size:.78rem;">
+        ${hd('Input Space','#38bdf8')}
+        ${ul(
+          `${R('Blue circle','#38bdf8')} = the set of all unit input vectors (‖v‖=1) — this is the "input space"`,
+          `${R('v₁ (red)','#f87171')}, ${R('v₂ (blue)','#60a5fa')} = right singular vectors of A, computed from eigenvectors of AᵀA`,
+          `${R('σ₁, σ₂','#facc15')} = singular values of A = √(eigenvalues of AᵀA) — they describe how much A stretches`,
+          `v₁ and v₂ are unit vectors, so they ${R('lie ON the circle','#c8c8e0')} — they are two special highlighted points on it`,
+          `${R('Yellow ●','#facc15')} = draggable input vector p — drag it on the left panel`
+        )}
+      </div>`,
+
+      /* Step 1 — Vᵀ : the main Q&A */
+      `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 26px;font-size:.78rem;">
+        <div>
+          ${hd('Q &amp; A — Understanding Vᵀ','#38bdf8')}
+          ${Q('Q: Are v₁, v₂ points on the circle?')}
+          ${Ans(`${R('Yes.','#c8c8e0')} v₁ and v₂ are unit vectors (‖v₁‖=‖v₂‖=1), so they lie exactly ON the blue circle. They are not random — they are the two ${R('special input directions','#c8c8e0')} that A maps without rotation (only scaling), computed from AᵀA.`)}
+          ${Q('Q: What is the matrix Vᵀ?')}
+          ${Ans(`Vᵀ is the matrix whose ${R('rows are v₁ and v₂','#c8c8e0')}:<br><code style="color:#c084fc;font-size:.76rem;">&nbsp;row 1 → [v₁ₓ, v₁ᵧ]<br>&nbsp;row 2 → [v₂ₓ, v₂ᵧ]</code><br>It is an orthogonal rotation matrix (VᵀV = I).`)}
+          ${Q('Q: What is Vᵀ · v₁ ?')}
+          ${Ans(`Vᵀ·v₁ = [v₁·v₁ , v₂·v₁] = [${R('1','#34d399')}, ${R('0','#f87171')}] = ${R('x̂','#38bdf8')}<br><span style="color:#505078;">v₁·v₁=1 (unit), v₂·v₁=0 (orthogonal) → lands on x-axis!</span>`)}
+          ${Q('Q: What is Vᵀ · v₂ ?')}
+          ${Ans(`Vᵀ·v₂ = [v₁·v₂ , v₂·v₂] = [${R('0','#f87171')}, ${R('1','#34d399')}] = ${R('ŷ','#38bdf8')}<br><span style="color:#505078;">v₁·v₂=0 (orthogonal), v₂·v₂=1 (unit) → lands on y-axis!</span>`)}
+        </div>
+        <div>
+          ${hd('What Step 1 Actually Does','#facc15')}
+          ${ul(
+            `Vᵀ ${R('rotates every input vector','#c8c8e0')} — x̂, ŷ coordinate axes stay ${R('fixed','#34d399')} in the right panel`,
+            `v₁ ${R('(red)','#f87171')} rotates until it lands exactly on ${R('x̂ →','#38bdf8')} (watch in right panel)`,
+            `v₂ ${R('(blue)','#60a5fa')} rotates until it lands exactly on ${R('ŷ ↑','#38bdf8')}`,
+            `Every point on the circle also rotates — including p → Vᵀp`,
+            `${R('Circle stays a circle','#c8c8e0')} — rotations preserve shape and all lengths`,
+            `Goal: once v₁=x̂ and v₂=ŷ, step 2 (Σ) can scale each direction ${R('independently','#c8c8e0')}`
+          )}
+        </div>
+      </div>`,
+
+      /* Step 2 — Σ·Vᵀ */
+      `<div style="font-size:.78rem;">
+        ${hd('What Step 2 Does — the Only Stretching','#facc15')}
+        ${ul(
+          `After Vᵀ: v₁ is now ${R('x̂','#38bdf8')}, v₂ is now ${R('ŷ','#38bdf8')} — they sit exactly on the coordinate axes`,
+          `Σ = diag(σ₁, σ₂) scales the ${R('x-direction by σ₁','#a78bfa')} and ${R('y-direction by σ₂','#34d399')} — no off-diagonal mixing`,
+          `This clean scaling works ${R('only because Vᵀ aligned v₁,v₂ with the axes first','#c8c8e0')}`,
+          `${R('Circle → axis-aligned ellipse','#c8c8e0')}: horizontal semi-axis = σ₁, vertical semi-axis = σ₂ (bracket markers show this)`,
+          `This is the ${R('only step that changes shape/size','#f87171')} — steps 1 and 3 are pure rotations with no stretch`
+        )}
+      </div>`,
+
+      /* Step 3 / Complete */
+      `<div style="font-size:.78rem;">
+        ${hd('What Step 3 Does + Full Summary','#a78bfa')}
+        ${ul(
+          `U rotates the axis-aligned ellipse to its final orientation — ${R('semi-axes σ₁, σ₂ unchanged','#c8c8e0')}`,
+          `The ellipse axes tip along ${R('u₁','#f87171')} and ${R('u₂','#60a5fa')} (left singular vectors of A)`,
+          `p arrives at its final position ${R('Ap = U·Σ·Vᵀ·p','#c8c8e0')}`,
+          `Full story: ${R('Vᵀ','#f87171')} rotated v₁,v₂ onto axes → ${R('Σ','#facc15')} scaled each axis → ${R('U','#60a5fa')} rotated to final orientation`,
+          `The coordinate axes ${R('never moved','#c8c8e0')} throughout — all motion was in the vectors and the curve`
+        )}
+      </div>`
+    ];
+
+    el.innerHTML = panels[Math.min(step, panels.length-1)];
   }
 
   function updateMatDisplay(sv) {
@@ -933,6 +1017,7 @@ print(f"Recovery error: {np.linalg.norm(A_clean - A_true)/np.linalg.norm(A_true)
     updateMatDisplay(sv);
     document.getElementById('geo-step-label').textContent =
       `σ₁=${sv.s1.toFixed(3)}  σ₂=${sv.s2.toFixed(3)}  |det A|=${Math.abs(sv.s1*sv.s2).toFixed(3)}`;
+    updateExplain(animT);
   }
 
   // ── Drag handling ──
