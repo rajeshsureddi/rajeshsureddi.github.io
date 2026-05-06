@@ -812,16 +812,34 @@ print(f"Recovery error: {np.linalg.norm(A_clean - A_true)/np.linalg.norm(A_true)
         )}
       </div>`,
 
-      /* Step 3 / Complete */
-      `<div style="font-size:.78rem;">
-        ${hd('What Step 3 Does + Full Summary','#a78bfa')}
-        ${ul(
-          `U rotates the axis-aligned ellipse to its final orientation — ${R('semi-axes σ₁, σ₂ unchanged','#c8c8e0')}`,
-          `The ellipse axes tip along ${R('u₁','#f87171')} and ${R('u₂','#60a5fa')} (left singular vectors of A)`,
-          `p arrives at its final position ${R('Ap = U·Σ·Vᵀ·p','#c8c8e0')}`,
-          `Full story: ${R('Vᵀ','#f87171')} rotated v₁,v₂ onto axes → ${R('Σ','#facc15')} scaled each axis → ${R('U','#60a5fa')} rotated to final orientation`,
-          `The coordinate axes ${R('never moved','#c8c8e0')} throughout — all motion was in the vectors and the curve`
-        )}
+      /* Step 3 / Complete — rich intuition on U */
+      `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 26px;font-size:.78rem;">
+        <div>
+          ${hd('Q &amp; A — Understanding U','#a78bfa')}
+          ${Q('Q: Is U also a rotation (like Vᵀ)?')}
+          ${Ans(`${R('Yes.','#c8c8e0')} U is an orthogonal matrix (UᵀU=I). Its columns ${R('u₁, u₂','#c8c8e0')} are unit vectors that are mutually perpendicular. Orthogonal matrices can only ${R('rotate or reflect','#c8c8e0')} — they never stretch.`)}
+          ${Q('Q: What exactly does U rotate?')}
+          ${Ans(`After Σ·Vᵀ the ellipse is axis-aligned — semi-axis σ₁ along ${R('x̂','#38bdf8')}, σ₂ along ${R('ŷ','#38bdf8')}. U rotates this so that ${R('x̂ → u₁','#f87171')} and ${R('ŷ → u₂','#60a5fa')}. The shape is unchanged — only the orientation tips to its final direction.`)}
+          ${Q('Q: What are u₁ and u₂?')}
+          ${Ans(`${R('u₁ = A·v₁ / σ₁','#c8c8e0')} &nbsp; ${R('u₂ = A·v₂ / σ₂','#c8c8e0')}<br>They are where the input directions v₁,v₂ end up after the full transform A, normalised to unit length. They are the ${R('left singular vectors','#c8c8e0')} of A — eigenvectors of AAᵀ.`)}
+          ${Q('Q: Why doesn\'t U stretch the ellipse?')}
+          ${Ans(`All columns of U are unit vectors, so U maps the unit circle to itself. It rotates direction but never changes length. Semi-axes σ₁, σ₂ come entirely from Σ and are ${R('untouched by U','#c8c8e0')}.`)}
+        </div>
+        <div>
+          ${hd('Intuition: U as the "Output Rotation"','#facc15')}
+          ${ul(
+            `${R('Vᵀ','#f87171')} rotates in ${R('input space','#f87171')}: aligns v₁,v₂ with standard axes before scaling`,
+            `${R('U','#60a5fa')} rotates in ${R('output space','#60a5fa')}: tilts the axes from standard (x̂,ŷ) to the final directions u₁,u₂`,
+            `They are mirrors of each other — one undoes the input frame, the other sets the output frame`,
+            `Between them, A looks purely diagonal: ${R('A·v₁ = σ₁·u₁','#c8c8e0')}, ${R('A·v₂ = σ₂·u₂','#c8c8e0')}`,
+            `Think of it as: Vᵀ "de-rotates" input → Σ scales in the neutral frame → U "re-rotates" into output`,
+            `The two rotations exist because A's input and output spaces can have ${R('different natural orientations','#c8c8e0')}`
+          )}
+          <div style="margin-top:9px;padding:7px 10px;background:#0c0c1e;border-left:2px solid #a78bfa;border-radius:4px;">
+            <span style="color:#a78bfa;font-size:.7rem;font-weight:700;">Key equation</span><br>
+            <code style="color:#facc15;font-size:.76rem;">A · v₁ = U · Σ · Vᵀ · v₁<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= U · Σ · x̂<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= U · (σ₁ · x̂)<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= σ₁ · u₁ ✓</code>
+          </div>
+        </div>
       </div>`
     ];
 
