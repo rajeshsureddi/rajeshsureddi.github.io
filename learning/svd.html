@@ -149,11 +149,11 @@ $$\underbrace{A}_{m\times n} = \underbrace{U}_{m\times m}\;\underbrace{\Sigma}_{
 
 <p>Any linear map sends a unit sphere to an ellipsoid. SVD tells you exactly how: first rotate the sphere by $V^\top$ (so the "interesting axes" align with the coordinate axes), then stretch each axis by the corresponding singular value via $\Sigma$, then rotate the ellipsoid into its final orientation via $U$. The singular values are the <strong>semi-axes lengths</strong> of the output ellipsoid.</p>
 
-<p>In 2D: a unit circle maps to an ellipse. The interactive below shows each step. Drag the sliders to change the matrix $A = \bigl[\begin{smallmatrix}a & b \\ c & d\end{smallmatrix}\bigr]$, then click <strong>Play</strong> to watch the three-stage animation. The <strong>left panel</strong> always shows the input circle with right singular vectors $\mathbf{v}_1$ (red) and $\mathbf{v}_2$ (blue). The <strong>right panel</strong> animates the transformation.</p>
+<p>In 2D: the unit circle maps to an ellipse. The interactive below makes every step concrete. Set $A = \bigl[\begin{smallmatrix}a & b \\ c & d\end{smallmatrix}\bigr]$ with the sliders, then click <strong>Play</strong>. The <strong>left panel</strong> (input space) is fixed — it shows the unit circle, the right singular vectors $\mathbf{v}_1$ (red) and $\mathbf{v}_2$ (blue), and a <strong>draggable yellow point p</strong> you can place anywhere. The <strong>right panel</strong> shows what happens to both the circle and your point through each transformation stage.</p>
 
 <!-- Viz 1: SVD Geometric Explorer -->
 <div class="graphic-container" id="geo-container">
-  <canvas id="svd-geo" style="width:100%;display:block;" height="360"></canvas>
+  <canvas id="svd-geo" style="width:100%;display:block;" height="420"></canvas>
   <div class="mat-display">
     <div>
       <div class="mat-label">A</div>
@@ -396,6 +396,101 @@ print(f"PC1 explains {ratios[0]*100:.1f}%, PC2 explains {ratios[1]*100:.1f}%")
 </code></pre>
 </div>
 
+<h3>5.2 Why the Columns of V Are the PCA Loading Vectors</h3>
+
+<p>The connection is one substitution away. Apply thin SVD to the centered data matrix $\tilde{X} = U\Sigma V^\top$ and substitute into the sample covariance:</p>
+
+<div class="math-box">$$C = \frac{\tilde{X}^\top \tilde{X}}{n-1} = \frac{(U\Sigma V^\top)^\top(U\Sigma V^\top)}{n-1} = \frac{V\Sigma \underbrace{U^\top U}_{=\,I} \Sigma V^\top}{n-1} = V \underbrace{\frac{\Sigma^2}{n-1}}_{\Lambda} V^\top$$</div>
+
+<p>This <em>is</em> the eigendecomposition of $C$. The diagonal matrix $\Lambda = \Sigma^2/(n-1)$ contains the eigenvalues, and $V$ contains the eigenvectors — column $\mathbf{v}_k$ is the $k$-th principal direction. No extra computation needed: the SVD of $\tilde{X}$ delivers the PCA directions directly.</p>
+
+<div class="callout blue">
+  <div class="ct">Three equivalent statements — same vector</div>
+  <p><strong>1.</strong> $\mathbf{v}_k$ = $k$-th right singular vector of $\tilde{X}$ &nbsp;(SVD definition)</p>
+  <p><strong>2.</strong> $\mathbf{v}_k$ = $k$-th eigenvector of $C = \tilde{X}^\top\tilde{X}/(n-1)$ &nbsp;(covariance eigendecomposition)</p>
+  <p><strong>3.</strong> $\mathbf{v}_k$ = direction maximising explained variance, orthogonal to $\mathbf{v}_1,\dots,\mathbf{v}_{k-1}$ &nbsp;(PCA definition)</p>
+</div>
+
+<p>The PCA <em>scores</em> (coordinates of each data point in the PC basis) are $\tilde{X}V = U\Sigma$ — the left singular vectors scaled by the singular values. So one thin SVD of $\tilde{X}$ gives you both the principal directions ($V$, columns = PCs) and the projections ($U\Sigma$, rows = scores).</p>
+
+<h3>5.3 Application: Surface Normal Estimation in 3D Point Clouds</h3>
+
+<p>One of the most elegant uses of 3D PCA: given a neighbourhood of points sampled from a surface, find the surface <strong>normal</strong> — the direction perpendicular to the local tangent plane — using nothing but SVD.</p>
+
+<p>Pick any point $\mathbf{p}$. Collect its $k$ nearest neighbours into a $k\times 3$ matrix $Q$. Center it: $\tilde{Q} = Q - \bar{Q}$. Compute the $3\times 3$ covariance $C = \tilde{Q}^\top\tilde{Q}/(k-1)$ and diagonalise via SVD (or equivalently eigendecomposition):</p>
+
+<div class="math-box">$$C = V\,\mathrm{diag}(\sigma_1^2,\,\sigma_2^2,\,\sigma_3^2)\,V^\top, \qquad \sigma_1 \ge \sigma_2 \ge \sigma_3 \ge 0$$</div>
+
+<p>If the surface is locally smooth and nearly planar, the points spread in two directions (the tangent plane) and barely at all in the perpendicular direction (the normal). Consequently:</p>
+
+<div class="math-box">$$\sigma_1 \approx \sigma_2 \gg \sigma_3 \approx 0 \qquad \Longrightarrow \qquad \mathbf{v}_3 \;\text{is the surface normal}$$</div>
+
+<p><strong>Planarity score:</strong> $\lambda_p = 1 - \sigma_3/\sigma_1 \in [0,1]$. Near 1 means a clean planar patch; near 0 means a corner, edge, or noise-dominated cloud. The interactive below lets you tune both the noise level and the plane tilt — drag to orbit the 3D view.</p>
+
+<div class="callout amber">
+  <div class="ct">Sign Ambiguity</div>
+  <p>SVD determines $\mathbf{v}_3$ only up to a sign flip ($\pm\mathbf{v}_3$ are both valid normals). In practice the orientation is resolved by requiring the normal to point <em>toward the sensor</em> (viewpoint consistency), or by propagating a consistent orientation through the graph of overlapping neighbourhoods (normal propagation in Open3D / PCL).</p>
+</div>
+
+<!-- Viz 5: 3D surface normals via SVD/PCA -->
+<div class="graphic-container">
+  <canvas id="svd-normal" style="width:100%;display:block;cursor:grab;" height="420"></canvas>
+  <div class="controls">
+    <div class="ctrl-grid">
+      <div class="ctrl-group">
+        <label>Point noise σ <span class="val" id="normal-noise-val">0.05</span></label>
+        <input type="range" id="normal-noise" min="0.0" max="0.5" step="0.01" value="0.05">
+      </div>
+      <div class="ctrl-group">
+        <label>Plane tilt (°) <span class="val" id="normal-tilt-val">30</span></label>
+        <input type="range" id="normal-tilt" min="-80" max="80" step="2" value="30">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+      <button class="tab-btn" id="normal-rand">↻ Resample</button>
+      <button class="tab-btn" id="normal-rot">⟳ Auto-rotate</button>
+    </div>
+  </div>
+</div>
+
+<div class="code-block">
+  <div class="code-header"><span>surface_normals.py</span><span class="tag">NumPy · scikit-learn</span></div>
+<pre><code class="language-python">import numpy as np
+from sklearn.neighbors import NearestNeighbors
+
+def estimate_normals(points: np.ndarray, k: int = 20):
+    """Estimate surface normals via local PCA (SVD of neighbourhood matrix)."""
+    n = len(points)
+    normals   = np.zeros_like(points)
+    planarity = np.zeros(n)
+
+    nbrs = NearestNeighbors(n_neighbors=k + 1).fit(points)
+    _, indices = nbrs.kneighbors(points)
+
+    for i in range(n):
+        Q   = points[indices[i, 1:]]         # k neighbours (exclude self)
+        Q_c = Q - Q.mean(axis=0)             # centre
+        _, s, Vt = np.linalg.svd(Q_c, full_matrices=False)  # thin SVD
+        normals[i]   = Vt[-1]                # last row of Vt = v₃ (min variance)
+        planarity[i] = 1 - s[-1] / s[0] if s[0] > 1e-10 else 0.0
+
+    return normals, planarity
+
+# --- Example: half-sphere point cloud -----------------------------------------
+rng   = np.random.default_rng(42)
+phi   = rng.uniform(0, np.pi / 2, 500)
+theta = rng.uniform(0, 2 * np.pi, 500)
+pts   = np.stack([np.sin(phi) * np.cos(theta),
+                  np.sin(phi) * np.sin(theta),
+                  np.cos(phi)], axis=1)
+pts  += rng.normal(0, 0.02, pts.shape)       # small noise
+
+normals, planarity = estimate_normals(pts, k=15)
+print(f"Mean planarity : {planarity.mean():.3f}")   # ≈ 0.93 for clean sphere
+print(f"Normal at pt[0]: {normals[0]}")             # ≈ outward radial direction
+</code></pre>
+</div>
+
 <!-- ══════════════════════════════════════════════════
      SECTION 6 — APPLICATIONS
 ══════════════════════════════════════════════════ -->
@@ -477,6 +572,8 @@ print(f"Recovery error: {np.linalg.norm(A_clean - A_true)/np.linalg.norm(A_true)
   let animT = 3.0;
   let animRAF = null;
   let isPlaying = false;
+  let dragPt = [0.6, 0.3];
+  let isDragging = false;
 
   function resize() {
     const W = canvas.parentElement.clientWidth;
@@ -617,12 +714,34 @@ print(f"Recovery error: {np.linalg.norm(A_clean - A_true)/np.linalg.norm(A_true)
     ctx.restore();
   }
 
-  function getStepLabel(t) {
-    if (t < 0.05) return 'Input: unit circle in domain space';
-    if (t <= 1.0) return `Step 1 — Applying Vᵀ (rotate to right-singular-vector frame, t=${t.toFixed(2)})`;
-    if (t <= 2.0) return `Step 2 — Applying Σ (stretch by σ₁ and σ₂, t=${(t-1).toFixed(2)})`;
-    if (t < 3.0)  return `Step 3 — Applying U (rotate to output orientation, t=${(t-2).toFixed(2)})`;
-    return 'A = UΣVᵀ — transformation complete';
+  // Step descriptions (3 lines: title, main, note)
+  function getStepDesc(t, sv) {
+    const {s1,s2} = sv;
+    if (t < 0.05) return [
+      'INPUT — drag the yellow ● to any position',
+      'v₁ (red) and v₂ (blue) are the right singular vectors. A maps: v₁ → σ₁·u₁  and  v₂ → σ₂·u₂.',
+      'Every vector p in input space ends up at Ap in output space. Watch p track through the 3 steps.'
+    ];
+    if (t <= 1) return [
+      `STEP 1 — Apply Vᵀ  (pure rotation, t=${t.toFixed(2)})`,
+      `Vᵀ rotates space so that v₁ aligns with x̂ and v₂ aligns with ŷ. The deformed grid shows the rotation.`,
+      'Circle stays circular — rotations never stretch. p moves to Vᵀp. No distance has changed yet.'
+    ];
+    if (t <= 2) return [
+      `STEP 2 — Apply Σ = diag(σ₁, σ₂)  (the only stretching, t=${(t-1).toFixed(2)})`,
+      `σ₁=${s1.toFixed(3)}: x-axis stretched by σ₁.  σ₂=${s2.toFixed(3)}: y-axis scaled by σ₂. ALL size change is here.`,
+      'Circle becomes an axis-aligned ellipse with semi-axes σ₁ and σ₂. p moves to ΣVᵀp.'
+    ];
+    if (t < 3) return [
+      `STEP 3 — Apply U  (pure rotation back, t=${(t-2).toFixed(2)})`,
+      `U rotates the ellipse to its final orientation in output space. The semi-axes stay σ₁ and σ₂ — no new stretching.`,
+      'p arrives at its final position Ap = UΣVᵀp.'
+    ];
+    return [
+      'COMPLETE — A = U · Σ · Vᵀ',
+      `Unit circle → ellipse with semi-axes σ₁=${s1.toFixed(3)} (along u₁) and σ₂=${s2.toFixed(3)} (along u₂).`,
+      'Yellow ● shows exactly where p ends up. Every point in the plane follows this same rotate→stretch→rotate path.'
+    ];
   }
 
   function updateMatDisplay(sv) {
@@ -645,75 +764,165 @@ print(f"Recovery error: {np.linalg.norm(A_clean - A_true)/np.linalg.norm(A_true)
 
   function draw() {
     const CW = canvas.width/dpr, CH = canvas.height/dpr;
+    const descH = 86;
     ctx.clearRect(0,0,CW,CH);
 
     const halfW = CW/2;
-    const midY  = CH/2;
-    const scale = Math.min(halfW*0.38, CH*0.38);
-
+    const drawH = CH - descH;
+    const midY  = drawH / 2;
+    const scale = Math.min(halfW*0.37, drawH*0.38);
     const cxL = halfW*0.5, cxR = halfW + halfW*0.5;
 
-    // Separator line
+    // ── DESCRIPTION BOX ──
+    ctx.fillStyle='#08080f'; ctx.fillRect(0, drawH, CW, descH);
+    ctx.strokeStyle='#1a1a28'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(0,drawH); ctx.lineTo(CW,drawH); ctx.stroke();
+
+    const {m, sv} = getM(animT);
+    const desc = getStepDesc(animT, sv);
+    ctx.textAlign='left';
+    ctx.fillStyle='#38bdf8'; ctx.font='700 10px monospace';
+    ctx.fillText(desc[0], 14, drawH+20);
+    ctx.fillStyle='#9090b8'; ctx.font='12px sans-serif';
+    ctx.fillText(desc[1], 14, drawH+40);
+    ctx.fillStyle='#505070'; ctx.font='11px sans-serif';
+    ctx.fillText(desc[2], 14, drawH+60);
+    // progress bar
+    const pct = animT/3;
+    ctx.fillStyle='#1a1a30'; ctx.fillRect(0, drawH+descH-6, CW, 6);
+    ctx.fillStyle='#38bdf8'; ctx.fillRect(0, drawH+descH-6, CW*pct, 6);
+
+    // Separator
     ctx.strokeStyle = '#202038'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(halfW,0); ctx.lineTo(halfW,CH); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(halfW,0); ctx.lineTo(halfW,drawH); ctx.stroke();
 
     // Panel labels
-    ctx.font = '11px monospace'; ctx.textAlign = 'center';
-    ctx.fillStyle = '#404060';
-    ctx.fillText('INPUT SPACE', cxL, 18);
-    ctx.fillText('OUTPUT SPACE', cxR, 18);
+    ctx.font='10px monospace'; ctx.textAlign='center';
+    ctx.fillStyle='#2a2a50';
+    ctx.fillText('INPUT SPACE (domain)', cxL, 15);
+    ctx.fillText('OUTPUT SPACE (range)', cxR, 15);
 
-    // ── LEFT PANEL: static unit circle with v1, v2 ──
     const Imat = [1,0,0,1];
-    drawGrid(cxL, midY, scale, Imat, 0.18);
-    drawAxes(cxL, midY, scale, Imat, 0.5);
-    // unit disk (faint fill)
+
+    // ── LEFT PANEL ──
+    drawGrid(cxL, midY, scale, Imat, 0.15);
+    drawAxes(cxL, midY, scale, Imat, 0.45);
     drawCurve(cxL, midY, scale, Imat, '#38bdf8', 1.5, true);
-    // v1 arrow (red)
-    const {m, sv} = getM(animT);
     drawArrow(cxL, midY, scale, sv.v1[0], sv.v1[1], 1.0, '#f87171', 'v₁');
-    // v2 arrow (blue)
     drawArrow(cxL, midY, scale, sv.v2[0], sv.v2[1], 1.0, '#60a5fa', 'v₂');
 
-    // ── RIGHT PANEL: animated transformation ──
-    drawGrid(cxR, midY, scale, m, 0.22);
-    drawAxes(cxR, midY, scale, m, 0.5);
-    drawCurve(cxR, midY, scale, m, '#a78bfa', 2, true);
+    // Draggable point p in left panel
+    const pxL = cxL + dragPt[0]*scale, pyL = midY - dragPt[1]*scale;
+    ctx.save();
+    ctx.strokeStyle='rgba(250,204,21,0.55)'; ctx.lineWidth=1.5; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(cxL,midY); ctx.lineTo(pxL,pyL); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+    ctx.beginPath(); ctx.arc(pxL,pyL,6,0,2*Math.PI);
+    ctx.fillStyle='#facc15'; ctx.fill();
+    ctx.strokeStyle='#0c0c14'; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.fillStyle='#facc15'; ctx.font='bold 11px monospace'; ctx.textAlign='left';
+    ctx.fillText('p', pxL+9, pyL-4);
 
-    // Draw u1, u2 arrows when near final state
-    if (animT > 2.3) {
-      const alpha2 = Math.min(1, (animT-2.3)/0.5);
-      const col1 = `rgba(248,113,113,${alpha2})`;
-      const col2 = `rgba(96,165,250,${alpha2})`;
-      drawArrow(cxR, midY, scale, sv.u1[0]*sv.s1, sv.u1[1]*sv.s1, 1.0, col1, animT>2.8?'u₁·σ₁':'');
-      drawArrow(cxR, midY, scale, sv.u2[0]*sv.s2, sv.u2[1]*sv.s2, 1.0, col2, animT>2.8?'u₂·σ₂':'');
+    // ── RIGHT PANEL ──
+    drawGrid(cxR, midY, scale, m, 0.2);
+    drawAxes(cxR, midY, scale, m, 0.45);
+
+    // In step 1: show dashed reference of where v₁ was before V^T (shows the alignment)
+    if (animT > 0.1 && animT <= 1.5) {
+      const fade = Math.min(1, Math.min(animT, 1.5-animT)*4);
+      ctx.save(); ctx.globalAlpha=fade*0.5; ctx.setLineDash([5,4]);
+      ctx.strokeStyle='#f87171'; ctx.lineWidth=1.2;
+      ctx.beginPath(); ctx.moveTo(cxR,midY); ctx.lineTo(cxR+sv.v1[0]*scale,midY-sv.v1[1]*scale); ctx.stroke();
+      ctx.strokeStyle='#60a5fa';
+      ctx.beginPath(); ctx.moveTo(cxR,midY); ctx.lineTo(cxR+sv.v2[0]*scale,midY-sv.v2[1]*scale); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+      if (animT > 0.85) {
+        const fade2=Math.min(1,(animT-0.85)/0.15);
+        ctx.save(); ctx.globalAlpha=fade2*0.8;
+        ctx.fillStyle='#38bdf8'; ctx.font='10px monospace'; ctx.textAlign='left';
+        ctx.fillText('v₁→x̂', cxR+scale*1.08, midY+4);
+        ctx.fillText('v₂→ŷ', cxR+6, midY-scale*1.05);
+        ctx.restore();
+      }
     }
 
-    // Sigma labels when in stretch phase
-    if (animT > 1.1 && animT <= 2.8) {
-      const ta = Math.min(1, (animT-1.1)/0.4);
-      ctx.save();
-      ctx.globalAlpha = ta;
-      ctx.font = '12px monospace';
-      ctx.fillStyle = '#facc15';
-      ctx.textAlign = 'left';
-      const ex1 = cxR + m[0]*scale;
-      const ey1 = midY - m[2]*scale;
-      ctx.fillText(`σ₁=${sv.s1.toFixed(2)}`, ex1+6, ey1);
-      const ex2 = cxR + m[1]*scale;
-      const ey2 = midY - m[3]*scale;
-      ctx.fillText(`σ₂=${sv.s2.toFixed(2)}`, ex2+6, ey2);
+    drawCurve(cxR, midY, scale, m, '#a78bfa', 2, true);
+
+    // u₁·σ₁ and u₂·σ₂ arrows fade in near completion
+    if (animT > 2.25) {
+      const fade = Math.min(1,(animT-2.25)/0.6);
+      drawArrow(cxR, midY, scale, sv.u1[0]*sv.s1, sv.u1[1]*sv.s1, 1.0,
+                `rgba(248,113,113,${fade})`, animT>2.8?'u₁·σ₁':'');
+      drawArrow(cxR, midY, scale, sv.u2[0]*sv.s2, sv.u2[1]*sv.s2, 1.0,
+                `rgba(96,165,250,${fade})`, animT>2.8?'u₂·σ₂':'');
+    }
+
+    // σ₁, σ₂ labels during stretch phase
+    if (animT > 1.08 && animT <= 2.85) {
+      const ta = Math.min(1,(animT-1.08)/0.35);
+      ctx.save(); ctx.globalAlpha=ta;
+      ctx.font='11px monospace'; ctx.fillStyle='#facc15'; ctx.textAlign='center';
+      // σ₁ label at tip of major axis
+      const s1tx=cxR+m[0]*scale*sv.s1/Math.max(sv.s1,0.01), s1ty=midY-m[2]*scale*sv.s1/Math.max(sv.s1,0.01);
+      ctx.fillText(`σ₁=${sv.s1.toFixed(2)}`,s1tx,s1ty-12);
+      const s2tx=cxR+m[1]*scale*sv.s2/Math.max(sv.s2,0.01), s2ty=midY-m[3]*scale*sv.s2/Math.max(sv.s2,0.01);
+      ctx.fillText(`σ₂=${sv.s2.toFixed(2)}`,s2tx+28,s2ty);
       ctx.restore();
     }
 
-    // Step label overlay
-    const lbl = getStepLabel(animT);
-    ctx.fillStyle = '#38bdf8'; ctx.font = '11px monospace'; ctx.textAlign = 'center';
-    ctx.fillText(lbl, CW/2, CH-10);
+    // Transformed point (yellow dot on right panel)
+    const tp = [m[0]*dragPt[0]+m[1]*dragPt[1], m[2]*dragPt[0]+m[3]*dragPt[1]];
+    const pxR = cxR + tp[0]*scale, pyR = midY - tp[1]*scale;
+    ctx.save();
+    ctx.strokeStyle='rgba(250,204,21,0.55)'; ctx.lineWidth=1.5; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(cxR,midY); ctx.lineTo(pxR,pyR); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+    ctx.beginPath(); ctx.arc(pxR,pyR,6,0,2*Math.PI);
+    ctx.fillStyle='#facc15'; ctx.fill();
+    ctx.strokeStyle='#0c0c14'; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.fillStyle='#facc15'; ctx.font='bold 11px monospace'; ctx.textAlign='left';
+    const ptLbl = animT<0.05?'p': animT>=2.99?'Ap':'M·p';
+    ctx.fillText(ptLbl, pxR+9, pyR-4);
 
     updateMatDisplay(sv);
-    document.getElementById('geo-step-label').textContent = `σ₁=${sv.s1.toFixed(3)}  σ₂=${sv.s2.toFixed(3)}`;
+    document.getElementById('geo-step-label').textContent =
+      `σ₁=${sv.s1.toFixed(3)}  σ₂=${sv.s2.toFixed(3)}  |det A|=${Math.abs(sv.s1*sv.s2).toFixed(3)}`;
   }
+
+  // ── Drag handling ──
+  function canvasXY(e) {
+    const r=canvas.getBoundingClientRect();
+    const touch=e.touches?e.touches[0]:e;
+    return [(touch.clientX-r.left)*(canvas.width/dpr)/r.width,
+            (touch.clientY-r.top)*(canvas.height/dpr)/r.height];
+  }
+  function hitDrag(cx,cy) {
+    const CW=canvas.width/dpr, CH=canvas.height/dpr, halfW=CW/2;
+    const drawH=CH-86, midY=drawH/2, scale=Math.min(halfW*0.37,drawH*0.38);
+    const pxL=halfW*0.5+dragPt[0]*scale, pyL=midY-dragPt[1]*scale;
+    return cx<halfW && Math.hypot(cx-pxL,cy-pyL)<14;
+  }
+  function moveDrag(cx,cy) {
+    const CW=canvas.width/dpr, CH=canvas.height/dpr, halfW=CW/2;
+    const drawH=CH-86, midY=drawH/2, scale=Math.min(halfW*0.37,drawH*0.38);
+    dragPt[0]=Math.max(-1.8,Math.min(1.8,(cx-halfW*0.5)/scale));
+    dragPt[1]=Math.max(-1.8,Math.min(1.8,-(cy-midY)/scale));
+    draw();
+  }
+  canvas.addEventListener('mousedown',e=>{const [x,y]=canvasXY(e);if(hitDrag(x,y)){isDragging=true;e.preventDefault();}});
+  canvas.addEventListener('mousemove',e=>{
+    const [x,y]=canvasXY(e);
+    if(isDragging){moveDrag(x,y);}
+    else canvas.style.cursor=hitDrag(x,y)?'grab':'default';
+  });
+  canvas.addEventListener('mouseup',()=>{isDragging=false;});
+  canvas.addEventListener('mouseleave',()=>{isDragging=false;});
+  canvas.addEventListener('touchstart',e=>{const [x,y]=canvasXY(e);if(hitDrag(x,y)){isDragging=true;e.preventDefault();}},{passive:false});
+  canvas.addEventListener('touchmove',e=>{if(!isDragging)return;const[x,y]=canvasXY(e);moveDrag(x,y);e.preventDefault();},{passive:false});
+  canvas.addEventListener('touchend',()=>{isDragging=false;});
 
   function setStep(t) {
     stopAnim();
@@ -736,7 +945,7 @@ print(f"Recovery error: {np.linalg.norm(A_clean - A_true)/np.linalg.norm(A_true)
     document.getElementById('geo-play').textContent = '⏹ Stop';
     animT = 0;
     let start = null;
-    const dur = 3500;
+    const dur = 3800;
     function frame(ts) {
       if (!start) start = ts;
       animT = Math.min(3, ((ts-start)/dur)*3);
@@ -755,10 +964,6 @@ print(f"Recovery error: {np.linalg.norm(A_clean - A_true)/np.linalg.norm(A_true)
   document.getElementById('geo-step2').addEventListener('click', ()=>setStep(2));
   document.getElementById('geo-step3').addEventListener('click', ()=>setStep(3));
   document.getElementById('geo-play').addEventListener('click', startAnim);
-
-  function setSliderLabel(id, valId, val) {
-    document.getElementById(valId).textContent = parseFloat(val).toFixed(1);
-  }
 
   ['a','b','c','d'].forEach((ch,i) => {
     const sl = document.getElementById(`geo-${ch}`);
@@ -803,169 +1008,242 @@ print(f"Recovery error: {np.linalg.norm(A_clean - A_true)/np.linalg.norm(A_true)
   let matB = [1.0, 0.5, -0.5, 1.5];
 
   function resize() {
-    const W = canvas.parentElement.clientWidth, H = 320;
+    const W=canvas.parentElement.clientWidth, H=380;
     canvas.style.width=W+'px'; canvas.style.height=H+'px';
     canvas.width=W*dpr; canvas.height=H*dpr;
     ctx.scale(dpr,dpr); draw();
   }
 
-  function svd2x2s(a,b,c,d) {
-    const p=a*a+c*c, q=a*b+c*d, r=b*b+d*d;
-    const tr=p+r, disc=(p-r)*(p-r)+4*q*q;
-    const sq=Math.sqrt(Math.max(0,disc));
-    return [Math.sqrt(Math.max(0,(tr+sq)/2)), Math.sqrt(Math.max(0,(tr-sq)/2))];
+  function svd2x2s(a,b,c,d){
+    const p=a*a+c*c,q=a*b+c*d,r=b*b+d*d;
+    const disc=(p-r)*(p-r)+4*q*q;
+    const sq=Math.sqrt(Math.max(0,disc)),tr=p+r;
+    return[Math.sqrt(Math.max(0,(tr+sq)/2)),Math.sqrt(Math.max(0,(tr-sq)/2))];
   }
 
-  function eigenvalues2x2(a,b,c,d) {
-    const tr=a+d, det=a*d-b*c;
-    const disc=tr*tr-4*det;
-    if (disc >= 0) {
-      const sq=Math.sqrt(disc);
-      return [{re:(tr+sq)/2,im:0},{re:(tr-sq)/2,im:0}];
-    } else {
-      const im=Math.sqrt(-disc)/2;
-      return [{re:tr/2,im:im},{re:tr/2,im:-im}];
+  function eigenvalues2x2(a,b,c,d){
+    const tr=a+d,det=a*d-b*c,disc=tr*tr-4*det;
+    if(disc>=0){const sq=Math.sqrt(disc);return[{re:(tr+sq)/2,im:0},{re:(tr-sq)/2,im:0}];}
+    const im=Math.sqrt(-disc)/2;
+    return[{re:tr/2,im:im},{re:tr/2,im:-im}];
+  }
+
+  function drawEllipse(ctx2,cx,cy,sc,m,color,lw,fill){
+    const N=200;
+    ctx2.beginPath();
+    for(let i=0;i<=N;i++){
+      const th=(i/N)*2*Math.PI,cos_t=Math.cos(th),sin_t=Math.sin(th);
+      const x=m[0]*cos_t+m[1]*sin_t, y=m[2]*cos_t+m[3]*sin_t;
+      i===0?ctx2.moveTo(cx+x*sc,cy-y*sc):ctx2.lineTo(cx+x*sc,cy-y*sc);
     }
+    ctx2.closePath();
+    if(fill){ctx2.fillStyle=color.replace(')',',0.1)').replace('rgb','rgba');ctx2.fill();}
+    ctx2.strokeStyle=color;ctx2.lineWidth=lw;ctx2.stroke();
   }
 
-  function draw() {
+  // Returns verdict text: [mainVerdict, eigNote, singNote]
+  function getVerdict(a,b,c,d,eigs,s1,s2){
+    const isReal=eigs[0].im===0;
+    const isRotation=(Math.abs(a*a+b*b-1)<0.05&&Math.abs(c*c+d*d-1)<0.05&&Math.abs(s1-1)<0.05&&Math.abs(s2-1)<0.05);
+    const isShear=(Math.abs(a-1)<0.05&&Math.abs(d-1)<0.05&&Math.abs(c)<0.05&&Math.abs(b)>0.4);
+    if(isRotation) return [
+      'ROTATION — eigenvalues are complex, but SVD is correct',
+      `λ₁,₂ = ${eigs[0].re.toFixed(2)}±${Math.abs(eigs[0].im).toFixed(2)}i  ← complex! eigendecomposition ≠ real`,
+      `σ₁=σ₂=${s1.toFixed(3)}  ✓ correctly says: rotation, no stretching`
+    ];
+    if(isShear) return [
+      'SHEAR — eigenvalues say "no stretch", but σ tells the truth',
+      `λ₁=λ₂=1  ← both = 1, would suggest no size change  ✗`,
+      `σ₁=${s1.toFixed(3)}, σ₂=${s2.toFixed(3)}  ✓ correctly measures the actual stretching`
+    ];
+    if(!isReal) return [
+      'COMPLEX eigenvalues — SVD remains real and meaningful',
+      `λ = ${eigs[0].re.toFixed(2)}±${Math.abs(eigs[0].im).toFixed(2)}i  ← complex conjugate pair`,
+      `σ₁=${s1.toFixed(3)}, σ₂=${s2.toFixed(3)}  ✓ singular values always real, always ≥ 0`
+    ];
+    return [
+      'Symmetric PD — eigenvalues equal singular values',
+      `λ₁=${eigs[0].re.toFixed(3)}, λ₂=${eigs[1].re.toFixed(3)}  (real & positive ✓)`,
+      `σ₁=${s1.toFixed(3)}, σ₂=${s2.toFixed(3)}  ← same as |λᵢ| for symmetric PSD`
+    ];
+  }
+
+  function draw(){
     const CW=canvas.width/dpr, CH=canvas.height/dpr;
     ctx.clearRect(0,0,CW,CH);
+    ctx.fillStyle='#09090f'; ctx.fillRect(0,0,CW,CH);
+
     const [a,b,c,d]=matB;
     const [s1,s2]=svd2x2s(a,b,c,d);
     const eigs=eigenvalues2x2(a,b,c,d);
     const isReal=eigs[0].im===0;
 
-    const panW=CW/3;
+    const topH=200, botH=CH-topH;
+    const halfW=CW/2;
 
-    // ── Panel 1: Eigenvalues of A (complex plane) ──
-    const p1cx=panW*0.5, p1cy=CH/2;
-    ctx.fillStyle='#0a0a18'; ctx.fillRect(0,0,panW,CH);
-    ctx.fillStyle='#404060'; ctx.font='10px monospace'; ctx.textAlign='center';
-    ctx.fillText('Eigenvalues of A', panW*0.5, 16);
-    ctx.fillText('(Argand plane)', panW*0.5, 28);
+    // ═══ TOP: geometric transform ═══
+    const geoScale=Math.min(halfW*0.36, topH*0.38);
+    const gcx=CW/2, gcy=topH/2;
 
-    const range=Math.max(2.5, Math.abs(eigs[0].re)+1, Math.abs(eigs[0].im)+1);
-    const sc=Math.min(panW,CH-60)*0.38/range;
+    // Background + divider
+    ctx.fillStyle='#08080e'; ctx.fillRect(0,0,CW,topH);
+    ctx.strokeStyle='#1a1a28'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(0,topH); ctx.lineTo(CW,topH); ctx.stroke();
 
     // Grid
-    ctx.strokeStyle='#1a1a30'; ctx.lineWidth=0.5;
-    for(let g=-3;g<=3;g++) {
-      ctx.beginPath(); ctx.moveTo(p1cx+g*sc,p1cy-3*sc); ctx.lineTo(p1cx+g*sc,p1cy+3*sc); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(p1cx-3*sc,p1cy+g*sc); ctx.lineTo(p1cx+3*sc,p1cy+g*sc); ctx.stroke();
+    ctx.strokeStyle='#121222'; ctx.lineWidth=0.6;
+    for(let g=-3;g<=3;g++){
+      ctx.beginPath(); ctx.moveTo(gcx+g*geoScale,gcy-3*geoScale); ctx.lineTo(gcx+g*geoScale,gcy+3*geoScale); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(gcx-3*geoScale,gcy+g*geoScale); ctx.lineTo(gcx+3*geoScale,gcy+g*geoScale); ctx.stroke();
     }
     // Axes
-    ctx.strokeStyle='#303060'; ctx.lineWidth=1;
-    ctx.beginPath(); ctx.moveTo(p1cx-range*sc,p1cy); ctx.lineTo(p1cx+range*sc,p1cy); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(p1cx,p1cy-range*sc); ctx.lineTo(p1cx,p1cy+range*sc); ctx.stroke();
-    ctx.fillStyle='#404060'; ctx.font='9px sans-serif';
-    ctx.fillText('Re',p1cx+range*sc-8,p1cy-4);
-    ctx.fillText('Im',p1cx+6,p1cy-range*sc+10);
+    ctx.strokeStyle='#252545'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(gcx-2.8*geoScale,gcy); ctx.lineTo(gcx+2.8*geoScale,gcy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(gcx,gcy-2.8*geoScale); ctx.lineTo(gcx,gcy+2.8*geoScale); ctx.stroke();
 
-    // Unit circle reference
-    ctx.beginPath(); ctx.arc(p1cx,p1cy,sc,0,2*Math.PI);
-    ctx.strokeStyle='#1a1a38'; ctx.lineWidth=0.8; ctx.stroke();
+    // Unit circle (input) dashed
+    ctx.beginPath(); ctx.arc(gcx,gcy,geoScale,0,2*Math.PI);
+    ctx.strokeStyle='#38bdf8'; ctx.lineWidth=1; ctx.setLineDash([5,4]); ctx.stroke(); ctx.setLineDash([]);
+
+    // Transformed ellipse (output)
+    drawEllipse(ctx,gcx,gcy,geoScale,[a,b,c,d],'#a78bfa',2.2,true);
+
+    // u₁·σ₁, u₂·σ₂ arrows
+    let v1x,v1y,v2x,v2y,u1x,u1y,u2x,u2y;
+    {
+      const p=a*a+c*c,q=a*b+c*d,r=b*b+d*d;
+      const disc2=(p-r)*(p-r)+4*q*q,sq=Math.sqrt(Math.max(0,disc2)),tr=p+r;
+      const lam1=Math.max(0,(tr+sq)/2),lam2=Math.max(0,(tr-sq)/2);
+      if(Math.abs(q)>1e-9){const vx=lam1-r,vy=q,nn=Math.sqrt(vx*vx+vy*vy);v1x=vx/nn;v1y=vy/nn;}
+      else{v1x=p>=r?1:0;v1y=p>=r?0:1;}
+      v2x=-v1y;v2y=v1x;
+      u1x=s1>1e-10?(a*v1x+b*v1y)/s1:1;u1y=s1>1e-10?(c*v1x+d*v1y)/s1:0;
+      u2x=s2>1e-10?(a*v2x+b*v2y)/s2:-u1y;u2y=s2>1e-10?(c*v2x+d*v2y)/s2:u1x;
+    }
+    function arrowGeo(ex,ey,color,lbl){
+      const ang=Math.atan2(ey-gcy,ex-gcx),al=9;
+      ctx.beginPath();ctx.moveTo(gcx,gcy);ctx.lineTo(ex,ey);
+      ctx.strokeStyle=color;ctx.lineWidth=2;ctx.stroke();
+      ctx.beginPath();ctx.moveTo(ex,ey);
+      ctx.lineTo(ex-al*Math.cos(ang-0.4),ey-al*Math.sin(ang-0.4));
+      ctx.lineTo(ex-al*Math.cos(ang+0.4),ey-al*Math.sin(ang+0.4));
+      ctx.closePath();ctx.fillStyle=color;ctx.fill();
+      if(lbl){ctx.fillStyle=color;ctx.font='bold 10px monospace';ctx.textAlign='left';ctx.fillText(lbl,ex+8,ey-5);}
+    }
+    arrowGeo(gcx+u1x*s1*geoScale,gcy-u1y*s1*geoScale,'#f87171','u₁σ₁');
+    arrowGeo(gcx+u2x*s2*geoScale,gcy-u2y*s2*geoScale,'#60a5fa','u₂σ₂');
+
+    // Labels
+    ctx.fillStyle='#38bdf8'; ctx.font='10px monospace'; ctx.textAlign='right';
+    ctx.fillText('— unit circle (input)',CW-12,22);
+    ctx.fillStyle='#a78bfa'; ctx.textAlign='right';
+    ctx.fillText('— ellipse Ax (output)',CW-12,38);
+    ctx.fillStyle='#5050a0'; ctx.font='10px monospace'; ctx.textAlign='left';
+    ctx.fillText('Any input vector on the dashed circle lands on the solid ellipse.',14,topH-10);
+
+    // ═══ BOTTOM-LEFT: Eigenvalues of A (complex plane) ═══
+    const eigCx=halfW*0.5, eigCy=topH+botH*0.48;
+    ctx.fillStyle='#0a0a16'; ctx.fillRect(0,topH,halfW,botH);
+    ctx.strokeStyle='#1a1a28'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(halfW,topH); ctx.lineTo(halfW,CH); ctx.stroke();
+
+    ctx.fillStyle='#303050'; ctx.font='700 10px monospace'; ctx.textAlign='center';
+    ctx.fillText('Eigenvalues of A', halfW*0.5, topH+15);
+
+    const eigRange=Math.max(2.2, Math.abs(eigs[0].re)+0.8, Math.abs(eigs[0].im)+0.8);
+    const esc=Math.min(halfW*0.36, botH*0.36)/eigRange;
+
+    // Complex plane grid+axes
+    ctx.strokeStyle='#151525'; ctx.lineWidth=0.5;
+    for(let g=-3;g<=3;g++){
+      ctx.beginPath(); ctx.moveTo(eigCx+g*esc,eigCy-3*esc); ctx.lineTo(eigCx+g*esc,eigCy+3*esc); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(eigCx-3*esc,eigCy+g*esc); ctx.lineTo(eigCx+3*esc,eigCy+g*esc); ctx.stroke();
+    }
+    ctx.strokeStyle='#25254a'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(eigCx-eigRange*esc,eigCy); ctx.lineTo(eigCx+eigRange*esc,eigCy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(eigCx,eigCy-eigRange*esc); ctx.lineTo(eigCx,eigCy+eigRange*esc); ctx.stroke();
+    ctx.fillStyle='#303050'; ctx.font='9px monospace';
+    ctx.textAlign='right'; ctx.fillText('Re',eigCx+eigRange*esc-2,eigCy-4);
+    ctx.textAlign='left';  ctx.fillText('Im',eigCx+4,eigCy-eigRange*esc+10);
+
+    // Unit circle ref
+    ctx.beginPath(); ctx.arc(eigCx,eigCy,esc,0,2*Math.PI);
+    ctx.strokeStyle='#1e1e38'; ctx.lineWidth=0.8; ctx.stroke();
 
     // Eigenvalue dots
-    eigs.forEach((e,i) => {
-      const px=p1cx+e.re*sc, py=p1cy-e.im*sc;
-      ctx.beginPath(); ctx.arc(px,py,6,0,2*Math.PI);
+    eigs.forEach((e,i)=>{
+      const px=eigCx+e.re*esc, py=eigCy-e.im*esc;
+      ctx.beginPath(); ctx.arc(px,py,7,0,2*Math.PI);
       ctx.fillStyle=isReal?'#34d399':'#fb923c'; ctx.fill();
-      ctx.strokeStyle='#000'; ctx.lineWidth=1; ctx.stroke();
-      ctx.fillStyle=isReal?'#34d399':'#fb923c'; ctx.font='11px monospace'; ctx.textAlign='left';
+      ctx.strokeStyle='#0a0a14'; ctx.lineWidth=1.5; ctx.stroke();
       const lbl=isReal?`λ${i+1}=${e.re.toFixed(2)}`:`λ${i+1}=${e.re.toFixed(2)}${e.im>=0?'+':'-'}${Math.abs(e.im).toFixed(2)}i`;
-      ctx.fillText(lbl, px+8, py-6);
+      ctx.fillStyle=isReal?'#34d399':'#fb923c';ctx.font='10px monospace';ctx.textAlign='left';
+      ctx.fillText(lbl,px+10,py+4);
     });
 
-    // Legend
-    ctx.font='9px monospace'; ctx.textAlign='left';
-    ctx.fillStyle=isReal?'#34d399':'#fb923c';
-    ctx.fillText(isReal?'Real eigenvalues':'Complex eigenvalues', 8, CH-8);
+    // ═══ BOTTOM-RIGHT: Singular values ═══
+    const svBx=halfW+16, svMaxW=halfW-32, svTopY=topH+30;
+    ctx.fillStyle='#0a0a16'; ctx.fillRect(halfW,topH,halfW,botH);
+    ctx.fillStyle='#303050'; ctx.font='700 10px monospace'; ctx.textAlign='center';
+    ctx.fillText('Singular Values of A', halfW+halfW/2, topH+15);
 
-    // ── Panel 2: Eigenvalues of AᵀA ──
-    const p2x=panW;
-    ctx.fillStyle='#0c0c1e'; ctx.fillRect(p2x,0,panW,CH);
-    ctx.fillStyle='#404060'; ctx.font='10px monospace'; ctx.textAlign='center';
-    ctx.fillText('Eigenvalues of AᵀA', p2x+panW*0.5, 16);
-    ctx.fillText('= σ² (always ≥ 0)', p2x+panW*0.5, 28);
-
-    const ata_lam=[s1*s1, s2*s2];
-    const maxL=Math.max(ata_lam[0]*1.1, 1);
-    const barH=34, barY1=CH*0.3, barY2=CH*0.62;
-    const barX=p2x+panW*0.12, barMaxW=panW*0.76;
-
-    [0,1].forEach(i => {
-      const lam=ata_lam[i], by=i===0?barY1:barY2;
-      const bw=Math.max(2,(lam/maxL)*barMaxW);
-      ctx.fillStyle='rgba(251,146,60,0.15)'; ctx.fillRect(barX,by-barH/2,barMaxW,barH);
-      ctx.fillStyle='#fb923c'; ctx.fillRect(barX,by-barH/2,bw,barH);
-      ctx.fillStyle='#fbd38d'; ctx.font='11px monospace'; ctx.textAlign='left';
-      ctx.fillText(`λ${i+1}(AᵀA) = ${lam.toFixed(3)}`, barX+bw+6, by+4);
-      ctx.fillStyle='#604020'; ctx.font='10px monospace';
-      ctx.fillText(`σ${i+1}² = ${lam.toFixed(3)}`, barX+4, by+4);
+    const svals=[s1,s2], maxS=Math.max(svals[0]*1.1,0.5);
+    const barH=30, byArr=[svTopY+18, svTopY+65];
+    const colors=['#38bdf8','#818cf8'];
+    svals.forEach((sv,i)=>{
+      const by=byArr[i], bw=Math.max(3,(sv/maxS)*svMaxW);
+      ctx.fillStyle=colors[i].replace(')',',0.12)').replace('#','rgba(0,0,0,0.12'); // fallback
+      ctx.fillStyle=`rgba(56,189,248,0.12)`; if(i===1) ctx.fillStyle='rgba(129,140,248,0.12)';
+      ctx.fillRect(svBx,by-barH/2,svMaxW,barH);
+      ctx.fillStyle=colors[i];
+      ctx.fillRect(svBx,by-barH/2,bw,barH);
+      ctx.fillStyle='#e0f2fe'; if(i===1) ctx.fillStyle='#c7d2fe';
+      ctx.font='11px monospace'; ctx.textAlign='left';
+      ctx.fillText(`σ${i+1} = ${sv.toFixed(4)}`, svBx+bw+8, by+4);
+      ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.font='10px monospace';
+      ctx.fillText(`σ${i+1}`, svBx+6, by+4);
     });
 
-    // Arrow showing σ = √λ
-    ctx.fillStyle='#fbd38d'; ctx.font='11px monospace'; ctx.textAlign='center';
-    ctx.fillText('σᵢ = √λᵢ(AᵀA)', p2x+panW*0.5, CH-10);
+    // σ₁·σ₂ = |det(A)|
+    const detA=Math.abs(a*d-b*c);
+    ctx.fillStyle='#404060'; ctx.font='10px monospace'; ctx.textAlign='left';
+    ctx.fillText(`σ₁·σ₂ = ${(s1*s2).toFixed(4)} = |det A| = ${detA.toFixed(4)}`, svBx, svTopY+105);
+    ctx.fillText(`σ₁/σ₂ = ${(s2>1e-10?s1/s2:Infinity).toFixed(3)} (condition number)`, svBx, svTopY+120);
 
-    // ── Panel 3: Singular values ──
-    const p3x=panW*2;
-    ctx.fillStyle='#0a0a18'; ctx.fillRect(p3x,0,panW,CH);
-    ctx.fillStyle='#404060'; ctx.font='10px monospace'; ctx.textAlign='center';
-    ctx.fillText('Singular Values of A', p3x+panW*0.5, 16);
-    ctx.fillText('σ = √(eigenvalues of AᵀA)', p3x+panW*0.5, 28);
-
-    const svals=[s1,s2];
-    const maxS=Math.max(svals[0]*1.1, 1);
-
-    [0,1].forEach(i => {
-      const sv=svals[i], by=i===0?barY1:barY2;
-      const bw=Math.max(2,(sv/maxS)*barMaxW);
-      const bx=p3x+panW*0.12;
-      ctx.fillStyle='rgba(56,189,248,0.15)'; ctx.fillRect(bx,by-barH/2,barMaxW,barH);
-      ctx.fillStyle='#38bdf8'; ctx.fillRect(bx,by-barH/2,bw,barH);
-      ctx.fillStyle='#e0f2fe'; ctx.font='11px monospace'; ctx.textAlign='left';
-      ctx.fillText(`σ${i+1} = ${sv.toFixed(3)}`, bx+bw+6, by+4);
-    });
-
-    // Connection note
-    ctx.fillStyle='#38bdf8'; ctx.font='11px monospace'; ctx.textAlign='center';
-    const note = isReal
-      ? (Math.abs(eigs[0].im)<1e-9 && Math.abs(eigs[1].im)<1e-9
-        ? `|λ₁|=${Math.abs(eigs[0].re).toFixed(2)}, |λ₂|=${Math.abs(eigs[1].re).toFixed(2)} vs σ: ${s1.toFixed(2)},${s2.toFixed(2)}`
-        : '')
-      : `|λ|=${Math.sqrt(eigs[0].re**2+eigs[0].im**2).toFixed(2)}, σ: ${s1.toFixed(2)},${s2.toFixed(2)}`;
-    ctx.fillText(note, p3x+panW*0.5, CH-10);
-
-    // Dividers
-    ctx.strokeStyle='#1a1a30'; ctx.lineWidth=1;
-    ctx.beginPath(); ctx.moveTo(panW,0); ctx.lineTo(panW,CH); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(panW*2,0); ctx.lineTo(panW*2,CH); ctx.stroke();
+    // ═══ VERDICT strip at bottom ═══
+    const vdict=getVerdict(a,b,c,d,eigs,s1,s2);
+    const vy=CH-56;
+    ctx.fillStyle='#0d0d1e'; ctx.fillRect(0,vy,CW,56);
+    ctx.strokeStyle='#202038'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(0,vy); ctx.lineTo(CW,vy); ctx.stroke();
+    ctx.textAlign='left';
+    const vColor=isReal?'#34d399':'#fb923c';
+    ctx.fillStyle=vColor; ctx.font='700 10px monospace'; ctx.fillText(vdict[0],14,vy+17);
+    ctx.fillStyle='#6060a0'; ctx.font='10px monospace';
+    ctx.fillText(vdict[1],14,vy+32);
+    ctx.fillStyle='#38bdf8';
+    ctx.fillText(vdict[2],14,vy+47);
   }
 
-  ['a','b','c','d'].forEach((ch,i) => {
-    const sl=document.getElementById(`sp-${ch}`);
-    const vl=document.getElementById(`sp${ch}`);
-    sl.addEventListener('input',()=>{
-      matB[i]=parseFloat(sl.value);
-      vl.textContent=matB[i].toFixed(1);
+  ['a','b','c','d'].forEach((ch,i)=>{
+    document.getElementById(`sp-${ch}`).addEventListener('input',function(){
+      matB[i]=parseFloat(this.value);
+      document.getElementById(`sp${ch}`).textContent=matB[i].toFixed(1);
       draw();
     });
   });
 
-  function setPresetB(a,b,c,d) {
+  function setPresetB(a,b,c,d){
     matB=[a,b,c,d];
-    const ids=['sp-a','sp-b','sp-c','sp-d'], labs=['spa','spb','spc','spd'];
-    [a,b,c,d].forEach((v,i)=>{
-      document.getElementById(ids[i]).value=v;
-      document.getElementById(labs[i]).textContent=v.toFixed(1);
+    [['sp-a','spa',a],['sp-b','spb',b],['sp-c','spc',c],['sp-d','spd',d]].forEach(([sid,lid,v])=>{
+      document.getElementById(sid).value=v;
+      document.getElementById(lid).textContent=v.toFixed(1);
     });
     draw();
   }
 
   document.getElementById('sp-sym').addEventListener('click',   ()=>setPresetB(2,1,1,1.5));
-  document.getElementById('sp-rot').addEventListener('click',   ()=>{const c=Math.cos(1),s=Math.sin(1);setPresetB(c,-s,s,c);});
+  document.getElementById('sp-rot').addEventListener('click',   ()=>{const co=Math.cos(1),si=Math.sin(1);setPresetB(co,-si,si,co);});
   document.getElementById('sp-shear').addEventListener('click', ()=>setPresetB(1,2,0,1));
   document.getElementById('sp-indef').addEventListener('click', ()=>setPresetB(1,2,-1,-1));
 
@@ -1382,6 +1660,279 @@ print(f"Recovery error: {np.linalg.norm(A_clean - A_true)/np.linalg.norm(A_true)
   window.addEventListener('resize', resize);
   resize();
   generate();
+})();
+</script>
+
+<!-- ══════════════════════════════════════════════════
+     JAVASCRIPT — VIZ 5: 3D SURFACE NORMAL VIA SVD/PCA
+══════════════════════════════════════════════════ -->
+<script>
+(() => {
+  const canvas = document.getElementById('svd-normal');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+
+  let noise = 0.05, tiltDeg = 30;
+  let azimuth = 0.5, elevation = 0.35;
+  let isDragging = false, autoRotate = false, rotRAF = null;
+  let lastMouse = [0, 0];
+  let points3D = [];
+
+  function randn2() {
+    const u = Math.random(), v = Math.random();
+    return Math.sqrt(-2 * Math.log(Math.max(1e-15, u))) * Math.cos(2 * Math.PI * v);
+  }
+
+  function generatePoints() {
+    const tr = tiltDeg * Math.PI / 180;
+    points3D = [];
+    for (let i = 0; i < 70; i++) {
+      const r = Math.sqrt(Math.random()), th = Math.random() * 2 * Math.PI;
+      const u = r * Math.cos(th), v = r * Math.sin(th);
+      points3D.push([
+        u + randn2() * noise,
+        v * Math.cos(tr) + randn2() * noise,
+        v * Math.sin(tr) + randn2() * noise
+      ]);
+    }
+    draw();
+  }
+
+  function computePCA3D() {
+    const n = points3D.length;
+    const mx = points3D.reduce((s, p) => s + p[0], 0) / n;
+    const my = points3D.reduce((s, p) => s + p[1], 0) / n;
+    const mz = points3D.reduce((s, p) => s + p[2], 0) / n;
+
+    let sxx=0,sxy=0,sxz=0,syy=0,syz=0,szz=0;
+    for (const p of points3D) {
+      const dx=p[0]-mx, dy=p[1]-my, dz=p[2]-mz;
+      sxx+=dx*dx; sxy+=dx*dy; sxz+=dx*dz; syy+=dy*dy; syz+=dy*dz; szz+=dz*dz;
+    }
+    const f = 1/(n-1);
+    const C = [[sxx*f,sxy*f,sxz*f],[sxy*f,syy*f,syz*f],[sxz*f,syz*f,szz*f]];
+
+    function mv(M,v){return[M[0][0]*v[0]+M[0][1]*v[1]+M[0][2]*v[2],
+                             M[1][0]*v[0]+M[1][1]*v[1]+M[1][2]*v[2],
+                             M[2][0]*v[0]+M[2][1]*v[1]+M[2][2]*v[2]];}
+    function dot3(a,b){return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];}
+    function norm3(v){return Math.sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);}
+    function nn3(v){const n=norm3(v);return n<1e-14?[1,0,0]:[v[0]/n,v[1]/n,v[2]/n];}
+
+    const eigvecs=[], eigvals=[];
+    let Cr = C.map(r=>[...r]);
+    for (let k = 0; k < 3; k++) {
+      let v = nn3([Math.random()-0.5, Math.random()-0.5, Math.random()-0.5]);
+      let lam = 0;
+      for (let iter = 0; iter < 250; iter++) {
+        const u = mv(Cr, v);
+        lam = dot3(u, v);
+        const un = norm3(u);
+        if (un < 1e-14) break;
+        v = nn3(u);
+      }
+      eigvecs.push(v);
+      eigvals.push(Math.max(0, lam));
+      for (let i=0;i<3;i++) for (let j=0;j<3;j++) Cr[i][j] -= lam*v[i]*v[j];
+    }
+
+    const idx = [0,1,2].sort((a,b) => eigvals[b] - eigvals[a]);
+    return {
+      mean: [mx,my,mz],
+      pc: [eigvecs[idx[0]], eigvecs[idx[1]], eigvecs[idx[2]]],
+      sigma: [Math.sqrt(eigvals[idx[0]]), Math.sqrt(eigvals[idx[1]]), Math.sqrt(eigvals[idx[2]])]
+    };
+  }
+
+  function proj3D(p, cx, cy, scale) {
+    const ca=Math.cos(azimuth),sa=Math.sin(azimuth);
+    const x1=p[0]*ca+p[2]*sa, y1=p[1], z1=-p[0]*sa+p[2]*ca;
+    const ce=Math.cos(elevation),se=Math.sin(elevation);
+    const x2=x1, y2=y1*ce-z1*se, z2=y1*se+z1*ce;
+    const fov=4.5, dz=fov+z2;
+    return {sx: cx+(x2/dz)*scale*fov, sy: cy-(y2/dz)*scale*fov, depth: z2};
+  }
+
+  function drawArrow3D(from3, to3, cx, cy, scale, color, lbl) {
+    const f=proj3D(from3,cx,cy,scale), t=proj3D(to3,cx,cy,scale);
+    ctx.beginPath(); ctx.moveTo(f.sx,f.sy); ctx.lineTo(t.sx,t.sy);
+    ctx.strokeStyle=color; ctx.lineWidth=2.5; ctx.stroke();
+    const ang=Math.atan2(t.sy-f.sy,t.sx-f.sx), al=11;
+    ctx.beginPath();
+    ctx.moveTo(t.sx,t.sy);
+    ctx.lineTo(t.sx-al*Math.cos(ang-0.4),t.sy-al*Math.sin(ang-0.4));
+    ctx.lineTo(t.sx-al*Math.cos(ang+0.4),t.sy-al*Math.sin(ang+0.4));
+    ctx.closePath(); ctx.fillStyle=color; ctx.fill();
+    if (lbl) {
+      ctx.fillStyle=color; ctx.font='bold 10px monospace'; ctx.textAlign='left';
+      ctx.fillText(lbl, t.sx+9, t.sy-3);
+    }
+  }
+
+  function draw() {
+    const CW=canvas.width/dpr, CH=canvas.height/dpr;
+    ctx.clearRect(0,0,CW,CH);
+    ctx.fillStyle='#09090f'; ctx.fillRect(0,0,CW,CH);
+    if (!points3D.length) return;
+
+    const pca = computePCA3D();
+    const viewW = CW*0.63;
+    const cx=viewW/2, cy=CH/2;
+    const scale=Math.min(viewW,CH)*0.27;
+
+    const cpts = points3D.map(p=>[p[0]-pca.mean[0],p[1]-pca.mean[1],p[2]-pca.mean[2]]);
+    const [t1,t2,nv] = pca.pc;
+
+    // Tangent plane quad
+    const ps=1.35;
+    const qPts=[
+      [ps*(+t1[0]+t2[0]),ps*(+t1[1]+t2[1]),ps*(+t1[2]+t2[2])],
+      [ps*(-t1[0]+t2[0]),ps*(-t1[1]+t2[1]),ps*(-t1[2]+t2[2])],
+      [ps*(-t1[0]-t2[0]),ps*(-t1[1]-t2[1]),ps*(-t1[2]-t2[2])],
+      [ps*(+t1[0]-t2[0]),ps*(+t1[1]-t2[1]),ps*(+t1[2]-t2[2])]
+    ];
+    const pqPts = qPts.map(p=>proj3D(p,cx,cy,scale));
+
+    // Plane (always drawn first, behind points)
+    ctx.beginPath();
+    ctx.moveTo(pqPts[0].sx, pqPts[0].sy);
+    for (let i=1;i<4;i++) ctx.lineTo(pqPts[i].sx, pqPts[i].sy);
+    ctx.closePath();
+    ctx.fillStyle='rgba(56,189,248,0.07)'; ctx.fill();
+    ctx.strokeStyle='rgba(56,189,248,0.32)'; ctx.lineWidth=1; ctx.stroke();
+
+    // Points depth-sorted back→front
+    const projPts = cpts.map(p=>proj3D(p,cx,cy,scale));
+    const sorted = [...projPts].sort((a,b)=>b.depth-a.depth);
+    for (const {sx,sy,depth} of sorted) {
+      const alpha = 0.35+0.55*Math.max(0,Math.min(1,(depth+2)/4));
+      ctx.beginPath(); ctx.arc(sx,sy,3.5,0,2*Math.PI);
+      ctx.fillStyle=`rgba(56,189,248,${alpha.toFixed(2)})`; ctx.fill();
+    }
+
+    const O=[0,0,0];
+
+    // PC1 — violet
+    drawArrow3D(O,[t1[0]*pca.sigma[0]*0.7,t1[1]*pca.sigma[0]*0.7,t1[2]*pca.sigma[0]*0.7],
+                cx,cy,scale,'#a78bfa',`v₁  σ₁=${pca.sigma[0].toFixed(2)}`);
+    // PC2 — green
+    drawArrow3D(O,[t2[0]*pca.sigma[1]*0.7,t2[1]*pca.sigma[1]*0.7,t2[2]*pca.sigma[1]*0.7],
+                cx,cy,scale,'#34d399',`v₂  σ₂=${pca.sigma[1].toFixed(2)}`);
+    // Normal (PC3) — red, double-headed
+    const nLen=0.85;
+    drawArrow3D([-nv[0]*nLen,-nv[1]*nLen,-nv[2]*nLen],[nv[0]*nLen,nv[1]*nLen,nv[2]*nLen],
+                cx,cy,scale,'#f87171','');
+    const nTipP=proj3D([nv[0]*nLen,nv[1]*nLen,nv[2]*nLen],cx,cy,scale);
+    ctx.fillStyle='#f87171'; ctx.font='bold 11px monospace'; ctx.textAlign='left';
+    ctx.fillText('n = v₃  (normal)', nTipP.sx+10, nTipP.sy);
+    ctx.font='10px monospace';
+    ctx.fillText(`σ₃ = ${pca.sigma[2].toFixed(3)}`, nTipP.sx+10, nTipP.sy+14);
+
+    // Mean dot
+    const op=proj3D(O,cx,cy,scale);
+    ctx.beginPath(); ctx.arc(op.sx,op.sy,5,0,2*Math.PI);
+    ctx.fillStyle='#facc15'; ctx.fill();
+
+    // ── Right panel ──
+    const panX=viewW+14, panW=CW-viewW-20;
+    ctx.fillStyle='#0d0d1e'; ctx.fillRect(viewW,0,CW-viewW,CH);
+    ctx.strokeStyle='#1a1a28'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(viewW,0); ctx.lineTo(viewW,CH); ctx.stroke();
+
+    ctx.fillStyle='#383870'; ctx.font='700 10px monospace'; ctx.textAlign='center';
+    ctx.fillText('Singular Values', panX+panW/2-4, 22);
+
+    const maxS=Math.max(pca.sigma[0],0.01);
+    const bColors=['#a78bfa','#34d399','#f87171'];
+    const bLabels=['σ₁  (tangent 1)','σ₂  (tangent 2)','σ₃  (normal ↑)'];
+    const bY=[42,112,182];
+
+    pca.sigma.forEach((sv,i)=>{
+      const by=bY[i], bw=Math.max(3,(sv/maxS)*(panW-16));
+      ctx.fillStyle=bColors[i]; ctx.font='700 9px monospace'; ctx.textAlign='left';
+      ctx.fillText(bLabels[i], panX, by+14);
+      ctx.fillStyle='#111128'; ctx.fillRect(panX, by+19, panW-8, 17);
+      ctx.fillStyle=bColors[i]; ctx.fillRect(panX, by+19, bw, 17);
+      ctx.fillStyle='#c0c0e0'; ctx.font='10px monospace';
+      ctx.fillText(sv.toFixed(3), panX+bw+4, by+32);
+    });
+
+    // Planarity bar
+    const planarity=pca.sigma[0]>1e-10?1-pca.sigma[2]/pca.sigma[0]:0;
+    const planY=252;
+    const planColor=planarity>0.85?'#34d399':planarity>0.5?'#facc15':'#f87171';
+    ctx.fillStyle='#383870'; ctx.font='700 9px monospace'; ctx.textAlign='center';
+    ctx.fillText('Planarity = 1 − σ₃/σ₁', panX+panW/2-4, planY);
+    ctx.fillStyle='#111128'; ctx.fillRect(panX, planY+8, panW-8, 17);
+    ctx.fillStyle=planColor; ctx.fillRect(panX, planY+8, (panW-8)*planarity, 17);
+    ctx.fillStyle=planColor; ctx.font='700 11px monospace'; ctx.textAlign='center';
+    ctx.fillText(planarity.toFixed(3), panX+panW/2-4, planY+21);
+
+    const kappa=pca.sigma[0]>1e-10?pca.sigma[0]/Math.max(pca.sigma[2],1e-6):Infinity;
+    ctx.fillStyle='#404060'; ctx.font='9px monospace'; ctx.textAlign='center';
+    ctx.fillText(`κ = σ₁/σ₃ = ${kappa>9999?'∞':kappa.toFixed(1)}`, panX+panW/2-4, planY+42);
+
+    const interp=planarity>0.88?'✓ clean planar patch':planarity>0.55?'~ noisy / curved':'✗ corner / cloud';
+    ctx.fillStyle=planColor; ctx.font='9px monospace'; ctx.textAlign='center';
+    ctx.fillText(interp, panX+panW/2-4, planY+58);
+
+    ctx.fillStyle='#252545'; ctx.font='9px monospace'; ctx.textAlign='center';
+    ctx.fillText('drag to orbit', cx, CH-8);
+  }
+
+  canvas.addEventListener('mousedown',e=>{
+    isDragging=true; lastMouse=[e.clientX,e.clientY]; canvas.style.cursor='grabbing';
+  });
+  canvas.addEventListener('mousemove',e=>{
+    if(!isDragging) return;
+    azimuth+=(e.clientX-lastMouse[0])*0.008;
+    elevation=Math.max(-1.3,Math.min(1.3,elevation+(e.clientY-lastMouse[1])*0.006));
+    lastMouse=[e.clientX,e.clientY]; draw();
+  });
+  canvas.addEventListener('mouseup',()=>{isDragging=false;canvas.style.cursor='grab';});
+  canvas.addEventListener('mouseleave',()=>{isDragging=false;canvas.style.cursor='grab';});
+  canvas.addEventListener('touchstart',e=>{
+    isDragging=true; lastMouse=[e.touches[0].clientX,e.touches[0].clientY]; e.preventDefault();
+  },{passive:false});
+  canvas.addEventListener('touchmove',e=>{
+    if(!isDragging) return;
+    azimuth+=(e.touches[0].clientX-lastMouse[0])*0.008;
+    elevation=Math.max(-1.3,Math.min(1.3,elevation+(e.touches[0].clientY-lastMouse[1])*0.006));
+    lastMouse=[e.touches[0].clientX,e.touches[0].clientY]; draw(); e.preventDefault();
+  },{passive:false});
+  canvas.addEventListener('touchend',()=>{isDragging=false;});
+
+  document.getElementById('normal-noise').addEventListener('input',function(){
+    noise=parseFloat(this.value);
+    document.getElementById('normal-noise-val').textContent=noise.toFixed(2);
+    generatePoints();
+  });
+  document.getElementById('normal-tilt').addEventListener('input',function(){
+    tiltDeg=parseFloat(this.value);
+    document.getElementById('normal-tilt-val').textContent=tiltDeg+'°';
+    generatePoints();
+  });
+  document.getElementById('normal-rand').addEventListener('click',()=>generatePoints());
+  document.getElementById('normal-rot').addEventListener('click',function(){
+    autoRotate=!autoRotate;
+    this.textContent=autoRotate?'⏹ Stop':'⟳ Auto-rotate';
+    if(autoRotate){
+      (function rotFrame(){
+        if(!autoRotate) return;
+        azimuth+=0.012; draw(); rotRAF=requestAnimationFrame(rotFrame);
+      })();
+    } else { if(rotRAF){cancelAnimationFrame(rotRAF);rotRAF=null;} }
+  });
+
+  function resize() {
+    const W=canvas.parentElement.clientWidth, H=420;
+    canvas.style.width=W+'px'; canvas.style.height=H+'px';
+    canvas.width=W*dpr; canvas.height=H*dpr;
+    ctx.scale(dpr,dpr); draw();
+  }
+  window.addEventListener('resize',resize);
+  resize();
+  generatePoints();
 })();
 </script>
 
