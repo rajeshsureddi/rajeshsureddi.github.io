@@ -714,33 +714,33 @@ print(f"Recovery error: {np.linalg.norm(A_clean - A_true)/np.linalg.norm(A_true)
     ctx.restore();
   }
 
-  // Step descriptions (3 lines: title, main, note)
+  // Step descriptions
   function getStepDesc(t, sv) {
     const {s1,s2} = sv;
     if (t < 0.05) return [
-      'INPUT — drag the yellow ● to any position',
-      'v₁ (red) and v₂ (blue) are the right singular vectors. A maps: v₁ → σ₁·u₁  and  v₂ → σ₂·u₂.',
-      'Every vector p in input space ends up at Ap in output space. Watch p track through the 3 steps.'
+      'START — drag ● to pick any input vector p  (adjust matrix A with sliders below)',
+      'LEFT panel: blue circle = all unit input vectors. Red v₁, blue v₂ = right singular vectors of A — computed from AᵀA. σ₁,σ₂ are the singular values of A.',
+      'RIGHT panel shows what happens step by step. Press ▶ to watch: Vᵀ rotates v₁,v₂ onto the axes → Σ stretches → U rotates to final orientation.'
     ];
     if (t <= 1) return [
-      `STEP 1 — Apply Vᵀ  (pure rotation, t=${t.toFixed(2)})`,
-      `Vᵀ rotates space so that v₁ aligns with x̂ and v₂ aligns with ŷ. The deformed grid shows the rotation.`,
-      'Circle stays circular — rotations never stretch. p moves to Vᵀp. No distance has changed yet.'
+      `STEP 1 / 3 — Vᵀ  (pure rotation — axes stay fixed, vectors rotate)`,
+      `Vᵀ ROTATES every vector. KEY: watch v₁ (red) in the RIGHT panel — it rotates until it points exactly along x̂ →. v₂ (blue) lands on ŷ ↑.`,
+      'Circle → circle (rotations preserve shape/length). p moves to Vᵀp. No size change yet. The coordinate axes x̂,ŷ never move — only the vectors do.'
     ];
     if (t <= 2) return [
-      `STEP 2 — Apply Σ = diag(σ₁, σ₂)  (the only stretching, t=${(t-1).toFixed(2)})`,
-      `σ₁=${s1.toFixed(3)}: x-axis stretched by σ₁.  σ₂=${s2.toFixed(3)}: y-axis scaled by σ₂. ALL size change is here.`,
-      'Circle becomes an axis-aligned ellipse with semi-axes σ₁ and σ₂. p moves to ΣVᵀp.'
+      `STEP 2 / 3 — Σ = diag(σ₁, σ₂)  (THE ONLY STEP THAT STRETCHES)`,
+      `Since v₁,v₂ now sit on the x,y axes, Σ scales them independently: x̂ by σ₁=${s1.toFixed(3)}, ŷ by σ₂=${s2.toFixed(3)}.`,
+      'Circle → axis-aligned ellipse (semi-axes σ₁ and σ₂ shown by the dashed markers). All stretching happens here — steps 1 and 3 are pure rotations.'
     ];
     if (t < 3) return [
-      `STEP 3 — Apply U  (pure rotation back, t=${(t-2).toFixed(2)})`,
-      `U rotates the ellipse to its final orientation in output space. The semi-axes stay σ₁ and σ₂ — no new stretching.`,
-      'p arrives at its final position Ap = UΣVᵀp.'
+      `STEP 3 / 3 — U  (pure rotation — no stretching)`,
+      `U rotates the axis-aligned ellipse to its final orientation. Semi-axes σ₁ and σ₂ stay exactly the same — only direction changes.`,
+      'p arrives at A·p = U·Σ·Vᵀ·p. The ellipse tips along u₁ (red) and u₂ (blue) — the left singular vectors.'
     ];
     return [
       'COMPLETE — A = U · Σ · Vᵀ',
-      `Unit circle → ellipse with semi-axes σ₁=${s1.toFixed(3)} (along u₁) and σ₂=${s2.toFixed(3)} (along u₂).`,
-      'Yellow ● shows exactly where p ends up. Every point in the plane follows this same rotate→stretch→rotate path.'
+      `Ellipse semi-axes: σ₁=${s1.toFixed(3)} along u₁ (red arrow), σ₂=${s2.toFixed(3)} along u₂ (blue arrow). These are the only two quantities that stretch.`,
+      'Story: Vᵀ rotated v₁,v₂ onto the axes → Σ stretched each axis → U rotated to final orientation. Axes never moved.'
     ];
   }
 
@@ -773,45 +773,65 @@ print(f"Recovery error: {np.linalg.norm(A_clean - A_true)/np.linalg.norm(A_true)
     const scale = Math.min(halfW*0.37, drawH*0.38);
     const cxL = halfW*0.5, cxR = halfW + halfW*0.5;
 
+    const {m, sv} = getM(animT);
+    const Imat = [1,0,0,1];
+
     // ── DESCRIPTION BOX ──
     ctx.fillStyle='#08080f'; ctx.fillRect(0, drawH, CW, descH);
     ctx.strokeStyle='#1a1a28'; ctx.lineWidth=1;
     ctx.beginPath(); ctx.moveTo(0,drawH); ctx.lineTo(CW,drawH); ctx.stroke();
 
-    const {m, sv} = getM(animT);
     const desc = getStepDesc(animT, sv);
     ctx.textAlign='left';
     ctx.fillStyle='#38bdf8'; ctx.font='700 10px monospace';
     ctx.fillText(desc[0], 14, drawH+20);
-    ctx.fillStyle='#9090b8'; ctx.font='12px sans-serif';
-    ctx.fillText(desc[1], 14, drawH+40);
-    ctx.fillStyle='#505070'; ctx.font='11px sans-serif';
-    ctx.fillText(desc[2], 14, drawH+60);
-    // progress bar
+    ctx.fillStyle='#9090b8'; ctx.font='11.5px sans-serif';
+    ctx.fillText(desc[1], 14, drawH+38);
+    ctx.fillStyle='#505070'; ctx.font='10.5px sans-serif';
+    ctx.fillText(desc[2], 14, drawH+56);
     const pct = animT/3;
     ctx.fillStyle='#1a1a30'; ctx.fillRect(0, drawH+descH-6, CW, 6);
     ctx.fillStyle='#38bdf8'; ctx.fillRect(0, drawH+descH-6, CW*pct, 6);
 
-    // Separator
+    // Separator between panels
     ctx.strokeStyle = '#202038'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(halfW,0); ctx.lineTo(halfW,drawH); ctx.stroke();
 
-    // Panel labels
-    ctx.font='10px monospace'; ctx.textAlign='center';
+    // ── PANEL LABELS ──
+    ctx.font='9px monospace'; ctx.textAlign='center';
     ctx.fillStyle='#2a2a50';
-    ctx.fillText('INPUT SPACE (domain)', cxL, 15);
-    ctx.fillText('OUTPUT SPACE (range)', cxR, 15);
-
-    const Imat = [1,0,0,1];
+    ctx.fillText('INPUT SPACE — unit circle + v₁,v₂ from A', cxL, 14);
+    // Dynamic right-panel label
+    const rLabel = animT < 0.05 ? 'same as input (no transform yet)'
+                 : animT <= 1   ? `after Vᵀ — (${(animT*100).toFixed(0)}% rotated)`
+                 : animT <= 2   ? `after Σ·Vᵀ — (${((animT-1)*100).toFixed(0)}% stretched)`
+                 : animT < 3   ? `after U·Σ·Vᵀ — (${((animT-2)*100).toFixed(0)}% final rotate)`
+                 : 'after A = U·Σ·Vᵀ (complete)';
+    ctx.fillText(rLabel, cxR, 14);
 
     // ── LEFT PANEL ──
     drawGrid(cxL, midY, scale, Imat, 0.15);
     drawAxes(cxL, midY, scale, Imat, 0.45);
+
+    // Axis labels left
+    ctx.fillStyle='rgba(70,70,130,0.7)'; ctx.font='9px monospace'; ctx.textAlign='left';
+    ctx.fillText('x̂', cxL+scale+5, midY+3);
+    ctx.fillText('ŷ', cxL+3, midY-scale-4);
+
     drawCurve(cxL, midY, scale, Imat, '#38bdf8', 1.5, true);
+
+    // v₁ and v₂ with source label "from A"
     drawArrow(cxL, midY, scale, sv.v1[0], sv.v1[1], 1.0, '#f87171', 'v₁');
     drawArrow(cxL, midY, scale, sv.v2[0], sv.v2[1], 1.0, '#60a5fa', 'v₂');
 
-    // Draggable point p in left panel
+    // "from A" annotation below v₁ arrow
+    {
+      const ax=cxL+sv.v1[0]*scale*0.55, ay=midY-sv.v1[1]*scale*0.55;
+      ctx.fillStyle='rgba(248,113,113,0.55)'; ctx.font='8px monospace'; ctx.textAlign='center';
+      ctx.fillText('(from A)', ax+8, ay+13);
+    }
+
+    // Draggable p in left panel
     const pxL = cxL + dragPt[0]*scale, pyL = midY - dragPt[1]*scale;
     ctx.save();
     ctx.strokeStyle='rgba(250,204,21,0.55)'; ctx.lineWidth=1.5; ctx.setLineDash([4,4]);
@@ -824,55 +844,78 @@ print(f"Recovery error: {np.linalg.norm(A_clean - A_true)/np.linalg.norm(A_true)
     ctx.fillStyle='#facc15'; ctx.font='bold 11px monospace'; ctx.textAlign='left';
     ctx.fillText('p', pxL+9, pyL-4);
 
-    // ── RIGHT PANEL ──
-    drawGrid(cxR, midY, scale, m, 0.2);
-    drawAxes(cxR, midY, scale, m, 0.45);
+    // ── RIGHT PANEL — FIXED standard axes, transformed objects ──
+    // Standard orthogonal grid (not warped) — axes stay fixed
+    drawGrid(cxR, midY, scale, Imat, 0.12);
+    drawAxes(cxR, midY, scale, Imat, 0.42);
 
-    // In step 1: show dashed reference of where v₁ was before V^T (shows the alignment)
-    if (animT > 0.1 && animT <= 1.5) {
-      const fade = Math.min(1, Math.min(animT, 1.5-animT)*4);
-      ctx.save(); ctx.globalAlpha=fade*0.5; ctx.setLineDash([5,4]);
-      ctx.strokeStyle='#f87171'; ctx.lineWidth=1.2;
-      ctx.beginPath(); ctx.moveTo(cxR,midY); ctx.lineTo(cxR+sv.v1[0]*scale,midY-sv.v1[1]*scale); ctx.stroke();
-      ctx.strokeStyle='#60a5fa';
-      ctx.beginPath(); ctx.moveTo(cxR,midY); ctx.lineTo(cxR+sv.v2[0]*scale,midY-sv.v2[1]*scale); ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.restore();
-      if (animT > 0.85) {
-        const fade2=Math.min(1,(animT-0.85)/0.15);
-        ctx.save(); ctx.globalAlpha=fade2*0.8;
-        ctx.fillStyle='#38bdf8'; ctx.font='10px monospace'; ctx.textAlign='left';
-        ctx.fillText('v₁→x̂', cxR+scale*1.08, midY+4);
-        ctx.fillText('v₂→ŷ', cxR+6, midY-scale*1.05);
-        ctx.restore();
-      }
-    }
+    // Axis labels right (always same position)
+    ctx.fillStyle='rgba(70,70,130,0.7)'; ctx.font='9px monospace'; ctx.textAlign='left';
+    ctx.fillText('x̂', cxR+scale+5, midY+3);
+    ctx.fillText('ŷ', cxR+3, midY-scale-4);
 
+    // Transformed curve (circle → ellipse under M)
     drawCurve(cxR, midY, scale, m, '#a78bfa', 2, true);
 
-    // u₁·σ₁ and u₂·σ₂ arrows fade in near completion
-    if (animT > 2.25) {
-      const fade = Math.min(1,(animT-2.25)/0.6);
-      drawArrow(cxR, midY, scale, sv.u1[0]*sv.s1, sv.u1[1]*sv.s1, 1.0,
-                `rgba(248,113,113,${fade})`, animT>2.8?'u₁·σ₁':'');
-      drawArrow(cxR, midY, scale, sv.u2[0]*sv.s2, sv.u2[1]*sv.s2, 1.0,
-                `rgba(96,165,250,${fade})`, animT>2.8?'u₂·σ₂':'');
-    }
+    // Transformed v₁ and v₂ — explicitly track where they go
+    const Mv1 = [m[0]*sv.v1[0]+m[1]*sv.v1[1], m[2]*sv.v1[0]+m[3]*sv.v1[1]];
+    const Mv2 = [m[0]*sv.v2[0]+m[1]*sv.v2[1], m[2]*sv.v2[0]+m[3]*sv.v2[1]];
 
-    // σ₁, σ₂ labels during stretch phase
-    if (animT > 1.08 && animT <= 2.85) {
-      const ta = Math.min(1,(animT-1.08)/0.35);
+    // At t≈1 (end of V^T step): Mv1 ≈ (1,0) = x̂, Mv2 ≈ (0,1) = ŷ — highlight this moment
+    const mv1x = Mv1[0], mv1y = Mv1[1];
+    const aligned = Math.abs(mv1y) < 0.08 && mv1x > 0.85;  // v₁ has landed on x̂
+    const v1Label = aligned && animT > 0.88 && animT < 1.15 ? 'Vᵀv₁ = x̂ ✓' : 'M·v₁';
+    const v2Label = aligned && animT > 0.88 && animT < 1.15 ? 'Vᵀv₂ = ŷ ✓' : 'M·v₂';
+
+    drawArrow(cxR, midY, scale, Mv1[0], Mv1[1], 1.0,
+              aligned && animT > 0.88 && animT < 1.15 ? '#ff6060' : '#f87171', v1Label);
+    drawArrow(cxR, midY, scale, Mv2[0], Mv2[1], 1.0,
+              aligned && animT > 0.88 && animT < 1.15 ? '#60d0ff' : '#60a5fa', v2Label);
+
+    // ── STEP 2: axis-aligned σ₁/σ₂ dimension markers ──
+    // During step 2, M = lerp(V^T, Σ·V^T, s), and M·v₁ lies exactly on x̂ with length (1-s+s*σ₁)
+    // So the ellipse is always axis-aligned — we can show σ dimensions directly
+    if (animT > 1.02 && animT <= 2.88) {
+      const ta = Math.min(1, (animT-1.02)/0.3);
+      // Current semi-axes: ||Mv1|| along x, ||Mv2|| along y (they stay on axes during step 2)
+      const currS1 = Math.hypot(Mv1[0], Mv1[1]);  // grows from 1 → σ₁
+      const currS2 = Math.hypot(Mv2[0], Mv2[1]);  // shrinks/grows from 1 → σ₂
       ctx.save(); ctx.globalAlpha=ta;
-      ctx.font='11px monospace'; ctx.fillStyle='#facc15'; ctx.textAlign='center';
-      // σ₁ label at tip of major axis
-      const s1tx=cxR+m[0]*scale*sv.s1/Math.max(sv.s1,0.01), s1ty=midY-m[2]*scale*sv.s1/Math.max(sv.s1,0.01);
-      ctx.fillText(`σ₁=${sv.s1.toFixed(2)}`,s1tx,s1ty-12);
-      const s2tx=cxR+m[1]*scale*sv.s2/Math.max(sv.s2,0.01), s2ty=midY-m[3]*scale*sv.s2/Math.max(sv.s2,0.01);
-      ctx.fillText(`σ₂=${sv.s2.toFixed(2)}`,s2tx+28,s2ty);
+      ctx.setLineDash([4,4]); ctx.lineWidth=1;
+
+      // Horizontal extent bracket (σ₁)
+      ctx.strokeStyle='rgba(250,204,21,0.55)';
+      ctx.beginPath(); ctx.moveTo(cxR, midY+currS2*scale+14); ctx.lineTo(cxR+currS1*scale, midY+currS2*scale+14); ctx.stroke();
+      // end ticks
+      ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(cxR, midY+currS2*scale+10); ctx.lineTo(cxR, midY+currS2*scale+18); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cxR+currS1*scale, midY+currS2*scale+10); ctx.lineTo(cxR+currS1*scale, midY+currS2*scale+18); ctx.stroke();
+      ctx.fillStyle='#facc15'; ctx.font='700 10px monospace'; ctx.textAlign='center';
+      ctx.fillText(`σ₁=${sv.s1.toFixed(2)}`, cxR+currS1*scale/2, midY+currS2*scale+28);
+
+      // Vertical extent bracket (σ₂)
+      ctx.setLineDash([4,4]);
+      ctx.strokeStyle='rgba(250,204,21,0.55)';
+      ctx.beginPath(); ctx.moveTo(cxR+currS1*scale+14, midY); ctx.lineTo(cxR+currS1*scale+14, midY-currS2*scale); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(cxR+currS1*scale+10, midY); ctx.lineTo(cxR+currS1*scale+18, midY); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cxR+currS1*scale+10, midY-currS2*scale); ctx.lineTo(cxR+currS1*scale+18, midY-currS2*scale); ctx.stroke();
+      ctx.fillStyle='#facc15'; ctx.font='700 10px monospace'; ctx.textAlign='left';
+      ctx.fillText(`σ₂=${sv.s2.toFixed(2)}`, cxR+currS1*scale+22, midY-currS2*scale/2+4);
+
       ctx.restore();
     }
 
-    // Transformed point (yellow dot on right panel)
+    // ── STEP 3 completion: u₁·σ₁ and u₂·σ₂ arrows ──
+    if (animT > 2.3) {
+      const fade = Math.min(1,(animT-2.3)/0.55);
+      drawArrow(cxR, midY, scale, sv.u1[0]*sv.s1, sv.u1[1]*sv.s1, 1.0,
+                `rgba(248,113,113,${fade})`, animT>2.82?'u₁·σ₁':'');
+      drawArrow(cxR, midY, scale, sv.u2[0]*sv.s2, sv.u2[1]*sv.s2, 1.0,
+                `rgba(96,165,250,${fade})`, animT>2.82?'u₂·σ₂':'');
+    }
+
+    // Transformed p (yellow dot right panel)
     const tp = [m[0]*dragPt[0]+m[1]*dragPt[1], m[2]*dragPt[0]+m[3]*dragPt[1]];
     const pxR = cxR + tp[0]*scale, pyR = midY - tp[1]*scale;
     ctx.save();
