@@ -107,9 +107,11 @@ code:not(.hljs){font-family:'Fira Code','JetBrains Mono',Consolas,monospace;font
 
 <div class="callout amber">
   <div class="ct">Required Preprocessing — Nonlinear Regression Fitting</div>
-  <p>For <strong>PLCC</strong> and <strong>RMSE</strong>: model predictions may live on a different scale or range than MOS. A model trained on [0,1] compared against MOS on [1,5] would appear terrible without any scale matching. The standard fix (per VQEG / ITU-T Rec. BT.500) is to first fit a <em>monotonic nonlinear regression</em> to map predictions to the MOS scale:</p>
+  <p>Model predictions often live on a different scale or have a nonlinear relationship with MOS. The standard fix (per VQEG / ITU-T Rec. BT.500) is to first fit a <em>monotonic nonlinear regression</em> to map predictions to the MOS scale:</p>
   <p style="text-align:center;margin-top:8px;">$\hat{y}_i = f(x_i) \quad$ where $\;f(x) = \dfrac{\beta_1 - \beta_2}{1 + e^{-\beta_3(x - \beta_4)}} + \beta_2$</p>
-  <p style="margin-top:6px;">Fitted values $\hat{y}_i$ are then used in place of $x_i$ for PLCC and RMSE. For <strong>SROCC</strong> and <strong>KRCC</strong> no fitting is needed — they are rank-based and scale-invariant.</p>
+  <p style="margin-top:6px;">Fitted values $\hat{y}_i$ replace raw predictions for <strong>PLCC</strong> and <strong>RMSE</strong>. For <strong>SROCC</strong> and <strong>KRCC</strong> no fitting is needed — they are rank-based and invariant to any monotonic rescaling.</p>
+  <p style="margin-top:8px;"><strong>What fitting removes:</strong> global scale, offset, and monotonic nonlinearity between predictions and MOS (e.g., a model outputting [0,1] vs MOS on [1,5], or a logarithmic relationship). After fitting, predictions are on the MOS scale and RMSE is meaningful in MOS units.</p>
+  <p style="margin-top:6px;"><strong>What fitting cannot remove:</strong> per-image random errors — noise that is not a systematic function of the predicted score. If individual predictions scatter widely around MOS even after the best monotonic mapping, RMSE will still be high. PLCC can remain high at the same time because it only measures the overall linear trend, not per-image scatter. This is precisely why RMSE must always accompany PLCC.</p>
 </div>
 
 <!-- ══════════════════════════════════════════════════
@@ -143,7 +145,7 @@ code:not(.hljs){font-family:'Fira Code','JetBrains Mono',Consolas,monospace;font
 <div class="qa-block">
   <div class="qa-item">
     <div class="qa-q">Can PLCC be high even if absolute errors are large?</div>
-    <div class="qa-a">Yes. PLCC only measures the <em>shape</em> of the relationship (linear trend), not its scale. A model that predicts $2\times\text{MOS}$ for every image has PLCC=1 but large RMSE. This is why you always report both PLCC and RMSE.</div>
+    <div class="qa-a">Yes — but only for errors that logistic fitting cannot eliminate. Fitting removes systematic distortions (scale, offset, nonlinearity). What it cannot remove is <em>per-image random noise</em>. Consider a model with PLCC = 0.92: it explains 85% of MOS variance ($R^2 = 0.92^2$), meaning the remaining 15% unexplained variance can still give RMSE ≈ 0.4 on a 1–5 MOS scale — nearly half a quality level off per image on average. PLCC is blind to that scatter because it only measures the linear trend direction; RMSE directly measures it. This is why both are always reported together.</div>
   </div>
   <div class="qa-item">
     <div class="qa-q">What if the relationship is non-linear but monotonic?</div>
