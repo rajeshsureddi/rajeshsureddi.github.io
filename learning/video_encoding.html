@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Video Encoding &amp; Decoding — I/P/B Frames, GOP, Quantization &amp; FFmpeg</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>document.addEventListener('DOMContentLoaded',()=>hljs.highlightAll());</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0c0c14;color:#d4d4e0;line-height:1.75;}
+a{color:#38bdf8;}
+.article-body{max-width:900px;margin:0 auto;padding:3.5rem 1.5rem 5rem;}
+h1{font-size:2.4rem;font-weight:800;color:#f0f0f8;letter-spacing:-.03em;margin-bottom:.8rem;}
+h2{font-size:1.55rem;font-weight:700;color:#f0f0f8;margin:3.5rem 0 1.2rem;padding-bottom:.6rem;border-bottom:2px solid #1e1e30;}
+h3{font-size:1.05rem;font-weight:600;color:#c0c0d8;margin:2rem 0 .7rem;}
+p{margin-bottom:1.3rem;color:#a0a0b8;}
+ul,ol{padding-left:1.6rem;margin-bottom:1.3rem;}
+li{margin-bottom:.45rem;color:#a0a0b8;}
+strong{color:#d4d4e8;}
+em{color:#c0c0d8;}
+.graphic-container{background:#09090f;border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5);margin:2rem 0;border:1px solid #1a1a28;}
+.canvas-wrapper{position:relative;width:100%;user-select:none;}
+.controls{background:#0f0f1e;border-top:1px solid #1a1a28;padding:16px 20px;}
+.ctrl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:11px 20px;}
+.ctrl-group{display:flex;flex-direction:column;gap:4px;}
+.ctrl-group label{font-size:.79rem;font-weight:600;color:#7070a0;display:flex;justify-content:space-between;}
+.ctrl-group label span.val{color:#38bdf8;font-family:monospace;}
+input[type=range]{-webkit-appearance:none;width:100%;background:transparent;cursor:pointer;}
+input[type=range]::-webkit-slider-runnable-track{height:4px;background:#1e1e38;border-radius:2px;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#38bdf8;margin-top:-5px;box-shadow:0 0 6px rgba(56,189,248,.5);}
+.math-box{background:#0f0f1e;border:1px solid #1e1e38;border-radius:10px;padding:1.2rem 1.4rem;margin:1.2rem 0;text-align:center;overflow-x:auto;}
+.math-box .katex{color:#d4d4f0;}
+.tab-btn{background:#111128;border:1.5px solid #252545;color:#9090b0;padding:5px 13px;border-radius:7px;font-size:.79rem;font-weight:600;cursor:pointer;transition:all .15s;}
+.tab-btn:hover{border-color:#38bdf8;color:#38bdf8;}
+.tab-btn.active{background:#0d1a2e;border-color:#38bdf8;color:#38bdf8;box-shadow:0 0 8px rgba(56,189,248,.2);}
+.callout{border-radius:10px;padding:13px 17px;margin:1.2rem 0;}
+.callout.green{background:#061410;border:1.5px solid #1a4a28;}
+.callout.blue{background:#04101a;border:1.5px solid #1a3a58;}
+.callout.amber{background:#140e04;border:1.5px solid #4a3810;}
+.callout.red{background:#140606;border:1.5px solid #4a1818;}
+.callout.purple{background:#0e0814;border:1.5px solid #3a1a58;}
+.callout .ct{font-size:.69rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;}
+.callout.green .ct{color:#34d399;}.callout.blue .ct{color:#38bdf8;}.callout.amber .ct{color:#facc15;}.callout.red .ct{color:#f87171;}.callout.purple .ct{color:#c084fc;}
+.callout p{font-size:.83rem;color:#8080a8;margin:0;}
+.callout p+p{margin-top:.5rem;}
+.code-block{background:#0d0d1a;border:1px solid #1e1e38;border-radius:10px;overflow:hidden;margin:1.4rem 0;}
+.code-header{background:#111128;padding:6px 14px;font-size:.72rem;color:#6060a0;font-weight:700;text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid #1e1e38;display:flex;justify-content:space-between;align-items:center;}
+.code-header .tag{color:#38bdf8;}
+pre{margin:0;padding:1rem 1.2rem;overflow-x:auto;}
+code.hljs{background:transparent;font-size:.82rem;line-height:1.65;}
+code:not(.hljs){font-family:'Fira Code','JetBrains Mono',Consolas,monospace;font-size:.83rem;background:#111128;padding:1px 5px;border-radius:4px;color:#c084fc;}
+.section-label{font-size:.77rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#6060a0;margin-bottom:.4rem;}
+.nav-back{display:inline-flex;align-items:center;gap:6px;color:#6060a0;font-size:.8rem;text-decoration:none;margin-bottom:1.5rem;}
+.nav-back:hover{color:#38bdf8;}
+.qa-block{background:#080812;border:1px solid #181830;border-radius:10px;padding:13px 17px;margin:1.2rem 0;}
+.qa-item{margin-bottom:12px;}
+.qa-item:last-child{margin-bottom:0;}
+.qa-q{font-size:.85rem;font-weight:700;color:#38bdf8;margin-bottom:4px;}
+.qa-q::before{content:"Q  ";font-family:monospace;color:#38bdf8;}
+.qa-a{font-size:.83rem;color:#7070a0;padding-left:1.3rem;line-height:1.6;}
+.qa-a::before{content:"A  ";font-family:monospace;color:#34d399;font-weight:700;}
+.summary-table{width:100%;border-collapse:collapse;margin:1.2rem 0;font-size:.81rem;}
+.summary-table th{background:#111128;color:#6060a0;font-size:.71rem;text-transform:uppercase;letter-spacing:.07em;padding:8px 12px;border:1px solid #1e1e38;text-align:left;}
+.summary-table td{padding:7px 12px;border:1px solid #1e1e38;color:#9090b0;}
+.summary-table tr:nth-child(2n){background:#0a0a16;}
+.summary-table .hl{color:#38bdf8;}.summary-table .good{color:#34d399;}.summary-table .mid{color:#facc15;}.summary-table .warn{color:#f87171;}
+.frame-badge{display:inline-block;padding:2px 10px;border-radius:6px;font-size:.75rem;font-weight:800;font-family:monospace;letter-spacing:.04em;}
+.frame-i{background:#0d1a0d;border:1.5px solid #22c55e;color:#22c55e;}
+.frame-p{background:#0d1020;border:1.5px solid #38bdf8;color:#38bdf8;}
+.frame-b{background:#180d20;border:1.5px solid #c084fc;color:#c084fc;}
+.pipeline-step{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#0f0f1e;border-radius:8px;margin-bottom:8px;border:1px solid #1a1a28;}
+.pipeline-step .step-num{width:28px;height:28px;min-width:28px;border-radius:50%;background:#1e1e38;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;color:#38bdf8;}
+.pipeline-step .step-text{font-size:.83rem;color:#8080a8;}
+.pipeline-step .step-text strong{color:#c0c0d8;}
+</style>
+</head>
+<body>
+<main class="article-body">
+
+<a href="../learning.html" class="nav-back">← Learning</a>
+
+
+<header style="margin-bottom:2.8rem;">
+  <p class="section-label">Video Coding · Compression · FFmpeg</p>
+  <h1>Video Encoding &amp; Decoding</h1>
+  <p style="font-size:1.05rem;color:#7070a0;max-width:700px;margin-bottom:0;">How raw pixels become a compressed bitstream — I, P, and B frames from first principles, GOP structure, quantization, rate-distortion trade-offs, and how FFmpeg ties it all together. Interactive visualizations throughout.</p>
+</header>
+
+<p>A 1080p video at 30 fps has roughly <strong>178 million pixels per second</strong>. At 8 bits per channel (YCbCr 4:2:0), that's about 3 Gbps of raw data — impossible to stream over the internet or store efficiently. Video codecs solve this by exploiting two fundamental redundancies: <em>spatial</em> redundancy within a frame and <em>temporal</em> redundancy across frames. Understanding how they do this is the goal of this article.</p>
+
+<div class="callout blue">
+  <div class="ct">Codecs Covered</div>
+  <p>The concepts here apply to all modern codecs: <strong>H.264/AVC</strong>, <strong>H.265/HEVC</strong>, <strong>H.266/VVC</strong>, <strong>VP9</strong>, and <strong>AV1</strong>. The terminology (I/P/B frames, GOP, QP) is universal. Implementation details (block sizes, transform types) differ by codec but the architecture is the same.</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SECTION 1 — COLOR SPACE & RAW VIDEO
+══════════════════════════════════════════════════ -->
+<h2>1. From Pixels to YCbCr — The Starting Point</h2>
+
+<p>Before any compression happens, raw video is typically converted from RGB to <strong>YCbCr</strong>. This is not a codec decision — it exploits human perception: our eyes are far more sensitive to brightness (luminance) than to color (chrominance).</p>
+
+<ul>
+  <li><strong>Y</strong> — Luma (luminance). Carries perceived brightness. Full resolution.</li>
+  <li><strong>Cb</strong> — Chroma blue-difference. Color information. Subsampled.</li>
+  <li><strong>Cr</strong> — Chroma red-difference. Color information. Subsampled.</li>
+</ul>
+
+<div class="math-box">
+$$\begin{bmatrix}Y\\Cb\\Cr\end{bmatrix} = \begin{bmatrix}0.299 & 0.587 & 0.114\\-0.169 & -0.331 & 0.500\\0.500 & -0.419 & -0.081\end{bmatrix}\begin{bmatrix}R\\G\\B\end{bmatrix} + \begin{bmatrix}0\\128\\128\end{bmatrix}$$
+</div>
+
+<p>The <strong>4:2:0 chroma subsampling</strong> format stores Cb and Cr at half the spatial resolution in both dimensions — one chroma sample per 2×2 luma block. This alone cuts data by <em>50%</em> before any codec compression, with minimal perceived quality loss.</p>
+
+<div class="graphic-container">
+  <canvas id="ycbcr-canvas" style="width:100%;display:block;" height="220"></canvas>
+  <div class="controls">
+    <div class="ctrl-grid">
+      <div class="ctrl-group">
+        <label>R <span class="val" id="r-val">180</span></label>
+        <input type="range" id="r-slider" min="0" max="255" value="180">
+      </div>
+      <div class="ctrl-group">
+        <label>G <span class="val" id="g-val">120</span></label>
+        <input type="range" id="g-slider" min="0" max="255" value="120">
+      </div>
+      <div class="ctrl-group">
+        <label>B <span class="val" id="b-val">60</span></label>
+        <input type="range" id="b-slider" min="0" max="255" value="60">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SECTION 2 — BLOCK PARTITIONING
+══════════════════════════════════════════════════ -->
+<h2>2. Block Partitioning — Dividing the Frame</h2>
+
+<p>Every codec works on rectangular blocks rather than individual pixels. The entire frame is partitioned into a grid of blocks, and each block is encoded independently (but potentially referencing other blocks for prediction).</p>
+
+<ul>
+  <li><strong>H.264:</strong> fixed 16×16 <em>Macroblocks</em> (MB). Each MB can be split into sub-partitions down to 4×4 for luma.</li>
+  <li><strong>H.265/HEVC:</strong> flexible <em>Coding Tree Units</em> (CTU) up to 64×64, recursively split into <em>Coding Units</em> (CU), <em>Prediction Units</em> (PU), and <em>Transform Units</em> (TU).</li>
+  <li><strong>AV1:</strong> superblocks up to 128×128 with a flexible partition tree.</li>
+</ul>
+
+<div class="callout amber">
+  <div class="ct">Why Blocks?</div>
+  <p>Working in blocks enables: (1) the 2D DCT to be computed on manageable-size tiles; (2) motion compensation to match blocks rather than individual pixels; (3) rate-distortion optimization to make per-block coding decisions. Larger blocks are more efficient for smooth regions; smaller blocks capture fine details. Modern codecs use <strong>quad-tree partitioning</strong> to choose adaptively per region.</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SECTION 3 — THE FULL ENCODING PIPELINE
+══════════════════════════════════════════════════ -->
+<h2>3. The Full Encoding Pipeline</h2>
+
+<p>A video encoder is a sequence of tightly coupled modules. Here is the complete forward path for a single block:</p>
+
+<div style="margin:1.5rem 0;">
+  <div class="pipeline-step"><div class="step-num">1</div><div class="step-text"><strong>Prediction</strong> — generate a predicted block using either intra (spatial) or inter (temporal) prediction. Subtract from original to get the <em>residual</em>.</div></div>
+  <div class="pipeline-step"><div class="step-num">2</div><div class="step-text"><strong>Transform (DCT/DST)</strong> — apply a 2D block transform to the residual. Compacts energy into a few low-frequency coefficients.</div></div>
+  <div class="pipeline-step"><div class="step-num">3</div><div class="step-text"><strong>Quantization</strong> — divide each transform coefficient by a <em>quantization step size</em> and round to integer. This is the <strong>only lossy step</strong>.</div></div>
+  <div class="pipeline-step"><div class="step-num">4</div><div class="step-text"><strong>Entropy Coding (CABAC/CAVLC)</strong> — losslessly compress the quantized coefficients using context-adaptive arithmetic or variable-length coding.</div></div>
+  <div class="pipeline-step"><div class="step-num">5</div><div class="step-text"><strong>Reconstruction (encoder-side decode)</strong> — dequantize, inverse-transform, add back the prediction. This is the reference frame for future inter predictions — encoder and decoder must be in sync.</div></div>
+  <div class="pipeline-step"><div class="step-num">6</div><div class="step-text"><strong>In-loop Filtering</strong> — deblocking filter (and SAO/ALF in HEVC/AV1) reduce blocking artifacts on the reference frames.</div></div>
+</div>
+
+<div class="callout green">
+  <div class="ct">Key Insight — The Encoder Decodes Too</div>
+  <p>Step 5 is subtle but critical. The encoder must reconstruct the frame <em>exactly as the decoder will</em>, using only information already in the bitstream. Any floating-point mismatch would cause the prediction reference to drift, accumulating errors across frames. This is why all intermediate operations (DCT, IDCT, quantization) use integer arithmetic.</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SECTION 4 — I FRAMES
+══════════════════════════════════════════════════ -->
+<h2>4. <span class="frame-badge frame-i">I</span> Frames — Intra-Coded, Self-Contained</h2>
+
+<p>An <strong>I-frame</strong> (Intra-coded frame) is encoded using only information within that frame itself — no reference to any other frame. It is the starting point of every Group of Pictures and enables random access (seeking) in a video stream.</p>
+
+<h3>4.1 Intra Prediction</h3>
+
+<p>Rather than predicting from other frames, intra prediction uses already-encoded <em>neighboring blocks within the same frame</em> — blocks to the left and above (in raster scan order). This exploits local spatial correlation.</p>
+
+<p><strong>H.264 intra prediction modes (4×4 blocks):</strong></p>
+<ul>
+  <li><strong>Mode 0 — Vertical:</strong> extrapolate columns downward from the top neighbor.</li>
+  <li><strong>Mode 1 — Horizontal:</strong> extrapolate rows rightward from the left neighbor.</li>
+  <li><strong>Mode 2 — DC:</strong> fill block with mean of top and left neighbors.</li>
+  <li><strong>Modes 3–8 — Diagonal:</strong> extrapolate along 6 angular directions.</li>
+</ul>
+
+<p><strong>H.265/HEVC</strong> expands this to <strong>35 intra modes</strong> (33 angular directions + DC + Planar). <strong>AV1</strong> uses up to <strong>56 intra prediction modes</strong>, adding smooth directional and recursive filtering modes.</p>
+
+<div class="math-box">
+$$\text{Intra Residual} = \text{Original Block} - \text{Intra Predicted Block}$$
+</div>
+
+<h3>4.2 2D DCT on the Residual</h3>
+
+<p>The residual block (typically 4×4, 8×8, or 16×16) is transformed with the <strong>2D Discrete Cosine Transform (Type-II)</strong>. For an $N \times N$ block $f[x,y]$:</p>
+
+<div class="math-box">
+$$F[u,v] = \frac{2}{N}\,C_u\,C_v \sum_{x=0}^{N-1}\sum_{y=0}^{N-1} f[x,y]\cos\!\left(\frac{(2x+1)u\pi}{2N}\right)\cos\!\left(\frac{(2y+1)v\pi}{2N}\right)$$
+</div>
+
+<p>where $C_k = \tfrac{1}{\sqrt{2}}$ if $k=0$, else $C_k = 1$. The top-left coefficient $F[0,0]$ is the <strong>DC coefficient</strong> (mean energy). All others are <strong>AC coefficients</strong> (oscillatory components). Natural images have most energy in the low-frequency (top-left) region — high-frequency coefficients are small and often zero after quantization.</p>
+
+<!-- INTERACTIVE DCT VISUALIZATION -->
+<div class="graphic-container">
+  <canvas id="dct-canvas" style="width:100%;display:block;" height="340"></canvas>
+  <div class="controls">
+    <p style="font-size:.79rem;color:#6060a0;margin-bottom:10px;">Click any cell in the 8×8 pixel block (left) to toggle it. Watch how energy concentrates in the DCT domain (right).</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="tab-btn" id="dct-preset-smooth">Smooth Gradient</button>
+      <button class="tab-btn" id="dct-preset-edge">Vertical Edge</button>
+      <button class="tab-btn" id="dct-preset-checker">Checkerboard</button>
+      <button class="tab-btn" id="dct-preset-clear">Clear</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SECTION 5 — P FRAMES
+══════════════════════════════════════════════════ -->
+<h2>5. <span class="frame-badge frame-p">P</span> Frames — Predictive, Forward Reference</h2>
+
+<p>A <strong>P-frame</strong> (Predictively coded frame) can reference blocks from one or more previously decoded frames in the past. Most blocks are encoded as a <em>motion vector</em> (where to find the matching block in the reference) plus a <em>residual</em> (the difference after prediction). Blocks with a good match have near-zero residuals and cost almost nothing to encode.</p>
+
+<h3>5.1 Motion Estimation (Encoder)</h3>
+
+<p>The encoder searches for the best matching block in the reference frame within a <em>search window</em>. Given a current block at position $(x,y)$, it finds the displacement $(\Delta x, \Delta y)$ minimizing some distortion metric — typically <strong>Sum of Absolute Differences (SAD)</strong> or <strong>Sum of Squared Errors (SSE)</strong>:</p>
+
+<div class="math-box">
+$$(\hat{\Delta x}, \hat{\Delta y}) = \arg\min_{\Delta x, \Delta y} \sum_{i,j} \left| \text{Current}[i,j] - \text{Ref}[i+\Delta y,\, j+\Delta x] \right|$$
+</div>
+
+<p>The motion vector $\mathbf{v} = (\hat{\Delta x}, \hat{\Delta y})$ is encoded (typically as a difference from a predicted MV). <strong>Sub-pixel motion estimation</strong> — searching at half-pixel or quarter-pixel positions using interpolation — dramatically improves prediction quality for a small bitrate overhead.</p>
+
+<h3>5.2 Motion Compensation (Decoder)</h3>
+
+<p>The decoder doesn't search — it just uses the transmitted motion vector to fetch the reference block:</p>
+
+<div class="math-box">
+$$\text{Reconstructed Block} = \text{Ref}[y+\Delta y,\, x+\Delta x] + \text{IDCT}(\text{dequantized residual coefficients})$$
+</div>
+
+<div class="callout blue">
+  <div class="ct">Asymmetry: Encoding is Expensive, Decoding is Fast</div>
+  <p>Motion <em>estimation</em> is computationally expensive — exhaustive block matching over a large search window costs $O(W^2)$ operations per block where $W$ is the search range. Real-time encoders use fast heuristics: <strong>Three-Step Search</strong>, <strong>Diamond Search</strong>, or learned search strategies. <br>Motion <em>compensation</em> (decoder side) is just a table lookup followed by an IDCT — orders of magnitude cheaper.</p>
+</div>
+
+<!-- INTERACTIVE MOTION ESTIMATION VISUALIZATION -->
+<div class="graphic-container">
+  <canvas id="me-canvas" style="width:100%;display:block;" height="360"></canvas>
+  <div class="controls">
+    <p style="font-size:.79rem;color:#6060a0;margin-bottom:10px;">Drag the <strong>orange block</strong> in the current frame to move it. Watch the motion vector and SAD cost update as the encoder searches the reference frame.</p>
+    <div class="ctrl-grid">
+      <div class="ctrl-group">
+        <label>Search Window <span class="val" id="me-range-val">±16px</span></label>
+        <input type="range" id="me-range" min="8" max="32" step="4" value="16">
+      </div>
+      <div class="ctrl-group">
+        <label>Object Velocity <span class="val" id="me-vel-val">8px</span></label>
+        <input type="range" id="me-vel" min="0" max="30" step="1" value="8">
+      </div>
+    </div>
+    <div style="margin-top:10px;font-size:.8rem;color:#6060a0;" id="me-info">SAD: — &nbsp;|&nbsp; MV: (—, —)</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SECTION 6 — B FRAMES
+══════════════════════════════════════════════════ -->
+<h2>6. <span class="frame-badge frame-b">B</span> Frames — Bidirectional Reference</h2>
+
+<p>A <strong>B-frame</strong> (Bidirectionally predicted frame) can reference frames from <em>both the past and the future</em>. It is the most compression-efficient frame type because it has more prediction candidates to choose from.</p>
+
+<h3>6.1 Reference Frame Structure</h3>
+
+<p>For a B-frame at time $t$, let $R_-$ be a past reference and $R_+$ be a future reference. Each block can be predicted as:</p>
+
+<ul>
+  <li><strong>Forward prediction:</strong> from $R_-$ only (like a P-block).</li>
+  <li><strong>Backward prediction:</strong> from $R_+$ only.</li>
+  <li><strong>Bidirectional (average):</strong> average of two motion-compensated blocks, one from each reference:
+    <div class="math-box" style="margin:.6rem 0;">$$\hat{B}[i,j] = \frac{1}{2}\left(\text{Ref}_-[i+\Delta y^-,j+\Delta x^-] + \text{Ref}_+[i+\Delta y^+,j+\Delta x^+]\right)$$</div>
+  </li>
+  <li><strong>Direct mode:</strong> motion vector derived from co-located block in reference, zero residual — essentially "skip" using temporal correlation.</li>
+</ul>
+
+<div class="callout amber">
+  <div class="ct">B-Frame Decoding Order ≠ Display Order</div>
+  <p>Because B-frames reference the future, the encoder must <em>delay</em> transmission. If the display order is I B B P, the bitstream order is I P B B — the encoder transmits P before B so the decoder has both references available before decoding the B-frames. This introduces a <strong>decode buffer delay</strong>, which is why low-latency streaming (live video, gaming) avoids B-frames.</p>
+</div>
+
+<div class="qa-block">
+  <div class="qa-item">
+    <div class="qa-q">Why do B-frames compress better than P-frames?</div>
+    <div class="qa-a">B-frames have access to the future reference, which often gives a much better match for occluded regions, newly appearing objects, or motion blur. The bidirectional average prediction also naturally handles objects moving at sub-block resolution — neither forward nor backward prediction alone captures it as well as their average. In practice B-frames reduce bitrate by 10–40% vs P-frames for the same quality.</div>
+  </div>
+  <div class="qa-item">
+    <div class="qa-q">Can B-frames reference other B-frames?</div>
+    <div class="qa-a">In H.264 and earlier, B-frames cannot be reference frames. In H.265/HEVC, "B-frames used as reference" are allowed — sometimes called hierarchical B-frames or RA (Random Access) coding. This enables reference pyramid structures where B-frames at coarser temporal scales are decoded first and used as references for finer-scale B-frames.</div>
+  </div>
+  <div class="qa-item">
+    <div class="qa-q">What is a "skip" block?</div>
+    <div class="qa-a">A skip block is one where the encoder signals that the entire block — motion vector and residual — is to be inferred from context (typically the median-predicted MV with zero residual). It costs almost zero bits and is extremely common in static regions. P-skip uses forward prediction; B-skip uses direct mode. In practice, 30–60% of macroblocks in a typical video are skip blocks.</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SECTION 7 — GOP
+══════════════════════════════════════════════════ -->
+<h2>7. GOP — Group of Pictures</h2>
+
+<p>A <strong>Group of Pictures (GOP)</strong> is the sequence of frames between two consecutive I-frames. Its structure determines the compression efficiency, random access granularity, and error resilience of the video.</p>
+
+<h3>7.1 GOP Parameters</h3>
+
+<ul>
+  <li><strong>GOP size (N):</strong> total number of frames in one GOP (I to next I, exclusive). Common values: 15–120 frames (0.5–4 sec at 30fps).</li>
+  <li><strong>B-frame count (M):</strong> number of B-frames between consecutive reference frames. Typical: 0–3.</li>
+  <li><strong>IDR frame:</strong> Instantaneous Decoder Refresh — a special I-frame that flushes the decoded picture buffer, enabling clean random access. Regular I-frames may still reference frames from a previous GOP via long-term references.</li>
+</ul>
+
+<h3>7.2 Open vs. Closed GOP</h3>
+
+<table class="summary-table">
+  <thead>
+    <tr><th>Property</th><th>Open GOP</th><th>Closed GOP</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>B-frames reference across boundary?</td><td class="good">Yes</td><td class="warn">No</td></tr>
+    <tr><td>Random access at I-frame?</td><td class="warn">Need prior frames</td><td class="good">Clean cut</td></tr>
+    <tr><td>Compression efficiency</td><td class="good">Higher</td><td class="mid">Lower</td></tr>
+    <tr><td>Adaptive bitrate (HLS/DASH)?</td><td class="warn">Harder</td><td class="good">Required</td></tr>
+  </tbody>
+</table>
+
+<!-- GOP TIMELINE VISUALIZATION -->
+<div class="graphic-container">
+  <canvas id="gop-canvas" style="width:100%;display:block;" height="260"></canvas>
+  <div class="controls">
+    <div class="ctrl-grid">
+      <div class="ctrl-group">
+        <label>GOP Size N <span class="val" id="gop-n-val">15</span></label>
+        <input type="range" id="gop-n" min="4" max="30" step="1" value="15">
+      </div>
+      <div class="ctrl-group">
+        <label>B-frames between refs M <span class="val" id="gop-m-val">2</span></label>
+        <input type="range" id="gop-m" min="0" max="4" step="1" value="2">
+      </div>
+    </div>
+    <div style="margin-top:10px;font-size:.79rem;color:#6060a0;" id="gop-info">Frame breakdown: I=1 · P=— · B=—</div>
+  </div>
+</div>
+
+<div class="callout green">
+  <div class="ct">GOP Size Trade-offs</div>
+  <p><strong>Smaller GOP (e.g., N=15):</strong> better error recovery and random access, worse compression. Used for broadcast TV and streaming where seeking matters.<br>
+  <strong>Larger GOP (e.g., N=120):</strong> better compression (more temporal prediction coverage), poor seekability. Used for offline encoding (Blu-ray, archival).<br>
+  <strong>Keyframe interval in practice:</strong> adaptive streaming (HLS/DASH) requires segment boundaries to align with I-frames. With 2-second segments at 30fps, GOP size = 60 is common.</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SECTION 8 — QUANTIZATION
+══════════════════════════════════════════════════ -->
+<h2>8. Quantization — The Only Lossy Step</h2>
+
+<p>Quantization maps continuous transform coefficients to a discrete set of integer levels. It is the <strong>sole source of quality loss</strong> in a standard video codec. Everything else — prediction, transform, entropy coding — is lossless (within the codec's precision).</p>
+
+<h3>8.1 Scalar Quantization</h3>
+
+<p>Each DCT coefficient $F[u,v]$ is quantized independently:</p>
+
+<div class="math-box">
+$$\hat{F}[u,v] = \text{round}\!\left(\frac{F[u,v]}{Q_{\text{step}}(u,v)}\right), \qquad \tilde{F}[u,v] = \hat{F}[u,v] \times Q_{\text{step}}(u,v)$$
+</div>
+
+<p>where $Q_{\text{step}}(u,v)$ is the quantization step size for coefficient $(u,v)$, $\hat{F}$ is the quantized (encoded) value, and $\tilde{F}$ is the dequantized (reconstructed) value. The quantization error is $F[u,v] - \tilde{F}[u,v] \in \left(-\tfrac{Q_{\text{step}}}{2}, \tfrac{Q_{\text{step}}}{2}\right]$.</p>
+
+<h3>8.2 Quantization Parameter (QP)</h3>
+
+<p>In H.264/HEVC, the step size is controlled by a single <strong>Quantization Parameter QP</strong> $\in [0, 51]$:</p>
+
+<div class="math-box">
+$$Q_{\text{step}} \approx 2^{(QP - 4)/6}$$
+</div>
+
+<p>Every increase of <strong>6 in QP doubles the step size</strong> — halving the precision and roughly <em>halving the bitrate</em>. The relationship is approximately logarithmic: QP=18 gives roughly 4× the bitrate of QP=30 at the same content.</p>
+
+<h3>8.3 Quantization Matrix — Perceptual Weighting</h3>
+
+<p>Real encoders don't use a flat $Q_{\text{step}}$ across all DCT coefficients. They apply a <strong>quantization matrix</strong> (also called weight matrix or scaling list) that coarsely quantizes high-frequency coefficients (top-right of the DCT block) and finely quantizes low-frequency ones — matching human contrast sensitivity:</p>
+
+<div class="math-box">
+$$Q_{\text{step}}(u,v) = Q_{\text{base}}(QP) \times W[u,v], \quad W[u,v] \uparrow \text{ as } u+v \uparrow$$
+</div>
+
+<!-- QUANTIZATION INTERACTIVE VISUALIZATION -->
+<div class="graphic-container">
+  <canvas id="quant-canvas" style="width:100%;display:block;" height="360"></canvas>
+  <div class="controls">
+    <div class="ctrl-grid">
+      <div class="ctrl-group">
+        <label>QP <span class="val" id="qp-val">28</span></label>
+        <input type="range" id="qp-slider" min="0" max="51" step="1" value="28">
+      </div>
+    </div>
+    <div style="margin-top:10px;font-size:.79rem;color:#6060a0;" id="quant-info">Non-zero coefficients: — / 64</div>
+  </div>
+</div>
+
+<h3>8.4 Rate-Distortion Optimization (RDO)</h3>
+
+<p>A codec's encoder doesn't just minimize distortion — it minimizes a weighted combination of distortion $D$ and bitrate cost $R$:</p>
+
+<div class="math-box">
+$$J = D + \lambda \cdot R$$
+</div>
+
+<p>The <strong>Lagrange multiplier</strong> $\lambda$ controls the trade-off. For H.264/HEVC it is approximated as $\lambda \approx 0.85 \times 2^{(QP-12)/3}$. The encoder evaluates every coding decision (partition size, prediction mode, QP) by this joint cost function and picks the minimum-cost option. This is why encoding is so slow — RDO is evaluated exhaustively across exponentially many candidate coding choices.</p>
+
+<div class="callout amber">
+  <div class="ct">Perceptual Rate-Distortion</div>
+  <p>Standard RD optimization uses PSNR-aligned distortion (SSE in pixel domain), which doesn't always match human perception. Modern encoders (x265 psy-rd, SVT-AV1) add perceptual terms — preserving film grain, texture energy, and contrast — at the cost of slightly higher bitrate. Psychovisual optimization is a large area of active research.</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SECTION 9 — ENTROPY CODING
+══════════════════════════════════════════════════ -->
+<h2>9. Entropy Coding — Losslessly Packing Coefficients</h2>
+
+<p>After quantization, many coefficients are zero (especially high-frequency ones). Entropy coding compresses this sparse representation losslessly.</p>
+
+<h3>9.1 Zig-Zag Scanning</h3>
+
+<p>The 2D block of quantized coefficients is scanned into a 1D sequence in <strong>zig-zag order</strong> — starting from the DC coefficient (top-left) and traversing diagonals that alternate direction. This groups the non-zero low-frequency coefficients at the start, followed by a long tail of zeros that compress efficiently as a run-length encoded "EOB" (End of Block) token.</p>
+
+<h3>9.2 CAVLC vs CABAC</h3>
+
+<table class="summary-table">
+  <thead>
+    <tr><th>Method</th><th>Used In</th><th>Approach</th><th>Efficiency</th><th>Complexity</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="hl">CAVLC</td><td>H.264 Baseline/Main</td><td>Context-adaptive VLC tables</td><td class="mid">Good</td><td class="good">Low</td></tr>
+    <tr><td class="hl">CABAC</td><td>H.264 High, H.265, AV1</td><td>Context-adaptive arithmetic coding</td><td class="good">~10–15% better</td><td class="mid">High</td></tr>
+  </tbody>
+</table>
+
+<p><strong>CABAC</strong> (Context-Adaptive Binary Arithmetic Coding) encodes each syntax element as a binary symbol whose probability is maintained and updated by a context model. The arithmetic coder achieves near-optimal entropy without needing symbol tables. The context model adapts to local statistics, giving strong compression of the coefficient patterns.</p>
+
+<!-- ══════════════════════════════════════════════════
+     SECTION 10 — DECODING PIPELINE
+══════════════════════════════════════════════════ -->
+<h2>10. The Decoding Pipeline</h2>
+
+<p>Decoding is the <em>strict inverse</em> of encoding, and crucially, it is deterministic — the decoder receives all decisions from the bitstream and never needs to search or optimize.</p>
+
+<div style="margin:1.5rem 0;">
+  <div class="pipeline-step"><div class="step-num">1</div><div class="step-text"><strong>Bitstream Parse &amp; NAL Unit Extraction</strong> — split the compressed bitstream into Network Abstraction Layer units (parameter sets, slices, SEI messages).</div></div>
+  <div class="pipeline-step"><div class="step-num">2</div><div class="step-text"><strong>Entropy Decode (CABAC/CAVLC)</strong> — recover quantized coefficients, motion vectors, partition sizes, and prediction modes for each block.</div></div>
+  <div class="pipeline-step"><div class="step-num">3</div><div class="step-text"><strong>Dequantization + Inverse Transform (IDCT)</strong> — multiply coefficients by $Q_{\text{step}}$ to recover approximated residuals, then apply 2D IDCT.</div></div>
+  <div class="pipeline-step"><div class="step-num">4</div><div class="step-text"><strong>Prediction Reconstruction</strong> — for I-blocks: apply intra prediction from already-decoded neighbors. For P/B-blocks: fetch reference block(s) from decoded frame buffer using motion vectors.</div></div>
+  <div class="pipeline-step"><div class="step-num">5</div><div class="step-text"><strong>Residual Addition</strong> — add the IDCT residual to the predicted block to reconstruct the decoded block.</div></div>
+  <div class="pipeline-step"><div class="step-num">6</div><div class="step-text"><strong>In-loop Filtering</strong> — deblocking filter removes block boundary artifacts. HEVC adds SAO (Sample Adaptive Offset); AV1 adds CDEF and LR (loop restoration) filters.</div></div>
+  <div class="pipeline-step"><div class="step-num">7</div><div class="step-text"><strong>Decoded Picture Buffer (DPB)</strong> — completed frames are stored as references for future inter prediction (and for B-frames, reordered to display order).</div></div>
+  <div class="pipeline-step"><div class="step-num">8</div><div class="step-text"><strong>Output &amp; Display Reorder</strong> — frames are output in display order (which may differ from decode order due to B-frames). Color space conversion YCbCr → RGB for display.</div></div>
+</div>
+
+<!-- DECODE ANIMATION -->
+<div class="graphic-container">
+  <canvas id="decode-canvas" style="width:100%;display:block;" height="300"></canvas>
+  <div class="controls">
+    <p style="font-size:.79rem;color:#6060a0;margin-bottom:10px;">Step through the decode pipeline of a single P-frame block.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="tab-btn active" id="decode-prev">◀ Prev</button>
+      <button class="tab-btn active" id="decode-next">Next ▶</button>
+      <button class="tab-btn" id="decode-reset">Reset</button>
+      <button class="tab-btn" id="decode-auto">Auto Play</button>
+    </div>
+    <div style="margin-top:10px;font-size:.85rem;color:#38bdf8;font-weight:700;" id="decode-step-label">Step 1 of 6: Parse bitstream</div>
+    <div style="font-size:.79rem;color:#6060a0;margin-top:4px;" id="decode-step-desc">The NAL unit is parsed. Block partition (16×16 MB), prediction mode (inter/P), motion vector MV=(+8,+3), and quantized coefficient array are extracted.</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SECTION 11 — FFMPEG
+══════════════════════════════════════════════════ -->
+<h2>11. FFmpeg — Putting It All Together</h2>
+
+<p><strong>FFmpeg</strong> is the open-source Swiss army knife for multimedia: a framework, command-line tool, and library that wraps libavcodec (codecs), libavformat (containers), libavfilter (filters), and libswscale (color conversion). Understanding how it maps to the concepts above makes its vast option space manageable.</p>
+
+<h3>11.1 Basic Encoding</h3>
+
+<div class="code-block">
+  <div class="code-header"><span>Shell</span><span class="tag">H.264 encode</span></div>
+  <pre><code class="language-bash">ffmpeg -i input.mp4 \
+  -c:v libx264 \        # use x264 (H.264) encoder
+  -crf 23 \             # Constant Rate Factor (quality knob, ~QP)
+  -preset medium \      # speed/quality tradeoff (ultrafast→veryslow)
+  -c:a copy \           # copy audio stream unchanged
+  output.mp4</code></pre>
+</div>
+
+<h3>11.2 CRF vs QP vs Target Bitrate</h3>
+
+<table class="summary-table">
+  <thead>
+    <tr><th>Mode</th><th>Flag</th><th>Behavior</th><th>Use Case</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="hl">CRF</td><td><code>-crf 0–51</code></td><td>Constant perceptual quality; bitrate varies per scene</td><td class="good">Offline archival, file-size budget</td></tr>
+    <tr><td class="hl">CQP</td><td><code>-qp 0–51</code></td><td>Fixed QP per frame type; no rate control</td><td class="mid">Benchmarking, research</td></tr>
+    <tr><td class="hl">ABR</td><td><code>-b:v 4M</code></td><td>Average bitrate over the whole file</td><td class="mid">Approximate file size target</td></tr>
+    <tr><td class="hl">CBR</td><td><code>-b:v 4M -maxrate 4M -bufsize 8M</code></td><td>Constant bitrate (padded/stuffed)</td><td class="good">Broadcast, streaming ingest</td></tr>
+    <tr><td class="hl">2-pass ABR</td><td><code>-pass 1 / -pass 2</code></td><td>First pass analyzes content, second pass encodes optimally</td><td class="good">Best quality at exact file size</td></tr>
+  </tbody>
+</table>
+
+<h3>11.3 Controlling Frame Types and GOP</h3>
+
+<div class="code-block">
+  <div class="code-header"><span>Shell</span><span class="tag">GOP and frame-type control</span></div>
+  <pre><code class="language-bash"># Set GOP size to 60 (2 seconds at 30fps), 2 B-frames between refs
+ffmpeg -i input.mp4 -c:v libx264 \
+  -g 60 \               # GOP size (keyframe interval)
+  -keyint_min 60 \      # min distance between keyframes (force fixed GOP)
+  -bf 2 \               # number of B-frames
+  -b_strategy 1 \       # adaptive B-frame placement
+  -crf 23 output.mp4
+
+# Disable B-frames entirely (for low-latency streaming)
+ffmpeg -i input.mp4 -c:v libx264 -tune zerolatency -bf 0 output.mp4
+
+# Force all-I (lossless baseline) — largest file, instant seek
+ffmpeg -i input.mp4 -c:v libx264 -intra output.mp4</code></pre>
+</div>
+
+<h3>11.4 Per-Frame QP and Scene Detection</h3>
+
+<div class="code-block">
+  <div class="code-header"><span>Shell</span><span class="tag">x264 tune and QP offsets</span></div>
+  <pre><code class="language-bash"># x264 internal QP offsets per frame type (I gets lower QP = higher quality)
+# Default: i_qfactor=0.71, b_qfactor=1.30 relative to P-frame QP
+ffmpeg -i input.mp4 -c:v libx264 \
+  -x264-params "i-qfactor=0.71:b-qfactor=1.30:scenecut=40" \
+  -crf 23 output.mp4
+
+# Detect scene cuts (scenecut threshold 40 = moderate sensitivity)
+# x264 inserts an IDR frame when the scene change score exceeds this value</code></pre>
+</div>
+
+<h3>11.5 HEVC (H.265) with FFmpeg</h3>
+
+<div class="code-block">
+  <div class="code-header"><span>Shell</span><span class="tag">H.265/HEVC encode</span></div>
+  <pre><code class="language-bash">ffmpeg -i input.mp4 \
+  -c:v libx265 \             # x265 encoder
+  -crf 28 \                  # ~same visual quality as x264 crf=23 (~50% bitrate savings)
+  -preset medium \
+  -x265-params "keyint=60:bframes=4:b-adapt=2:ref=4" \
+  output_hevc.mp4
+
+# Hardware-accelerated HEVC (NVIDIA NVENC)
+ffmpeg -i input.mp4 \
+  -c:v hevc_nvenc \
+  -rc vbr \
+  -cq 28 \
+  -b:v 0 \
+  output_nvenc.mp4</code></pre>
+</div>
+
+<h3>11.6 Reading Codec Info and Frame Types</h3>
+
+<div class="code-block">
+  <div class="code-header"><span>Shell</span><span class="tag">Inspect bitstream</span></div>
+  <pre><code class="language-bash"># Print every frame's type, QP, size, and PTS
+ffprobe -v quiet -select_streams v:0 \
+  -show_frames -show_entries \
+  frame=pict_type,pkt_size,best_effort_timestamp_time \
+  -of csv input.mp4 | head -30
+
+# Output: frame,I,12345,0.000000
+#         frame,P,3210,0.033333
+#         frame,B,980,0.066667
+
+# Visualize GOP structure and bitrate distribution
+ffprobe -v quiet -show_frames -select_streams v:0 \
+  -print_format json input.mp4 | \
+  python3 -c "
+import json,sys
+frames=json.load(sys.stdin)['frames']
+for f in frames[:60]:
+    t=f['pict_type'];s=int(f['pkt_size'])
+    bar='█'*(s//500)
+    print(f'{t} {bar} {s}B')
+"</code></pre>
+</div>
+
+<h3>11.7 FFmpeg's Internal libavcodec Flow</h3>
+
+<p>When you call <code>ffmpeg -c:v libx264</code>, the following pipeline runs inside libavcodec for every frame:</p>
+
+<div class="code-block">
+  <div class="code-header"><span>Pseudocode</span><span class="tag">libavcodec encode loop</span></div>
+  <pre><code class="language-python">for frame in input_frames:
+    # 1. Rate control: decide QP for this frame
+    qp = rate_controller.get_qp(frame, target_bitrate)
+
+    # 2. Frame-type decision (I/P/B based on scene change score, GOP rules)
+    frame_type = decide_frame_type(frame, prev_frames, gop_state)
+
+    # 3. For each CTU/macroblock in the frame:
+    for block in partition(frame):
+        # 3a. Try all prediction modes
+        best_cost = inf
+        for mode in intra_modes + inter_modes:
+            pred = predict(block, mode, reference_frames)
+            residual = block - pred
+            coeffs = dct2d(residual)
+            q_coeffs = quantize(coeffs, qp, quant_matrix)
+            bits = entropy_estimate(q_coeffs, mode)
+            distortion = sse(block, idct2d(dequantize(q_coeffs)) + pred)
+            cost = distortion + lambda_ * bits  # RDO
+            if cost < best_cost:
+                best_cost = cost
+                best = (mode, q_coeffs)
+
+        # 3b. Write best decision to bitstream
+        entropy_code(best, bitstream)
+
+        # 3c. Reconstruct for use as future reference
+        reconstructed[block] = idct2d(dequantize(best.q_coeffs)) + predict(block, best.mode)
+
+    deblock_filter(reconstructed_frame)
+    dpb.store(reconstructed_frame)</code></pre>
+</div>
+
+<div class="callout purple">
+  <div class="ct">x264 Preset — What It Really Controls</div>
+  <p>The <code>-preset</code> flag (ultrafast → veryslow) changes ~20 internal x264 parameters simultaneously: search range, number of reference frames, subpel refinement iterations, B-frame lookahead depth, trellis quantization, mixed-refs, and more. <strong>ultrafast</strong> turns off most of these for maximum speed; <strong>veryslow</strong> enables all of them for maximum compression. At a fixed CRF, going from <code>medium</code> to <code>veryslow</code> typically saves another 5–15% bitrate at the cost of 10–30× encoding time.</p>
+</div>
+
+<h3>11.8 Complete Real-World Streaming Encode</h3>
+
+<div class="code-block">
+  <div class="code-header"><span>Shell</span><span class="tag">HLS adaptive bitrate ladder</span></div>
+  <pre><code class="language-bash"># Generate a 3-rung HLS ladder: 1080p, 720p, 360p
+# Each rung has a fixed 2-second GOP aligned to segment boundaries
+ffmpeg -i input.mp4 \
+  -filter_complex \
+    "[0:v]split=3[v1][v2][v3]; \
+     [v1]scale=1920:1080[v1out]; \
+     [v2]scale=1280:720[v2out]; \
+     [v3]scale=640:360[v3out]" \
+  -map "[v1out]" -c:v:0 libx264 -crf 18 -preset fast \
+    -g 60 -keyint_min 60 -sc_threshold 0 \
+    -b:v:0 5000k -maxrate:v:0 5350k -bufsize:v:0 10000k \
+  -map "[v2out]" -c:v:1 libx264 -crf 21 -preset fast \
+    -g 60 -keyint_min 60 -sc_threshold 0 \
+    -b:v:1 2800k -maxrate:v:1 2996k -bufsize:v:1 5600k \
+  -map "[v3out]" -c:v:2 libx264 -crf 26 -preset fast \
+    -g 60 -keyint_min 60 -sc_threshold 0 \
+    -b:v:2 800k -maxrate:v:2 856k -bufsize:v:2 1600k \
+  -map 0:a -c:a:0 aac -b:a:0 128k \
+  -map 0:a -c:a:1 aac -b:a:1 128k \
+  -map 0:a -c:a:2 aac -b:a:2 64k \
+  -f hls -hls_time 2 -hls_playlist_type vod \
+  -hls_segment_filename "seg_%v_%03d.ts" \
+  -master_pl_name master.m3u8 \
+  -var_stream_map "v:0,a:0 v:1,a:1 v:2,a:2" \
+  stream_%v.m3u8</code></pre>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SECTION 12 — PUTTING IT ALL TOGETHER
+══════════════════════════════════════════════════ -->
+<h2>12. Summary — How Everything Connects</h2>
+
+<table class="summary-table">
+  <thead>
+    <tr><th>Concept</th><th>What It Exploits</th><th>Key Parameter</th><th>FFmpeg Flag</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="hl">YCbCr 4:2:0</td><td>Human luma/chroma sensitivity</td><td>Chroma ratio</td><td><code>-pix_fmt yuv420p</code></td></tr>
+    <tr><td class="hl"><span class="frame-badge frame-i">I</span> Frame</td><td>Spatial correlation within frame</td><td>Intra mode count</td><td><code>-g</code> (interval)</td></tr>
+    <tr><td class="hl"><span class="frame-badge frame-p">P</span> Frame</td><td>Temporal correlation (past)</td><td>Search range, ref count</td><td><code>-bf 0</code> to disable B</td></tr>
+    <tr><td class="hl"><span class="frame-badge frame-b">B</span> Frame</td><td>Temporal correlation (past + future)</td><td>B-frame count M</td><td><code>-bf N</code></td></tr>
+    <tr><td class="hl">GOP</td><td>Error containment + seek granularity</td><td>GOP size N</td><td><code>-g N</code></td></tr>
+    <tr><td class="hl">DCT</td><td>Energy compaction (spatial frequency)</td><td>Block size</td><td>Codec-internal</td></tr>
+    <tr><td class="hl">Quantization</td><td>Perceptual irrelevance of fine detail</td><td>QP (0–51)</td><td><code>-crf</code> / <code>-qp</code></td></tr>
+    <tr><td class="hl">CABAC</td><td>Statistical redundancy of symbols</td><td>Context model depth</td><td><code>-profile high</code></td></tr>
+    <tr><td class="hl">RDO</td><td>Optimal bit allocation per block</td><td>λ (QP-derived)</td><td><code>-preset</code> (trellis)</td></tr>
+  </tbody>
+</table>
+
+<div class="callout green">
+  <div class="ct">The Fundamental Compression Loop</div>
+  <p>Every frame type follows the same pattern: <strong>predict → subtract → transform → quantize → entropy code</strong>. The differences are only in what prediction source is used. I-frames predict from spatial neighbors within the frame. P-frames predict from past reconstructed frames. B-frames predict from both past and future. The residual pipeline — DCT, quantization, CABAC — is identical for all three. This elegant uniformity is what makes the standard modular and extensible across generations of codecs.</p>
+</div>
+
+</main>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     ALL INTERACTIVE JAVASCRIPT BELOW
+══════════════════════════════════════════════════════════════════ -->
+<script>
+// ─── Utility ───────────────────────────────────────────────────────
+function dpr(){return window.devicePixelRatio||1;}
+function setupCanvas(id,h){
+  const c=document.getElementById(id);
+  if(!c)return null;
+  const d=dpr();
+  const w=c.parentElement.clientWidth||c.offsetWidth||800;
+  c.width=w*d; c.height=h*d;
+  c.style.width=w+'px'; c.style.height=h+'px';
+  const ctx=c.getContext('2d');
+  ctx.scale(d,d);
+  return {c,ctx,w,h:h};
+}
+const DARK='#0c0c14',PANEL='#0f0f1e',GRID='#1a1a28',
+      BLUE='#38bdf8',GREEN='#22c55e',PURPLE='#c084fc',
+      AMBER='#facc15',RED='#f87171',TEXT='#a0a0b8',TEXTH='#d4d4e0';
+
+// ─── 1. YCbCr Visualizer ───────────────────────────────────────────
+(function(){
+  const cv=setupCanvas('ycbcr-canvas',220);
+  if(!cv)return;
+  const {ctx,w,h}=cv;
+  const rS=document.getElementById('r-slider'),
+        gS=document.getElementById('g-slider'),
+        bS=document.getElementById('b-slider');
+  function draw(){
+    const R=+rS.value,G=+gS.value,B=+bS.value;
+    document.getElementById('r-val').textContent=R;
+    document.getElementById('g-val').textContent=G;
+    document.getElementById('b-val').textContent=B;
+    const Y=Math.round(0.299*R+0.587*G+0.114*B);
+    const Cb=Math.round(-0.169*R-0.331*G+0.500*B+128);
+    const Cr=Math.round(0.500*R-0.419*G-0.081*B+128);
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle=DARK; ctx.fillRect(0,0,w,h);
+    const sw=w/5, pad=18, bw=sw-pad*2, bh=h-60;
+    const colors=[
+      [`rgb(${R},${G},${B})`,'RGB Input',`(${R},${G},${B})`],
+      [`rgb(${Y},${Y},${Y})`,'Y (Luma)',`${Y}`],
+      [`rgb(0,0,${Cb})`,'Cb (−)',`${Cb}`],
+      [`rgb(${Cr},0,0)`,'Cr (−)',`${Cr}`],
+      [null,'4:2:0\nSubsamp.',null],
+    ];
+    colors.forEach(([col,label,val],i)=>{
+      const x=i*sw+pad, y=18;
+      if(col){
+        ctx.fillStyle=col;
+        ctx.beginPath(); ctx.roundRect(x,y,bw,bh,6); ctx.fill();
+        ctx.fillStyle='rgba(0,0,0,0.4)';
+        ctx.beginPath(); ctx.roundRect(x,y,bw,bh,6); ctx.fill();
+      } else {
+        // 4:2:0 grid illustration
+        const gs=bw/4;
+        for(let r=0;r<4;r++) for(let c2=0;c2<4;c2++){
+          ctx.fillStyle=`rgb(${Y},${Y},${Y})`;
+          ctx.fillRect(x+c2*gs,y+r*gs,gs-1,gs-1);
+        }
+        for(let r=0;r<2;r++) for(let c2=0;c2<2;c2++){
+          ctx.strokeStyle=BLUE; ctx.lineWidth=1.5;
+          ctx.strokeRect(x+c2*gs*2+0.5,y+r*gs*2+0.5,gs*2-1,gs*2-1);
+        }
+      }
+      ctx.fillStyle=TEXTH; ctx.font='bold 10px Segoe UI';
+      ctx.textAlign='center';
+      ctx.fillText(label,x+bw/2,y+bh+14);
+      if(val){ctx.fillStyle=BLUE; ctx.font='10px monospace'; ctx.fillText(val,x+bw/2,y+bh+26);}
+    });
+    ctx.fillStyle=TEXT; ctx.font='11px Segoe UI'; ctx.textAlign='left';
+    ctx.fillText('Y full res · Cb/Cr half res (4:2:0) → 50% bandwidth saving before codec',10,h-4);
+  }
+  [rS,gS,bS].forEach(s=>s.addEventListener('input',draw));
+  draw();
+})();
+
+// ─── 2. DCT Visualizer ─────────────────────────────────────────────
+(function(){
+  const cv=setupCanvas('dct-canvas',340);
+  if(!cv)return;
+  const {c,ctx,w,h}=cv;
+  const N=8; let pixels=new Float32Array(N*N).fill(128);
+  function dct2d(f){
+    const F=new Float32Array(N*N);
+    for(let u=0;u<N;u++) for(let v=0;v<N;v++){
+      let s=0;
+      for(let x=0;x<N;x++) for(let y=0;y<N;y++){
+        s+=f[x*N+y]*Math.cos((2*x+1)*u*Math.PI/(2*N))*Math.cos((2*y+1)*v*Math.PI/(2*N));
+      }
+      const cu=u===0?1/Math.sqrt(2):1, cv2=v===0?1/Math.sqrt(2):1;
+      F[u*N+v]=(2/N)*cu*cv2*s;
+    }
+    return F;
+  }
+  let dragging=false;
+  function cellAt(e){
+    const rect=c.getBoundingClientRect();
+    const panelW=Math.min(w,380), panelH=h-10;
+    const cellSz=Math.floor(Math.min(panelW,panelH)/(N+1));
+    const ox=20, oy=30;
+    const mx=(e.clientX-rect.left)*(c.width/rect.width)/dpr();
+    const my=(e.clientY-rect.top)*(c.height/rect.height)/dpr();
+    const col=Math.floor((mx-ox)/cellSz), row=Math.floor((my-oy)/cellSz);
+    if(col>=0&&col<N&&row>=0&&row<N) return row*N+col;
+    return -1;
+  }
+  c.addEventListener('mousedown',e=>{dragging=true; const i=cellAt(e); if(i>=0){pixels[i]=pixels[i]>192?64:200;draw();}});
+  c.addEventListener('mousemove',e=>{if(dragging){const i=cellAt(e);if(i>=0){pixels[i]=pixels[i]>192?64:200;draw();}}});
+  c.addEventListener('mouseup',()=>dragging=false);
+  document.getElementById('dct-preset-smooth').addEventListener('click',()=>{
+    for(let x=0;x<N;x++) for(let y=0;y<N;y++) pixels[x*N+y]=64+Math.round(128*(x+y)/(2*(N-1)));
+    draw();
+  });
+  document.getElementById('dct-preset-edge').addEventListener('click',()=>{
+    for(let x=0;x<N;x++) for(let y=0;y<N;y++) pixels[x*N+y]=y<N/2?200:60;
+    draw();
+  });
+  document.getElementById('dct-preset-checker').addEventListener('click',()=>{
+    for(let x=0;x<N;x++) for(let y=0;y<N;y++) pixels[x*N+y]=(x+y)%2===0?220:40;
+    draw();
+  });
+  document.getElementById('dct-preset-clear').addEventListener('click',()=>{pixels.fill(128);draw();});
+  function draw(){
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle=DARK; ctx.fillRect(0,0,w,h);
+    const panelW=Math.floor((w-60)/2), cellSz=Math.floor(Math.min(panelW,h-40)/(N+1));
+    const ox=20, oy=30, ox2=ox+cellSz*N+50;
+    const F=dct2d(pixels);
+    const fMax=Math.max(...Array.from(F).map(Math.abs))||1;
+    ctx.fillStyle=TEXTH; ctx.font='bold 11px Segoe UI'; ctx.textAlign='center';
+    ctx.fillText('Pixel Block (click to edit)',ox+cellSz*N/2,oy-12);
+    ctx.fillText('DCT Coefficients',ox2+cellSz*N/2,oy-12);
+    ctx.fillStyle=TEXT; ctx.font='9px Segoe UI';
+    ctx.fillText('DC→',ox2-4,oy+8);
+    for(let r=0;r<N;r++) for(let cc2=0;cc2<N;cc2++){
+      const px=pixels[r*N+cc2],v=Math.round(px);
+      ctx.fillStyle=`rgb(${v},${v},${v})`;
+      ctx.fillRect(ox+cc2*cellSz,oy+r*cellSz,cellSz-1,cellSz-1);
+      const fv=F[r*N+cc2], norm=fv/fMax;
+      const bright=Math.round(128+norm*127);
+      const pos=norm>0;
+      ctx.fillStyle=pos?`rgba(56,189,248,${Math.abs(norm)})`:`rgba(248,113,113,${Math.abs(norm)})`;
+      ctx.fillRect(ox2+cc2*cellSz,oy+r*cellSz,cellSz-1,cellSz-1);
+      if(Math.abs(fv)>fMax*0.05){
+        ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.font=`${Math.max(7,cellSz-6)}px monospace`;
+        ctx.textAlign='center';
+        ctx.fillText(Math.round(fv),ox2+cc2*cellSz+cellSz/2,oy+r*cellSz+cellSz/2+4);
+      }
+    }
+    ctx.strokeStyle=GRID; ctx.lineWidth=1;
+    [ox,ox2].forEach(bx=>{
+      for(let i=0;i<=N;i++){ctx.beginPath();ctx.moveTo(bx+i*cellSz,oy);ctx.lineTo(bx+i*cellSz,oy+N*cellSz);ctx.stroke();}
+      for(let i=0;i<=N;i++){ctx.beginPath();ctx.moveTo(bx,oy+i*cellSz);ctx.lineTo(bx+N*cellSz,oy+i*cellSz);ctx.stroke();}
+    });
+    ctx.fillStyle=TEXT; ctx.font='10px Segoe UI'; ctx.textAlign='left';
+    const nzero=Array.from(F).filter(v=>Math.abs(v)>2).length;
+    ctx.fillText(`Non-zero AC: ${nzero-1}/63  |  DC=${Math.round(F[0])}`,ox,oy+N*cellSz+20);
+    ctx.fillStyle=AMBER; ctx.font='10px Segoe UI';
+    ctx.fillText('Blue=positive  Red=negative  Intensity=magnitude',ox2,oy+N*cellSz+20);
+  }
+  draw();
+})();
+
+// ─── 3. Motion Estimation Visualizer ───────────────────────────────
+(function(){
+  const cv=setupCanvas('me-canvas',360);
+  if(!cv)return;
+  const {c,ctx,w,h}=cv;
+  const FW=Math.floor((w-60)/2), FH=h-60;
+  const BW=40,BH=40;
+  let blockX=Math.floor((FW-BW)/2), blockY=Math.floor((FH-BH)/2);
+  let vel=8, searchRange=16;
+  let draggingME=false, dragOX=0,dragOY=0;
+  const rangeS=document.getElementById('me-range');
+  const velS=document.getElementById('me-vel');
+  rangeS.addEventListener('input',()=>{searchRange=+rangeS.value;document.getElementById('me-range-val').textContent='±'+searchRange+'px';draw();});
+  velS.addEventListener('input',()=>{vel=+velS.value;document.getElementById('me-vel-val').textContent=vel+'px';draw();});
+  c.addEventListener('mousedown',e=>{
+    const rect=c.getBoundingClientRect();
+    const mx=(e.clientX-rect.left)*(c.width/rect.width)/dpr()-20;
+    const my=(e.clientY-rect.top)*(c.height/rect.height)/dpr()-30;
+    if(mx>=blockX&&mx<=blockX+BW&&my>=blockY&&my<=blockY+BH){draggingME=true;dragOX=mx-blockX;dragOY=my-blockY;}
+  });
+  c.addEventListener('mousemove',e=>{
+    if(!draggingME)return;
+    const rect=c.getBoundingClientRect();
+    const mx=(e.clientX-rect.left)*(c.width/rect.width)/dpr()-20;
+    const my=(e.clientY-rect.top)*(c.height/rect.height)/dpr()-30;
+    blockX=Math.max(0,Math.min(FW-BW,mx-dragOX));
+    blockY=Math.max(0,Math.min(FH-BH,my-dragOY));
+    draw();
+  });
+  c.addEventListener('mouseup',()=>draggingME=false);
+  function drawFrame(ox,oy,label,blocks,highlight){
+    ctx.fillStyle=PANEL; ctx.beginPath(); ctx.roundRect(ox,oy,FW,FH,6); ctx.fill();
+    ctx.strokeStyle=GRID; ctx.lineWidth=1; ctx.strokeRect(ox,oy,FW,FH);
+    // draw fake objects
+    blocks.forEach(b=>{
+      const gr=ctx.createLinearGradient(ox+b.x,oy+b.y,ox+b.x+b.w,oy+b.y+b.h);
+      gr.addColorStop(0,b.c1); gr.addColorStop(1,b.c2);
+      ctx.fillStyle=gr; ctx.fillRect(ox+b.x,oy+b.y,b.w,b.h);
+    });
+    ctx.fillStyle=TEXTH; ctx.font='bold 11px Segoe UI'; ctx.textAlign='center';
+    ctx.fillText(label,ox+FW/2,oy-6);
+    if(highlight){
+      ctx.strokeStyle=AMBER; ctx.lineWidth=2;
+      ctx.strokeRect(ox+highlight.x,oy+highlight.y,highlight.w,highlight.h);
+    }
+  }
+  function draw(){
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle=DARK; ctx.fillRect(0,0,w,h);
+    const ox1=20,oy1=30,ox2=ox1+FW+20;
+    const refBlocks=[
+      {x:20,y:20,w:80,h:50,c1:'#1a2a40',c2:'#0d1a2e'},
+      {x:Math.max(0,Math.min(FW-50,blockX+vel)),y:Math.max(0,Math.min(FH-40,blockY)),w:50,h:40,c1:'#b45309',c2:'#d97706'},
+      {x:FW-90,y:FH-60,w:70,h:45,c1:'#14532d',c2:'#166534'},
+    ];
+    const curBlocks=[
+      {x:20,y:20,w:80,h:50,c1:'#1a2a40',c2:'#0d1a2e'},
+      {x:blockX,y:blockY,w:BW,h:BH,c1:'#92400e',c2:'#b45309'},
+      {x:FW-90,y:FH-60,w:70,h:45,c1:'#14532d',c2:'#166534'},
+    ];
+    drawFrame(ox2,oy1,'Reference Frame (past)',refBlocks,null);
+    drawFrame(ox1,oy1,'Current Frame',curBlocks,{x:blockX,y:blockY,w:BW,h:BH});
+    // search window on reference
+    const sX=Math.max(0,Math.min(FW-BW,blockX-searchRange)),
+          sY=Math.max(0,Math.min(FH-BH,blockY-searchRange)),
+          sW=Math.min(FW-sX,BW+2*searchRange),
+          sH=Math.min(FH-sY,BH+2*searchRange);
+    ctx.strokeStyle='rgba(250,204,21,0.35)'; ctx.lineWidth=1.5;
+    ctx.setLineDash([4,3]);
+    ctx.strokeRect(ox2+sX,oy1+sY,sW,sH);
+    ctx.setLineDash([]);
+    ctx.fillStyle='rgba(250,204,21,0.07)'; ctx.fillRect(ox2+sX,oy1+sY,sW,sH);
+    // best match block on reference
+    const refX=Math.max(0,Math.min(FW-BW,blockX+vel));
+    const refY=Math.max(0,Math.min(FH-BH,blockY));
+    ctx.strokeStyle=GREEN; ctx.lineWidth=2;
+    ctx.strokeRect(ox2+refX,oy1+refY,BW,BH);
+    // motion vector arrow
+    const ax=ox1+blockX+BW/2, ay=oy1+blockY+BH/2;
+    const bx=ox2+refX+BW/2, by=oy1+refY+BH/2;
+    ctx.strokeStyle=GREEN; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx,by); ctx.stroke();
+    ctx.fillStyle=GREEN;
+    const ang=Math.atan2(by-ay,bx-ax);
+    ctx.beginPath(); ctx.moveTo(bx,by);
+    ctx.lineTo(bx-12*Math.cos(ang-0.4),by-12*Math.sin(ang-0.4));
+    ctx.lineTo(bx-12*Math.cos(ang+0.4),by-12*Math.sin(ang+0.4));
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle=GREEN; ctx.font='bold 10px monospace'; ctx.textAlign='center';
+    ctx.fillText(`MV=(+${vel},0)`,ax+(bx-ax)/2,ay+(by-ay)/2-8);
+    const inSearch=Math.abs(vel)<=searchRange;
+    const sad=inSearch?Math.round(12*Math.random()*10+8):9999;
+    document.getElementById('me-info').textContent=
+      `SAD: ${inSearch?sad:'Out of search range'} · MV: (+${vel}, 0) · Search: ±${searchRange}px`;
+  }
+  draw();
+})();
+
+// ─── 4. GOP Timeline Visualizer ────────────────────────────────────
+(function(){
+  const cv=setupCanvas('gop-canvas',260);
+  if(!cv)return;
+  const {ctx,w,h}=cv;
+  const nS=document.getElementById('gop-n'), mS=document.getElementById('gop-m');
+  function buildGOP(N,M){
+    const frames=[];
+    frames.push({t:'I',ref:[]});
+    let refIdx=0;
+    while(frames.length<N){
+      const nextP=frames.length+M;
+      for(let b=0;b<M&&frames.length<N-1;b++){
+        frames.push({t:'B',ref:[refIdx,Math.min(nextP,N-1)]});
+      }
+      if(frames.length<N){frames.push({t:'P',ref:[refIdx]});refIdx=frames.length-1;}
+    }
+    return frames;
+  }
+  function draw(){
+    const N=+nS.value, M=+mS.value;
+    document.getElementById('gop-n-val').textContent=N;
+    document.getElementById('gop-m-val').textContent=M;
+    const frames=buildGOP(N,M);
+    const nI=frames.filter(f=>f.t==='I').length;
+    const nP=frames.filter(f=>f.t==='P').length;
+    const nB=frames.filter(f=>f.t==='B').length;
+    document.getElementById('gop-info').textContent=`Frame breakdown: I=${nI} · P=${nP} · B=${nB} · Total=${N}`;
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle=DARK; ctx.fillRect(0,0,w,h);
+    const pad=30, availW=w-2*pad;
+    const fw=Math.min(36,Math.floor(availW/frames.length)-4);
+    const fh=44, rowY=h/2-fh/2;
+    const totalW=frames.length*(fw+4)-4;
+    const startX=pad+Math.max(0,(availW-totalW)/2);
+    const COLORS={I:GREEN,P:BLUE,B:PURPLE};
+    const BG={I:'#061410',P:'#04101a',B:'#0e0814'};
+    frames.forEach((f,i)=>{
+      const x=startX+i*(fw+4), y=rowY;
+      ctx.fillStyle=BG[f.t];
+      ctx.beginPath(); ctx.roundRect(x,y,fw,fh,5); ctx.fill();
+      ctx.strokeStyle=COLORS[f.t]; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.roundRect(x,y,fw,fh,5); ctx.stroke();
+      ctx.fillStyle=COLORS[f.t]; ctx.font=`bold ${Math.max(11,fw-6)}px monospace`;
+      ctx.textAlign='center';
+      ctx.fillText(f.t,x+fw/2,y+fh/2+5);
+      ctx.fillStyle=TEXT; ctx.font='9px Segoe UI';
+      ctx.fillText(i,x+fw/2,y+fh+14);
+    });
+    // reference arrows for first GOP
+    ctx.save();
+    frames.forEach((f,i)=>{
+      if(f.t==='P'&&f.ref.length>0){
+        const r=f.ref[0];
+        const x1=startX+r*(fw+4)+fw/2, x2=startX+i*(fw+4)+fw/2;
+        const y1=rowY-4, y2=rowY-4;
+        ctx.strokeStyle='rgba(56,189,248,0.5)'; ctx.lineWidth=1.5;
+        ctx.setLineDash([3,2]);
+        ctx.beginPath(); ctx.moveTo(x1,y1);
+        ctx.bezierCurveTo(x1,y1-20,x2,y2-20,x2,y2);
+        ctx.stroke();
+      }
+      if(f.t==='B'&&f.ref.length===2){
+        [f.ref[0],f.ref[1]].forEach((r,ri)=>{
+          const x1=startX+r*(fw+4)+fw/2, x2=startX+i*(fw+4)+fw/2;
+          const yy=rowY+fh+4;
+          ctx.strokeStyle=`rgba(192,132,252,${ri===0?0.6:0.4})`; ctx.lineWidth=1.2;
+          ctx.setLineDash([2,2]);
+          ctx.beginPath(); ctx.moveTo(x1,yy);
+          ctx.bezierCurveTo(x1,yy+18,x2,yy+18,x2,yy);
+          ctx.stroke();
+        });
+      }
+    });
+    ctx.restore();
+    ctx.fillStyle=TEXT; ctx.font='10px Segoe UI'; ctx.textAlign='left';
+    ctx.fillText('--- P ref (past)     --- B refs (past+future)',startX,h-8);
+  }
+  [nS,mS].forEach(s=>s.addEventListener('input',draw));
+  draw();
+})();
+
+// ─── 5. Quantization Visualizer ────────────────────────────────────
+(function(){
+  const cv=setupCanvas('quant-canvas',360);
+  if(!cv)return;
+  const {ctx,w,h}=cv;
+  const qpS=document.getElementById('qp-slider');
+  const N=8;
+  // Typical 8x8 DCT coefficients for a natural image block (luminance)
+  const origCoeffs=[
+    [280,-42,18,-12, 8,-5, 3,-2],
+    [-45, 25,-10,  6,-4, 2,-1, 1],
+    [ 20,-12,  8, -5, 3,-2, 1,-1],
+    [-14,  8, -5,  3,-2, 1,-1, 0],
+    [  9, -5,  3, -2, 1,-1, 0, 0],
+    [ -6,  3, -2,  1,-1, 0, 0, 0],
+    [  4, -2,  1, -1, 0, 0, 0, 0],
+    [ -2,  1, -1,  0, 0, 0, 0, 0],
+  ];
+  // Std JPEG luminance quant matrix (scaled)
+  const stdW=[
+    [16,11,10,16,24,40,51,61],
+    [12,12,14,19,26,58,60,55],
+    [14,13,16,24,40,57,69,56],
+    [14,17,22,29,51,87,80,62],
+    [18,22,37,56,68,109,103,77],
+    [24,35,55,64,81,104,113,92],
+    [49,64,78,87,103,121,120,101],
+    [72,92,95,98,112,100,103,99],
+  ];
+  function qstep(qp){return Math.pow(2,(qp-4)/6);}
+  function draw(){
+    const qp=+qpS.value;
+    document.getElementById('qp-val').textContent=qp;
+    const qs=qstep(qp);
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle=DARK; ctx.fillRect(0,0,w,h);
+    const side=Math.floor(Math.min((w-80)/2,h-80)/N);
+    const ox1=20, oy1=40, ox2=ox1+N*side+44;
+    ctx.fillStyle=TEXTH; ctx.font='bold 11px Segoe UI'; ctx.textAlign='center';
+    ctx.fillText('Original DCT Coefficients',ox1+N*side/2,oy1-14);
+    ctx.fillText('After Quantization (QP='+qp+')',ox2+N*side/2,oy1-14);
+    let nz=0;
+    const maxOrig=280;
+    for(let r=0;r<N;r++) for(let cc=0;cc<N;cc++){
+      const orig=origCoeffs[r][cc];
+      const qval=Math.round(orig/(qs*stdW[r][cc]/16));
+      const recon=qval*qs*stdW[r][cc]/16;
+      if(qval!==0) nz++;
+      const xo=ox1+cc*side, yo=oy1+r*side;
+      const xq=ox2+cc*side, yq=oy1+r*side;
+      // original
+      const alpha=Math.min(1,Math.abs(orig)/maxOrig);
+      ctx.fillStyle=orig>0?`rgba(56,189,248,${0.15+alpha*0.85})`:`rgba(248,113,113,${0.15+alpha*0.85})`;
+      ctx.fillRect(xo,yo,side-1,side-1);
+      ctx.fillStyle='rgba(255,255,255,0.75)'; ctx.font=`${Math.max(8,side-8)}px monospace`;
+      ctx.textAlign='center';
+      ctx.fillText(orig,xo+side/2,yo+side/2+4);
+      // quantized
+      if(qval===0){
+        ctx.fillStyle='rgba(26,26,40,0.9)';
+        ctx.fillRect(xq,yq,side-1,side-1);
+        ctx.fillStyle='rgba(100,100,120,0.5)'; ctx.font=`${Math.max(8,side-8)}px monospace`;
+        ctx.textAlign='center';
+        ctx.fillText('0',xq+side/2,yq+side/2+4);
+      } else {
+        const alpha2=Math.min(1,Math.abs(qval)/20);
+        ctx.fillStyle=qval>0?`rgba(34,197,94,${0.2+alpha2*0.8})`:`rgba(250,204,21,${0.2+alpha2*0.8})`;
+        ctx.fillRect(xq,yq,side-1,side-1);
+        ctx.fillStyle='rgba(0,0,0,0.7)'; ctx.font=`bold ${Math.max(8,side-8)}px monospace`;
+        ctx.textAlign='center';
+        ctx.fillText(qval,xq+side/2,yq+side/2+4);
+      }
+    }
+    ctx.strokeStyle=GRID; ctx.lineWidth=1;
+    [ox1,ox2].forEach(bx=>{
+      for(let i=0;i<=N;i++){ctx.beginPath();ctx.moveTo(bx+i*side,oy1);ctx.lineTo(bx+i*side,oy1+N*side);ctx.stroke();}
+      for(let i=0;i<=N;i++){ctx.beginPath();ctx.moveTo(bx,oy1+i*side);ctx.lineTo(bx+N*side,oy1+i*side);ctx.stroke();}
+    });
+    document.getElementById('quant-info').textContent=`Non-zero coefficients: ${nz} / 64   |   Q-step ≈ ${qs.toFixed(2)}   |   Zero-out rate: ${Math.round((64-nz)/64*100)}%`;
+    ctx.fillStyle=TEXT; ctx.font='10px Segoe UI'; ctx.textAlign='left';
+    ctx.fillText('Blue/Red = original sign · Green/Amber = quantized · Gray = zeroed out',ox1,oy1+N*side+20);
+  }
+  qpS.addEventListener('input',draw);
+  draw();
+})();
+
+// ─── 6. Decode Step-Through ────────────────────────────────────────
+(function(){
+  const cv=setupCanvas('decode-canvas',300);
+  if(!cv)return;
+  const {ctx,w,h}=cv;
+  let step=0;
+  const steps=[
+    {label:'Step 1 of 6: Parse Bitstream',
+     desc:'The NAL unit is parsed. Block partition (16×16 MB), prediction mode (inter/P), motion vector MV=(+8,+3), and quantized coefficient array are extracted from the CABAC-decoded bitstream.'},
+    {label:'Step 2 of 6: Entropy Decode',
+     desc:'CABAC arithmetic decoder recovers the quantized DCT coefficients in zig-zag order. Most high-frequency coefficients are 0 (encoded as run-length "EOB"). Non-zero coefficients: [42, -18, 7, -3, 5, -2] in zig-zag positions 0–5.'},
+    {label:'Step 3 of 6: Dequantize + IDCT',
+     desc:'Each coefficient is multiplied by Q_step(QP=28) = 11.3 and the quantization matrix weight. The 8×8 matrix of dequantized values is passed through the 2D IDCT to reconstruct the residual block in pixel domain.'},
+    {label:'Step 4 of 6: Motion Compensation',
+     desc:'The decoded motion vector MV=(+8,+3) is used to index into the Decoded Picture Buffer (DPB). The reference block is fetched from the past reference frame at offset (+8,+3) with quarter-pixel bilinear interpolation.'},
+    {label:'Step 5 of 6: Add Residual',
+     desc:'Reconstructed block = Reference block (from MC) + IDCT residual. The residual corrects the prediction error. For a good P-block this residual is small — most of the energy was captured by motion compensation.'},
+    {label:'Step 6 of 6: Deblocking Filter',
+     desc:'The deblocking filter smooths block boundaries. It checks boundary strength (BS) based on reference frame, MV difference, and non-zero coefficients. Strong boundaries (BS=2) get a 3-tap filter; weak ones (BS=1) get a conditional 2-tap filter.'},
+  ];
+  const icons=['📦','🔢','🔄','🎯','➕','🧹'];
+  const colors=[AMBER,BLUE,GREEN,PURPLE,RED,GREEN];
+  function draw(){
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle=DARK; ctx.fillRect(0,0,w,h);
+    const total=steps.length;
+    const bw=Math.floor((w-40)/(total));
+    for(let i=0;i<total;i++){
+      const x=20+i*bw, y=h/2-20, bh2=40;
+      const done=i<step, active=i===step;
+      ctx.fillStyle=active?colors[i]+'22':(done?'#0a1a0a':'#0a0a18');
+      ctx.beginPath(); ctx.roundRect(x+2,y,bw-4,bh2,6); ctx.fill();
+      ctx.strokeStyle=active?colors[i]:(done?'#1a4a28':'#1a1a28');
+      ctx.lineWidth=active?2:1;
+      ctx.beginPath(); ctx.roundRect(x+2,y,bw-4,bh2,6); ctx.stroke();
+      ctx.fillStyle=active?colors[i]:(done?'#34d399':'#3a3a5a');
+      ctx.font=`${active?16:13}px Segoe UI`; ctx.textAlign='center';
+      ctx.fillText(icons[i],x+bw/2,y+bh2/2+6);
+      if(i<total-1){
+        ctx.strokeStyle=done?GREEN:'#2a2a40'; ctx.lineWidth=1.5;
+        ctx.setLineDash([3,2]);
+        ctx.beginPath(); ctx.moveTo(x+bw,h/2); ctx.lineTo(x+bw,h/2); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+    // step names below
+    for(let i=0;i<total;i++){
+      const x=20+i*bw;
+      ctx.fillStyle=i===step?TEXTH:'#4a4a68'; ctx.font=`${Math.max(8,bw-18)}px Segoe UI`;
+      ctx.textAlign='center';
+      const name=['Parse','Entropy\nDecode','Dequant\n+IDCT','Motion\nComp','Add\nResidual','Deblock'][i];
+      name.split('\n').forEach((line,li)=>{
+        ctx.fillText(line,x+bw/2,h/2+30+li*13);
+      });
+    }
+    // progress bar
+    ctx.fillStyle='#1a1a28';
+    ctx.beginPath(); ctx.roundRect(20,h-20,w-40,6,3); ctx.fill();
+    ctx.fillStyle=colors[step];
+    ctx.beginPath(); ctx.roundRect(20,h-20,Math.round((step+1)/(total)*(w-40)),6,3); ctx.fill();
+    document.getElementById('decode-step-label').textContent=steps[step].label;
+    document.getElementById('decode-step-desc').textContent=steps[step].desc;
+  }
+  document.getElementById('decode-prev').addEventListener('click',()=>{if(step>0){step--;draw();}});
+  document.getElementById('decode-next').addEventListener('click',()=>{if(step<steps.length-1){step++;draw();}});
+  document.getElementById('decode-reset').addEventListener('click',()=>{step=0;draw();});
+  let autoPlay=null;
+  document.getElementById('decode-auto').addEventListener('click',()=>{
+    if(autoPlay){clearInterval(autoPlay);autoPlay=null;document.getElementById('decode-auto').textContent='Auto Play';return;}
+    document.getElementById('decode-auto').textContent='Stop';
+    autoPlay=setInterval(()=>{
+      if(step<steps.length-1){step++;draw();}
+      else{clearInterval(autoPlay);autoPlay=null;document.getElementById('decode-auto').textContent='Auto Play';}
+    },1800);
+  });
+  draw();
+})();
+
+// ─── Resize all canvases on window resize ──────────────────────────
+window.addEventListener('resize',()=>{
+  document.querySelectorAll('canvas').forEach(c=>{
+    const h=parseInt(c.style.height);
+    const d=dpr(), nw=c.parentElement.clientWidth;
+    c.width=nw*d; c.height=h*d;
+    c.style.width=nw+'px';
+    const ctx=c.getContext('2d'); ctx.scale(d,d);
+  });
+});
+</script>
+
+</body>
+</html>
