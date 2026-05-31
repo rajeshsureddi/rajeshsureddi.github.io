@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLM Inference — From Tokens to Claude</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+        onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;}
+body{margin:0;padding:0;font-family:'Segoe UI',system-ui,sans-serif;background:#eef0f6;color:#2d2d2d;line-height:1.68;}
+a{color:#0d3b8e;}
+
+/* ── Hero ── */
+.hero{background:linear-gradient(135deg,#0a0a23 0%,#1a1a5e 55%,#0d3b8e 100%);color:white;padding:56px 24px 48px;text-align:center;}
+.hero .badge{display:inline-block;background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.28);padding:4px 16px;border-radius:20px;font-size:0.76em;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:18px;}
+.hero h1{font-size:2.2em;font-weight:700;margin:0 0 14px;letter-spacing:-0.5px;}
+.hero p{font-size:1.05em;opacity:0.82;max-width:620px;margin:0 auto;}
+
+/* ── Layout ── */
+.content{max-width:1100px;margin:0 auto;padding:0 20px 80px;}
+.nav-back{display:inline-flex;align-items:center;gap:6px;color:#0d3b8e;font-size:.85em;text-decoration:none;margin:20px 0 0;padding-left:4px;}
+.nav-back:hover{color:#1a1a5e;}
+
+/* ── Section header ── */
+.section-header{font-size:1.45em;font-weight:700;color:#1a1a5e;margin:44px 0 18px;display:flex;align-items:center;gap:12px;}
+.section-header::after{content:'';flex:1;height:2px;background:linear-gradient(to right,#1a1a5e33,transparent);}
+.section-header .snum{width:32px;height:32px;border-radius:50%;background:#0d3b8e;color:white;display:flex;align-items:center;justify-content:center;font-size:.85em;font-weight:800;flex-shrink:0;}
+
+/* ── Cards ── */
+.card{background:white;border-radius:12px;padding:24px 28px;margin:20px 0;box-shadow:0 2px 10px rgba(0,0,0,.08);}
+.card.accent{border-left:5px solid #0d3b8e;}
+.card.accent-green{border-left:5px solid #1a7340;}
+.card.accent-orange{border-left:5px solid #b45309;}
+.card.accent-purple{border-left:5px solid #7c3aed;}
+.card.accent-red{border-left:5px solid #dc2626;}
+.card h2{font-size:1.12em;color:#1a1a5e;margin:0 0 10px;}
+.card h3{font-size:.97em;color:#333;margin:16px 0 6px;}
+.card p{margin:8px 0;font-size:.93em;color:#444;}
+.card ul{padding-left:1.4rem;margin:8px 0;}
+.card li{font-size:.91em;color:#444;margin-bottom:.4em;}
+
+/* ── Math ── */
+.math-box{background:#f4f6ff;border:1px solid #dde3f5;border-radius:8px;padding:14px 12px;text-align:center;margin:12px 0;overflow-x:auto;}
+.math-box .katex-display{margin:4px 0!important;}
+
+/* ── Live box (code/output) ── */
+.live-box{background:#1e1e2e;color:#cdd6f4;border-radius:8px;padding:14px 16px;margin:12px 0;font-family:'Cascadia Code','Fira Code','Courier New',monospace;font-size:.8em;line-height:1.9;overflow-x:auto;}
+.lc{color:#585b80;} .lv{color:#89b4fa;} .lo{color:#fab387;font-weight:bold;} .lg{color:#a6e3a1;font-weight:bold;} .lr{color:#f38ba8;font-weight:bold;} .lh{color:#f9e2af;font-weight:bold;} .lp{color:#cba6f7;font-weight:bold;}
+
+/* ── Intuition card ── */
+.intuition-card{background:#fffbea;border:1px solid #ffe082;border-radius:12px;padding:22px 28px;margin:20px 0;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.intuition-card h3{color:#b45309;margin:0 0 10px;font-size:1.05em;}
+.intuition-card p{font-size:.9em;color:#555;margin:6px 0;}
+
+/* ── Result card ── */
+.result-card{background:linear-gradient(135deg,#0d3b8e,#1a1a5e);color:white;border-radius:12px;padding:28px;margin:20px 0;box-shadow:0 4px 16px rgba(0,0,0,.2);}
+.result-card h2{color:white;margin:0 0 14px;font-size:1.15em;}
+.result-card p{font-size:.9em;opacity:.88;margin:6px 0;}
+
+/* ── Pill row ── */
+.pill-row{display:flex;gap:12px;flex-wrap:wrap;margin:12px 0;}
+.pill{background:#f4f6ff;border:1px solid #d0d8f0;border-radius:8px;padding:10px 16px;flex:1;min-width:130px;text-align:center;}
+.pill .plabel{font-size:.72em;color:#888;margin-bottom:4px;}
+.pill .pval{font-family:'Courier New',monospace;font-size:1.1em;font-weight:bold;color:#0d3b8e;}
+
+/* ── Controls ── */
+.ctrl-card{background:white;border-radius:12px;padding:20px 24px;margin:16px 0;box-shadow:0 2px 10px rgba(0,0,0,.08);}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start;}
+.ctrl-group{display:flex;flex-direction:column;gap:6px;min-width:180px;}
+.ctrl-group label{font-weight:600;font-size:.88em;color:#555;display:flex;justify-content:space-between;}
+input[type=range]{cursor:pointer;accent-color:#0d3b8e;width:100%;}
+.tip-box{flex:1;min-width:200px;font-size:.82em;color:#555;background:#f4f6ff;padding:12px 16px;border-radius:8px;border:1px solid #d0d8f0;}
+.btn{padding:7px 16px;border-radius:8px;border:2px solid #0d3b8e;background:white;color:#0d3b8e;font-size:.82em;font-weight:700;cursor:pointer;transition:all .15s;}
+.btn:hover{background:#0d3b8e;color:white;}
+.btn.active{background:#0d3b8e;color:white;}
+
+/* ── Two-column grid ── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:20px 0;}
+@media(max-width:700px){.two-col{grid-template-columns:1fr;}}
+
+/* ── Step cards ── */
+.steps-row{display:flex;gap:18px;flex-wrap:wrap;margin:16px 0;}
+.step-card{flex:1;min-width:220px;background:white;border-radius:12px;padding:20px;box-shadow:0 2px 10px rgba(0,0,0,.08);}
+.step-head{display:flex;align-items:center;gap:12px;margin-bottom:8px;}
+.step-num{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;color:white;font-size:.9em;flex-shrink:0;}
+.step-title{font-weight:700;font-size:.97em;}
+.step-desc{font-size:.84em;color:#555;margin:0;}
+
+/* ── Table ── */
+.tbl{width:100%;border-collapse:collapse;margin:12px 0;font-size:.87em;}
+.tbl th{background:#f4f6ff;color:#1a1a5e;padding:9px 12px;border:1px solid #dde3f5;text-align:left;font-size:.8em;text-transform:uppercase;letter-spacing:.05em;}
+.tbl td{padding:8px 12px;border:1px solid #e8eaf2;color:#444;}
+.tbl tr:nth-child(even){background:#fafbff;}
+.tbl .hl{color:#0d3b8e;font-weight:700;}
+.tbl .good{color:#1a7340;font-weight:600;}
+.tbl .warn{color:#b45309;font-weight:600;}
+.tbl .bad{color:#dc2626;font-weight:600;}
+
+/* ── Token coloring ── */
+.tok{display:inline-block;padding:2px 7px;border-radius:5px;font-family:'Courier New',monospace;font-size:.87em;font-weight:600;margin:2px 3px;cursor:default;}
+.tok-colors{--c0:#dbeafe;--c1:#dcfce7;--c2:#fef9c3;--c3:#fce7f3;--c4:#ede9fe;--c5:#ffedd5;--c6:#e0f2fe;--c7:#f0fdf4;}
+.t0{background:#dbeafe;color:#1e3a8a;}
+.t1{background:#dcfce7;color:#14532d;}
+.t2{background:#fef9c3;color:#713f12;}
+.t3{background:#fce7f3;color:#831843;}
+.t4{background:#ede9fe;color:#4c1d95;}
+.t5{background:#ffedd5;color:#7c2d12;}
+.t6{background:#e0f2fe;color:#0c4a6e;}
+.t7{background:#f0fdf4;color:#052e16;}
+
+/* ── Canvas wrappers ── */
+.viz-card{background:white;border-radius:12px;padding:0;margin:20px 0;box-shadow:0 2px 10px rgba(0,0,0,.08);overflow:hidden;}
+.viz-title{padding:14px 20px 10px;font-weight:700;color:#1a1a5e;font-size:.97em;border-bottom:1px solid #eef0f6;}
+.viz-canvas-wrap{padding:0;}
+.viz-controls{padding:14px 20px;background:#f8f9fc;border-top:1px solid #eef0f6;}
+
+/* ── KV timeline bars ── */
+.kv-row{display:flex;gap:4px;align-items:center;margin-bottom:8px;}
+.kv-cell{height:28px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:.72em;font-weight:700;transition:all .3s;}
+
+/* ── Trend chips ── */
+.trend-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin:16px 0;}
+.trend-card{background:white;border-radius:12px;padding:20px;box-shadow:0 2px 10px rgba(0,0,0,.08);border-top:4px solid;}
+.trend-card h3{margin:0 0 8px;font-size:.97em;}
+.trend-card p{font-size:.84em;color:#555;margin:0;}
+.trend-tag{display:inline-block;font-size:.72em;font-weight:700;padding:2px 8px;border-radius:10px;margin:8px 4px 0 0;}
+</style>
+</head>
+<body>
+
+<!-- ══ HERO ══════════════════════════════════════════════════════════ -->
+<div class="hero">
+  <div class="badge">LLM · Transformers · Inference · 2025</div>
+  <h1>LLM Inference — From Tokens to Claude</h1>
+  <p>How does typing a prompt lead to an answer? This guide walks through every step — tokenization, attention, KV cache, sampling — from raw text to real-time token generation. No assumptions. All interactive.</p>
+</div>
+
+<div class="content">
+<a href="../learning.html" class="nav-back">← Learning</a>
+
+<!-- ══ 0. THE BIG PICTURE ═════════════════════════════════════════════ -->
+<div class="section-header"><div class="snum">0</div>The Big Picture — What Actually Happens</div>
+
+<div class="card accent">
+  <h2>One sentence: an LLM is a function that takes a sequence of tokens and outputs a probability distribution over the next token.</h2>
+  <p>That's it. Everything else — attention, layers, KV cache, sampling — is either how that function is built or how it's run efficiently. When you type a message to Claude, here's what happens:</p>
+</div>
+
+<!-- Pipeline viz -->
+<div class="viz-card">
+  <div class="viz-title">End-to-End Inference Pipeline</div>
+  <canvas id="pipeline-canvas" style="width:100%;display:block;" height="130"></canvas>
+</div>
+
+<div class="steps-row">
+  <div class="step-card"><div class="step-head"><div class="step-num" style="background:#0d3b8e;">1</div><div class="step-title">Tokenize</div></div><p class="step-desc">Text → integer IDs. "Hello world" → [9906, 1917]. No model yet.</p></div>
+  <div class="step-card"><div class="step-head"><div class="step-num" style="background:#1a7340;">2</div><div class="step-title">Embed</div></div><p class="step-desc">Each token ID → a dense vector of 4096–8192 floats. Lookup table.</p></div>
+  <div class="step-card"><div class="step-head"><div class="step-num" style="background:#7c3aed;">3</div><div class="step-title">N × Transformer</div></div><p class="step-desc">Stack of 32–128 identical blocks, each with attention + FFN. Runs on GPU.</p></div>
+  <div class="step-card"><div class="step-head"><div class="step-num" style="background:#b45309;">4</div><div class="step-title">Sample</div></div><p class="step-desc">Final vector → logits over vocab → softmax → pick next token.</p></div>
+  <div class="step-card"><div class="step-head"><div class="step-num" style="background:#dc2626;">5</div><div class="step-title">Repeat</div></div><p class="step-desc">Append new token to context. Run steps 3–4 again. Stop at EOS.</p></div>
+</div>
+
+<!-- ══ 1. TOKENIZATION ════════════════════════════════════════════════ -->
+<div class="section-header"><div class="snum">1</div>Tokenization — Text Is Not What the Model Sees</div>
+
+<div class="card accent">
+  <h2>The model never sees characters or words. It sees integers.</h2>
+  <p>A <strong>tokenizer</strong> converts raw text into a sequence of integer IDs from a fixed <em>vocabulary</em> — typically 32k–128k entries. Modern LLMs use <strong>Byte-Pair Encoding (BPE)</strong> or <strong>SentencePiece</strong>, which learn to split text into subword units that balance coverage and efficiency.</p>
+</div>
+
+<div class="two-col">
+  <div class="card">
+    <h2>How BPE Works</h2>
+    <p>Starting from individual bytes/characters, BPE repeatedly finds the most frequent adjacent pair and merges it into a new token:</p>
+    <div class="live-box">
+<span class="lc"># Initial character split:</span>
+<span class="lg">"tokenization"</span>
+→ [<span class="lv">t</span>,<span class="lv">o</span>,<span class="lv">k</span>,<span class="lv">e</span>,<span class="lv">n</span>,<span class="lv">i</span>,<span class="lv">z</span>,<span class="lv">a</span>,<span class="lv">t</span>,<span class="lv">i</span>,<span class="lv">o</span>,<span class="lv">n</span>]
+
+<span class="lc"># After BPE merges (GPT-4 tokenizer):</span>
+→ [<span class="lh">"token"</span>, <span class="lh">"ization"</span>]
+→ [<span class="lo">9263</span>, <span class="lo">2065</span>]  <span class="lc"># 2 tokens, not 12</span>
+    </div>
+    <p>Common English words → 1 token. Rare words/names → 2–4 tokens. Code → varies. Whitespace is baked into tokens (e.g. <code>Ġhello</code> ≠ <code>hello</code>).</p>
+  </div>
+  <div class="card">
+    <h2>Why It Matters for Inference</h2>
+    <ul>
+      <li><strong>Context length</strong> is measured in tokens, not characters.</li>
+      <li>A 200,000-token context window ≈ 150,000 words ≈ a full novel.</li>
+      <li>Pricing, latency, and memory all scale with token count.</li>
+      <li>Non-English text is less efficient: e.g. Chinese characters ≈ 1.5–3 tokens each in GPT-4o tokenizer.</li>
+      <li><strong>Numbers</strong> tokenize character-by-character in many models — "12345" = 5 tokens, limiting math.</li>
+    </ul>
+    <div class="math-box">$$\text{tokens} \approx \frac{\text{words}}{0.75} \quad (\text{rough English rule of thumb})$$</div>
+  </div>
+</div>
+
+<!-- Interactive tokenizer -->
+<div class="viz-card">
+  <div class="viz-title">Interactive Tokenizer — type to see tokens</div>
+  <div style="padding:16px 20px 12px;">
+    <textarea id="tok-input" rows="3" style="width:100%;border:1.5px solid #dde3f5;border-radius:8px;padding:10px 12px;font-size:.93em;resize:vertical;font-family:inherit;" placeholder="Type anything here — each token gets a color...">The quick brown fox jumps over the lazy dog. LLMs are amazing!</textarea>
+    <div style="margin-top:10px;">
+      <div style="font-size:.8em;color:#888;margin-bottom:6px;">Tokenized output (each color = one token):</div>
+      <div id="tok-output" style="background:#f8f9fc;border-radius:8px;padding:10px 14px;min-height:38px;font-size:.93em;line-height:2;"></div>
+    </div>
+    <div class="pill-row" style="margin-top:10px;">
+      <div class="pill"><div class="plabel">Token count</div><div class="pval" id="tok-count">—</div></div>
+      <div class="pill"><div class="plabel">Characters</div><div class="pval" id="tok-chars">—</div></div>
+      <div class="pill"><div class="plabel">Chars / token</div><div class="pval" id="tok-ratio">—</div></div>
+      <div class="pill"><div class="plabel">Vocab size</div><div class="pval">~100K</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 2. EMBEDDINGS ══════════════════════════════════════════════════ -->
+<div class="section-header"><div class="snum">2</div>Embeddings — Integers → High-Dimensional Vectors</div>
+
+<div class="card accent-green">
+  <h2>An embedding is just a learned lookup table.</h2>
+  <p>The model has a matrix $W_E \in \mathbb{R}^{|V| \times d}$ where $|V|$ is vocab size and $d$ is the model dimension (e.g. 4096). Looking up token $i$ just fetches row $i$. There's nothing magical — it's a trainable array that gets updated via gradient descent until semantically similar tokens have similar vectors.</p>
+  <div class="math-box">$$\mathbf{x}_i = W_E[\text{token}_i] \in \mathbb{R}^d \quad \text{(embedding lookup for token } i\text{)}$$</div>
+</div>
+
+<div class="two-col">
+  <div class="card">
+    <h2>Positional Encoding — Where Am I In The Sequence?</h2>
+    <p>Attention has no built-in sense of order. Without positional encoding, "dog bites man" = "man bites dog." Two main approaches:</p>
+    <div class="card" style="margin:10px 0;padding:14px 18px;background:#f8f9fc;">
+      <strong>Sinusoidal (original Transformer):</strong>
+      <div class="math-box">$$\text{PE}(pos, 2i) = \sin\!\left(\frac{pos}{10000^{2i/d}}\right), \quad \text{PE}(pos, 2i+1) = \cos\!\left(\frac{pos}{10000^{2i/d}}\right)$$</div>
+      <p style="font-size:.85em;color:#555;">Fixed, not learned. Different frequencies encode different scales. Can generalize to unseen lengths.</p>
+    </div>
+    <div class="card" style="margin:10px 0;padding:14px 18px;background:#f0fdf4;">
+      <strong>RoPE — Rotary Position Embedding (LLaMA, Claude, GPT-4):</strong>
+      <div class="math-box">$$\mathbf{q}_m \cdot \mathbf{k}_n = \text{function only of } (m-n)$$</div>
+      <p style="font-size:.85em;color:#555;">Encodes <em>relative</em> distance by rotating Q and K vectors. Better extrapolation to long contexts. Used in virtually all modern LLMs.</p>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Input to Each Layer</h2>
+    <p>The full input to the first transformer layer is:</p>
+    <div class="math-box">$$\mathbf{h}_i^{(0)} = W_E[\text{token}_i] + \text{PE}(i) \in \mathbb{R}^d$$</div>
+    <p>For a sequence of $n$ tokens, this gives a matrix $H^{(0)} \in \mathbb{R}^{n \times d}$. This flows through all $L$ transformer layers.</p>
+    <div class="live-box">
+<span class="lc"># Example: Claude 3.5 Sonnet approximate dims</span>
+vocab_size  = <span class="lv">128_256</span>
+d_model     = <span class="lo">8_192</span>   <span class="lc"># embedding dimension</span>
+n_heads     = <span class="lh">64</span>      <span class="lc"># attention heads</span>
+d_head      = <span class="lg">128</span>     <span class="lc"># d_model / n_heads</span>
+n_layers    = <span class="lr">96</span>      <span class="lc"># transformer blocks</span>
+max_context = <span class="lp">200_000</span> <span class="lc"># tokens</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 3. ATTENTION ═══════════════════════════════════════════════════ -->
+<div class="section-header"><div class="snum">3</div>Attention — How Tokens Talk to Each Other</div>
+
+<div class="card accent-purple">
+  <h2>Attention lets every token look at every other token and decide how much to "attend" to each.</h2>
+  <p>This is the key insight of the Transformer: long-range dependencies are handled directly — a token at position 1 can directly influence a token at position 10,000. In an RNN, information had to travel 10,000 steps.</p>
+</div>
+
+<div class="card">
+  <h2>Scaled Dot-Product Attention — Step by Step</h2>
+  <p>Given the hidden state matrix $H \in \mathbb{R}^{n \times d}$, three projections create <strong>Q</strong> (queries), <strong>K</strong> (keys), and <strong>V</strong> (values):</p>
+  <div class="math-box">$$Q = H W_Q, \quad K = H W_K, \quad V = H W_V \qquad W_Q, W_K, W_V \in \mathbb{R}^{d \times d_k}$$</div>
+  <div class="steps-row" style="margin:14px 0;">
+    <div class="step-card"><div class="step-head"><div class="step-num" style="background:#0d3b8e;">Q</div><div class="step-title">Query — "What am I looking for?"</div></div><p class="step-desc">Each token projects to a query vector: its "search intent." The current token asks: which other tokens are relevant to me?</p></div>
+    <div class="step-card"><div class="step-head"><div class="step-num" style="background:#1a7340;">K</div><div class="step-title">Key — "What do I contain?"</div></div><p class="step-desc">Each token projects to a key vector: its "content label." Matching query against keys determines relevance scores.</p></div>
+    <div class="step-card"><div class="step-head"><div class="step-num" style="background:#7c3aed;">V</div><div class="step-title">Value — "What do I contribute?"</div></div><p class="step-desc">Each token projects to a value vector: the actual information to be passed. High-attention tokens contribute more.</p></div>
+  </div>
+  <div class="math-box">$$\text{Attention}(Q,K,V) = \text{softmax}\!\left(\frac{QK^T}{\sqrt{d_k}}\right)V$$</div>
+  <div class="intuition-card">
+    <h3>Why divide by √d_k?</h3>
+    <p>Without the scaling, the dot products $QK^T$ grow large in magnitude as $d_k$ increases — because they're sums of $d_k$ terms. Large values push softmax into extremely peaked (near-one-hot) distributions where gradients vanish. Dividing by $\sqrt{d_k}$ keeps the variance at ~1 regardless of dimension.</p>
+  </div>
+</div>
+
+<!-- Attention heatmap -->
+<div class="viz-card">
+  <div class="viz-title">Interactive Attention Heatmap — click a token to see what it attends to</div>
+  <canvas id="attn-canvas" style="width:100%;display:block;" height="380"></canvas>
+  <div class="viz-controls">
+    <div class="ctrl-row">
+      <div class="ctrl-group">
+        <label>Attention head <span id="attn-head-val">1</span>/8</label>
+        <input type="range" id="attn-head" min="0" max="7" step="1" value="0">
+      </div>
+      <div class="ctrl-group">
+        <label>Temperature <span id="attn-temp-val">1.0</span></label>
+        <input type="range" id="attn-temp" min="0.1" max="3.0" step="0.1" value="1.0">
+      </div>
+      <div class="tip-box">Click any token in the sentence to see its attention pattern. Each head learns different relationships — syntactic, semantic, coreference, etc.</div>
+    </div>
+  </div>
+</div>
+
+<div class="card accent">
+  <h2>Multi-Head Attention — Run it H times in parallel</h2>
+  <p>Instead of one attention function, use $H$ separate heads with smaller dimension $d_k = d/H$. Each head can specialize — one might attend to syntax, another to coreference, another to proximity. Outputs are concatenated and projected:</p>
+  <div class="math-box">$$\text{MultiHead}(Q,K,V) = \text{Concat}(\text{head}_1, \ldots, \text{head}_H)\,W_O$$</div>
+  <p>where $\text{head}_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V)$. This is where most of the model's expressiveness comes from.</p>
+</div>
+
+<div class="card accent-orange">
+  <h2>Causal (Masked) Attention for Inference</h2>
+  <p>During <em>training</em>, the model predicts all positions in parallel. To prevent token $i$ from "seeing" future tokens $j > i$, a <strong>causal mask</strong> sets future attention scores to $-\infty$ before softmax:</p>
+  <div class="math-box">$$\text{Attention}_{ij} = \begin{cases} \text{softmax}\!\left(\frac{q_i \cdot k_j}{\sqrt{d_k}}\right) & j \leq i \\ 0 & j > i \end{cases}$$</div>
+  <p>During <em>inference</em> (generating one token at a time), this is enforced naturally — future tokens don't exist yet.</p>
+</div>
+
+<!-- ══ 4. TRANSFORMER BLOCK ═══════════════════════════════════════════ -->
+<div class="section-header"><div class="snum">4</div>The Transformer Block — The Repeating Unit</div>
+
+<div class="card accent-green">
+  <h2>Every layer applies the same pattern: Norm → Attention → Residual → Norm → FFN → Residual</h2>
+</div>
+
+<!-- Transformer block diagram -->
+<div class="viz-card">
+  <div class="viz-title">Single Transformer Block — data flow diagram</div>
+  <canvas id="block-canvas" style="width:100%;display:block;" height="320"></canvas>
+</div>
+
+<div class="two-col">
+  <div class="card">
+    <h2>Layer Norm — Why Before Attention?</h2>
+    <p>Modern LLMs use <strong>Pre-LayerNorm</strong> (RMS Norm in LLaMA/Claude): normalize the input <em>before</em> attention, not after. This is more stable during training at large scale.</p>
+    <div class="math-box">$$\text{RMSNorm}(x) = \frac{x}{\sqrt{\frac{1}{d}\sum_i x_i^2 + \epsilon}} \cdot \gamma$$</div>
+    <p>$\gamma$ is a learned per-dimension scale. Unlike LayerNorm, RMSNorm skips the mean subtraction — saving ~20% compute with no quality loss.</p>
+  </div>
+  <div class="card">
+    <h2>Feed-Forward Network — Where "Knowledge" Is Stored</h2>
+    <p>After attention (which mixes tokens), a per-token FFN re-processes each position independently. Modern models use <strong>SwiGLU</strong>:</p>
+    <div class="math-box">$$\text{FFN}(x) = \big(\sigma(x W_1) \odot (x W_3)\big) W_2$$</div>
+    <p>The FFN is typically 4× wider than the embedding dimension: if $d=4096$, FFN has $d_{ff}=16384$ neurons. Research shows "factual recall" is strongly associated with FFN weights — they act as key-value memories.</p>
+    <p>This is where "Paris is the capital of France" lives.</p>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Residual Connections — The Secret to Deep Training</h2>
+  <p>Every sub-layer (attention + FFN) wraps its output in a residual stream: $\mathbf{h}' = \mathbf{h} + \text{SubLayer}(\text{Norm}(\mathbf{h}))$. This lets gradients flow directly backward through all layers, enabling training of 100+ layer networks.</p>
+  <div class="intuition-card">
+    <h3>Residual stream intuition</h3>
+    <p>Think of the residual stream as a "shared whiteboard" that every layer can read from and write to. Early layers write syntactic features, middle layers write semantic features, late layers write task-specific features. Each layer adds <em>incremental refinements</em> rather than replacing the representation.</p>
+  </div>
+</div>
+
+<!-- ══ 5. AUTOREGRESSIVE INFERENCE ════════════════════════════════════ -->
+<div class="section-header"><div class="snum">5</div>Autoregressive Generation — One Token at a Time</div>
+
+<div class="card accent">
+  <h2>The model generates text by running inference in a loop — each new token becomes part of the input for the next step.</h2>
+  <p>There are two distinct phases:</p>
+</div>
+
+<div class="steps-row">
+  <div class="step-card" style="border-top:4px solid #0d3b8e;">
+    <div class="step-head"><div class="step-num" style="background:#0d3b8e;">P</div><div class="step-title">Prefill Phase</div></div>
+    <p class="step-desc"><strong>Process the entire prompt in parallel.</strong> All $n$ input tokens run through all $L$ layers simultaneously using the full attention matrix. Cost: $O(n^2 \cdot L)$. This is fast because GPUs excel at parallel matrix multiplication. Fills the KV cache.</p>
+  </div>
+  <div class="step-card" style="border-top:4px solid #7c3aed;">
+    <div class="step-head"><div class="step-num" style="background:#7c3aed;">D</div><div class="step-title">Decode Phase</div></div>
+    <p class="step-desc"><strong>Generate tokens one at a time.</strong> Each new token requires one forward pass through all $L$ layers. Cost per token: $O(n \cdot L)$ using the KV cache. This is memory-bandwidth bound on GPU — the bottleneck for long generations.</p>
+  </div>
+</div>
+
+<!-- Autoregressive step-through -->
+<div class="viz-card">
+  <div class="viz-title">Autoregressive Generation — step through token by token</div>
+  <canvas id="ar-canvas" style="width:100%;display:block;" height="360"></canvas>
+  <div class="viz-controls">
+    <div class="ctrl-row" style="gap:14px;align-items:center;">
+      <button class="btn" id="ar-prev">◀ Prev</button>
+      <button class="btn" id="ar-next">Next ▶</button>
+      <button class="btn" id="ar-play">▶ Auto</button>
+      <button class="btn" id="ar-reset">Reset</button>
+      <div class="tip-box" style="margin:0;">Each step: the last token in context is the query. The model produces logits over the full vocabulary. We sample one token and append it.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 6. KV CACHE ═════════════════════════════════════════════════════ -->
+<div class="section-header"><div class="snum">6</div>KV Cache — The Engineering That Makes Inference Practical</div>
+
+<div class="card accent-purple">
+  <h2>Without the KV cache, every decode step would recompute all keys and values from scratch — O(n²) per token instead of O(n).</h2>
+  <p>The KV cache stores the Key and Value matrices from the attention computation for all previously processed tokens. Since token $i$'s keys and values never change once computed (causal masking means future tokens don't affect past representations), they can be reused indefinitely.</p>
+</div>
+
+<!-- KV cache comparison -->
+<div class="viz-card">
+  <div class="viz-title">KV Cache — compute vs. cache comparison</div>
+  <canvas id="kv-canvas" style="width:100%;display:block;" height="300"></canvas>
+  <div class="viz-controls">
+    <div class="ctrl-row">
+      <div class="ctrl-group">
+        <label>Context length (tokens) <span id="kv-len-val">8</span></label>
+        <input type="range" id="kv-len" min="2" max="20" step="1" value="8">
+      </div>
+      <div class="tip-box">Orange = compute (matrix multiply). Green = read from cache (memory bandwidth only). Without cache, every step recomputes the entire context.</div>
+    </div>
+  </div>
+</div>
+
+<div class="two-col">
+  <div class="card">
+    <h2>KV Cache Memory</h2>
+    <p>For each layer, storing one token's KV requires $2 \times d_k \times H$ floats per layer. For a 70B model with 200K context:</p>
+    <div class="math-box">$$\text{KV size} = 2 \times d_k \times H \times L \times n_\text{tokens} \times \text{bytes}$$</div>
+    <div class="live-box">
+<span class="lc"># LLaMA-3 70B KV cache estimate</span>
+n_layers = <span class="lv">80</span>
+n_kv_heads = <span class="lv">8</span>   <span class="lc"># GQA (grouped query)</span>
+d_head = <span class="lo">128</span>
+seq_len = <span class="lh">128_000</span>
+bytes_per = <span class="lg">2</span>      <span class="lc"># bfloat16</span>
+
+kv_gb = <span class="lr">2*n_layers*n_kv_heads*d_head*seq_len*bytes_per / 1e9</span>
+<span class="lc"># ≈ 42 GB — nearly as big as the model weights!</span>
+    </div>
+  </div>
+  <div class="card">
+    <h2>GQA — Grouped Query Attention</h2>
+    <p>Modern LLMs use <strong>Grouped Query Attention</strong> (GQA) or <strong>Multi-Query Attention</strong> (MQA) to shrink KV cache size. Instead of $H$ separate K/V heads, multiple query heads share one K/V head:</p>
+    <table class="tbl">
+      <tr><th>Method</th><th>K/V Heads</th><th>KV Cache</th><th>Quality</th></tr>
+      <tr><td class="hl">MHA</td><td>H = Q heads</td><td class="bad">100%</td><td class="good">Best</td></tr>
+      <tr><td class="hl">GQA</td><td>H/G groups</td><td class="warn">~13%</td><td class="good">≈ MHA</td></tr>
+      <tr><td class="hl">MQA</td><td>1 shared</td><td class="good">H× less</td><td class="warn">Slight drop</td></tr>
+    </table>
+    <p>Claude 3, LLaMA 3, Gemini all use GQA. It enables 8× larger context with the same memory.</p>
+  </div>
+</div>
+
+<!-- ══ 7. SAMPLING ════════════════════════════════════════════════════ -->
+<div class="section-header"><div class="snum">7</div>Sampling — Turning Logits into Tokens</div>
+
+<div class="card accent-orange">
+  <h2>The model outputs a vector of 100K+ raw scores (logits). How you convert those to the next token is a design choice with huge impact on quality and diversity.</h2>
+</div>
+
+<!-- Sampling viz -->
+<div class="viz-card">
+  <div class="viz-title">Sampling Strategies — interactive probability distribution</div>
+  <canvas id="sample-canvas" style="width:100%;display:block;" height="320"></canvas>
+  <div class="viz-controls">
+    <div class="ctrl-row">
+      <div class="ctrl-group">
+        <label>Temperature <span id="temp-val">1.0</span></label>
+        <input type="range" id="temp-slider" min="0.1" max="3.0" step="0.1" value="1.0">
+      </div>
+      <div class="ctrl-group">
+        <label>Top-p (nucleus) <span id="topp-val">1.0</span></label>
+        <input type="range" id="topp-slider" min="0.1" max="1.0" step="0.05" value="1.0">
+      </div>
+      <div class="ctrl-group">
+        <label>Top-k <span id="topk-val">0 (off)</span></label>
+        <input type="range" id="topk-slider" min="0" max="20" step="1" value="0">
+      </div>
+      <div class="tip-box">Watch how temperature sharpens/flattens the distribution, top-p cuts off the tail, and top-k retains only the highest-k candidates.</div>
+    </div>
+  </div>
+</div>
+
+<div class="two-col">
+  <div class="card">
+    <h2>Temperature Scaling</h2>
+    <p>Divide logits by temperature $T$ before softmax:</p>
+    <div class="math-box">$$p_i = \frac{e^{z_i / T}}{\sum_j e^{z_j / T}}$$</div>
+    <ul>
+      <li><strong>T → 0</strong>: argmax (greedy). Always picks most likely token. Deterministic but repetitive.</li>
+      <li><strong>T = 1</strong>: unmodified model probabilities.</li>
+      <li><strong>T &gt; 1</strong>: more uniform, more random, more "creative." Can generate nonsense.</li>
+      <li>Claude uses T ≈ 1 for most tasks; lower for code/math.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h2>Top-p and Top-k Filtering</h2>
+    <p><strong>Top-k:</strong> keep only the $k$ highest-probability tokens; zero out the rest before softmax. Simple but ignores the shape of the distribution.</p>
+    <p><strong>Top-p (nucleus sampling):</strong> sort tokens by probability; keep the smallest set whose cumulative probability exceeds $p$. Adapts to the distribution — in confident cases (one clear answer) keeps 1–2 tokens; in uncertain cases keeps many.</p>
+    <div class="math-box">$$\text{nucleus} = \{w : \text{sorted until } \sum p_w \geq p\}$$</div>
+    <p>Most modern LLMs use T=1 + top-p≈0.9–0.95 as the default sampling strategy.</p>
+  </div>
+</div>
+
+<!-- ══ 8. CONTEXT WINDOW ═══════════════════════════════════════════════ -->
+<div class="section-header"><div class="snum">8</div>Context Window — What Limits How Much the Model Can "See"</div>
+
+<div class="two-col">
+  <div class="card accent">
+    <h2>What is the context window?</h2>
+    <p>The maximum number of tokens the model can process in one forward pass — the size of the "working memory." Everything outside this window is invisible to the model.</p>
+    <p>Growing the context window is hard because:</p>
+    <ul>
+      <li><strong>Memory:</strong> KV cache grows linearly with context.</li>
+      <li><strong>Compute:</strong> Attention is $O(n^2)$ in the context length.</li>
+      <li><strong>Position generalization:</strong> Models trained on short sequences don't automatically work on longer ones.</li>
+    </ul>
+  </div>
+  <div class="card accent-green">
+    <h2>RoPE + YaRN — Extending Context</h2>
+    <p>RoPE encodes position by rotating Q/K vectors by angle $\theta \cdot m$ where $m$ is the position. The base frequency $\theta$ controls how fast angles rotate per step.</p>
+    <p><strong>RoPE scaling tricks:</strong></p>
+    <ul>
+      <li><strong>Linear interpolation:</strong> scale positions down by $s$ to fit larger context into trained range.</li>
+      <li><strong>NTK-aware:</strong> scale different frequency components differently.</li>
+      <li><strong>YaRN:</strong> ramp function that scales high-freq dims less aggressively. Used in LLaMA 3.1 for 128K context.</li>
+    </ul>
+    <p>Claude 3.5 achieves 200K context; Gemini 1.5 achieves 1M tokens.</p>
+  </div>
+</div>
+
+<table class="tbl">
+  <tr><th>Model</th><th>Context Window</th><th>Position Encoding</th><th>KV Cache Size (est.)</th></tr>
+  <tr><td class="hl">GPT-4o</td><td>128K tokens</td><td>RoPE</td><td class="warn">~26 GB @ 128K</td></tr>
+  <tr><td class="hl">Claude 3.5 Sonnet</td><td>200K tokens</td><td>RoPE</td><td class="warn">~42 GB @ 200K</td></tr>
+  <tr><td class="hl">Gemini 1.5 Pro</td><td>1M tokens</td><td>ALiBi + sparse</td><td class="bad">~200 GB @ 1M</td></tr>
+  <tr><td class="hl">LLaMA 3.1 405B</td><td>128K tokens</td><td>RoPE + YaRN</td><td class="warn">~20 GB @ 128K</td></tr>
+</table>
+
+<!-- ══ 9. SCALING LAWS ════════════════════════════════════════════════ -->
+<div class="section-header"><div class="snum">9</div>Scaling Laws — Bigger = Better, But How?</div>
+
+<div class="card accent-purple">
+  <h2>Chinchilla scaling laws (Hoffmann et al. 2022): for a given compute budget, train a model with N parameters on D = 20N tokens.</h2>
+  <p>Before Chinchilla, models were undertrained (too many parameters, too few tokens). Chinchilla showed that optimal compute requires equal scaling of both model size and data.</p>
+  <div class="math-box">$$L(N, D) = \frac{A}{N^\alpha} + \frac{B}{D^\beta} + L_\infty \quad \alpha \approx 0.34,\; \beta \approx 0.28$$</div>
+</div>
+
+<div class="viz-card">
+  <div class="viz-title">Scaling laws — loss vs. model size at fixed compute</div>
+  <canvas id="scale-canvas" style="width:100%;display:block;" height="260"></canvas>
+  <div class="viz-controls">
+    <div class="ctrl-row">
+      <div class="ctrl-group">
+        <label>Compute budget (FLOPs, log) <span id="scale-c-val">23</span></label>
+        <input type="range" id="scale-c" min="20" max="26" step="0.5" value="23">
+      </div>
+      <div class="tip-box">For each compute budget, there's an optimal model size. Too large = undertrained. Too small = capacity-limited. Chinchilla found many models (GPT-3, Gopher) were 3–4× undertrained.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 10. CURRENT TRENDS ══════════════════════════════════════════════ -->
+<div class="section-header"><div class="snum">10</div>Current Trends — What Makes 2024–2025 LLMs Fast</div>
+
+<div class="trend-grid">
+  <div class="trend-card" style="border-color:#0d3b8e;">
+    <h3>⚡ Flash Attention</h3>
+    <p>Reorders attention computation to avoid materializing the full $n \times n$ attention matrix. Uses GPU SRAM tiling — brings data to compute rather than compute to data. 2–4× speedup on long sequences with exact same output.</p>
+    <div>
+      <span class="trend-tag" style="background:#dbeafe;color:#1e3a8a;">IO-aware</span>
+      <span class="trend-tag" style="background:#dbeafe;color:#1e3a8a;">FlashAttn-3</span>
+    </div>
+  </div>
+  <div class="trend-card" style="border-color:#1a7340;">
+    <h3>🔮 Speculative Decoding</h3>
+    <p>A small "draft" model generates 4–8 tokens cheaply; the large model verifies all of them in a <em>single</em> forward pass using parallel attention. If accepted, get multi-token throughput at near 1-token latency. 2–3× speedup.</p>
+    <div>
+      <span class="trend-tag" style="background:#dcfce7;color:#14532d;">Medusa</span>
+      <span class="trend-tag" style="background:#dcfce7;color:#14532d;">SpecTr</span>
+    </div>
+  </div>
+  <div class="trend-card" style="border-color:#7c3aed;">
+    <h3>🧩 Mixture of Experts (MoE)</h3>
+    <p>Replace each FFN layer with $E$ expert FFNs. A router selects top-2 experts per token. Only 2/E experts are active per token — massive parameter count with moderate FLOP cost. GPT-4, Mixtral, Gemini 1.5 use MoE.</p>
+    <div>
+      <span class="trend-tag" style="background:#ede9fe;color:#4c1d95;">Mixtral 8×7B</span>
+      <span class="trend-tag" style="background:#ede9fe;color:#4c1d95;">Switch Transformer</span>
+    </div>
+  </div>
+  <div class="trend-card" style="border-color:#b45309;">
+    <h3>📦 Quantization</h3>
+    <p>Reduce weights from FP32/BF16 to INT8 or INT4. 4-bit quantization (GPTQ, AWQ, GGUF) gives ~4× memory reduction with &lt;1% quality drop on most tasks. Enables running 70B models on a single 48 GB GPU.</p>
+    <div>
+      <span class="trend-tag" style="background:#ffedd5;color:#7c2d12;">GGUF/llama.cpp</span>
+      <span class="trend-tag" style="background:#ffedd5;color:#7c2d12;">AWQ</span>
+      <span class="trend-tag" style="background:#ffedd5;color:#7c2d12;">GPTQ</span>
+    </div>
+  </div>
+  <div class="trend-card" style="border-color:#dc2626;">
+    <h3>🔄 Continuous Batching</h3>
+    <p>Rather than waiting for all requests in a batch to finish, new requests are inserted into the running batch as soon as a slot opens. Dramatically improves GPU utilization for variable-length generations. Used by vLLM, TensorRT-LLM.</p>
+    <div>
+      <span class="trend-tag" style="background:#fee2e2;color:#7f1d1d;">vLLM</span>
+      <span class="trend-tag" style="background:#fee2e2;color:#7f1d1d;">PagedAttention</span>
+    </div>
+  </div>
+  <div class="trend-card" style="border-color:#0891b2;">
+    <h3>🧠 Extended Thinking / Chain of Thought</h3>
+    <p>Models like Claude 3.7, o1/o3, and DeepSeek-R1 generate internal reasoning tokens before the final answer. These "thinking" tokens improve math, coding, and reasoning by letting the model explore and self-correct before committing.</p>
+    <div>
+      <span class="trend-tag" style="background:#e0f2fe;color:#0c4a6e;">Claude 3.7</span>
+      <span class="trend-tag" style="background:#e0f2fe;color:#0c4a6e;">OpenAI o3</span>
+      <span class="trend-tag" style="background:#e0f2fe;color:#0c4a6e;">DeepSeek-R1</span>
+    </div>
+  </div>
+</div>
+
+<!-- Speculative decoding viz -->
+<div class="viz-card">
+  <div class="viz-title">Speculative Decoding — draft → verify loop</div>
+  <canvas id="spec-canvas" style="width:100%;display:block;" height="220"></canvas>
+</div>
+
+<!-- ══ 11. HOW CLAUDE WORKS ════════════════════════════════════════════ -->
+<div class="section-header"><div class="snum">11</div>How Claude (and GPT) Work End-to-End</div>
+
+<div class="card accent">
+  <h2>Behind the chat interface is just a carefully formatted token sequence passed through the inference loop.</h2>
+</div>
+
+<div class="two-col">
+  <div class="card">
+    <h2>The Full Context Structure</h2>
+    <div class="live-box">
+<span class="lc"># What Claude actually "sees" as tokens:</span>
+&lt;<span class="lh">system</span>&gt;
+  You are Claude, made by Anthropic.
+  Today is May 31, 2026. Be helpful.
+&lt;<span class="lh">/system</span>&gt;
+
+&lt;<span class="lg">human</span>&gt;
+  What is attention in transformers?
+&lt;<span class="lg">/human</span>&gt;
+
+&lt;<span class="lv">assistant</span>&gt;
+  <span class="lc"># ← model starts generating here</span>
+  Attention is a mechanism that...
+    </div>
+    <p>All of this is <strong>flattened into one token sequence</strong>. There is no separate "system" processing — it's just context, with learned patterns from training that cause the model to treat &lt;system&gt; content as instructions.</p>
+  </div>
+  <div class="card">
+    <h2>Multi-Turn Conversations</h2>
+    <p>Each new user turn simply <strong>appends to the same context window</strong>. The model never "remembers" previous turns — it re-reads the entire conversation history every time. This is why:</p>
+    <ul>
+      <li>Long conversations use more tokens (and cost more).</li>
+      <li>Models can "forget" if context exceeds the window.</li>
+      <li>You can manipulate the model by injecting context early.</li>
+    </ul>
+    <p>The "memory" in commercial products (like Claude Projects) is built by a separate system that selectively injects relevant past conversations into the context window.</p>
+  </div>
+</div>
+
+<div class="card accent-purple">
+  <h2>Tool Use / Function Calling</h2>
+  <p>When Claude uses a tool (web search, code execution), it works like this:</p>
+  <div class="steps-row" style="margin:14px 0 0;">
+    <div class="step-card"><div class="step-head"><div class="step-num" style="background:#7c3aed;">1</div></div><p class="step-desc">Model generates a special <code>&lt;tool_call&gt;</code> token sequence specifying tool name + JSON arguments.</p></div>
+    <div class="step-card"><div class="step-head"><div class="step-num" style="background:#7c3aed;">2</div></div><p class="step-desc">Inference is paused. The tool runs in the real world (search, Python, database).</p></div>
+    <div class="step-card"><div class="step-head"><div class="step-num" style="background:#7c3aed;">3</div></div><p class="step-desc">Tool output is appended to context as a <code>&lt;tool_result&gt;</code>. Inference resumes.</p></div>
+    <div class="step-card"><div class="step-head"><div class="step-num" style="background:#7c3aed;">4</div></div><p class="step-desc">Model now "sees" the tool result and generates the final answer conditioned on it.</p></div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Streaming — How Tokens Appear One at a Time</h2>
+  <p>When you see Claude typing character by character, it's because the server streams each token over HTTP (Server-Sent Events or WebSocket) as soon as it's sampled, rather than waiting for the full response. Each token takes ~30–80ms on production hardware (decode phase). The "typing" appearance is not theatrics — it's the actual decode loop.</p>
+  <div class="live-box">
+<span class="lc"># Python: Claude streaming with Anthropic SDK</span>
+<span class="lp">import</span> anthropic
+
+client = anthropic.Anthropic()
+
+<span class="lv">with</span> client.messages.stream(
+    model=<span class="lg">"claude-sonnet-4-6"</span>,
+    max_tokens=<span class="lo">1024</span>,
+    messages=[{<span class="lg">"role"</span>: <span class="lg">"user"</span>, <span class="lg">"content"</span>: <span class="lg">"Explain KV cache"</span>}]
+) <span class="lv">as</span> stream:
+    <span class="lv">for</span> text <span class="lv">in</span> stream.text_stream:
+        <span class="lp">print</span>(text, end=<span class="lg">""</span>, flush=<span class="lo">True</span>)
+        <span class="lc"># each `text` is 1–3 tokens as they're decoded</span>
+  </div>
+</div>
+
+<!-- ══ SUMMARY ════════════════════════════════════════════════════════ -->
+<div class="result-card">
+  <h2>The Complete Picture</h2>
+  <p>Text → <strong>Tokenize</strong> (BPE, ~100K vocab) → <strong>Embed</strong> (lookup table + RoPE) → $L\times$ <strong>[RMSNorm → Multi-Head Attention → Residual → RMSNorm → SwiGLU FFN → Residual]</strong> → <strong>Logits</strong> → <strong>Sample</strong> (T + top-p) → append token → repeat.</p>
+  <p style="margin-top:12px;">The KV cache makes decode $O(n)$ instead of $O(n^2)$. Speculative decoding, Flash Attention, GQA, and MoE are engineering innovations that keep this loop fast at scale. The "intelligence" emerges from training on trillions of tokens — the inference machinery just runs the resulting function.</p>
+</div>
+
+<table style="width:100%;border:0;margin:20px 0;"><tbody><tr><td style="padding:0;text-align:right;font-size:.8em;color:#888;">
+  All articles written with the help of <a href="https://claude.ai" target="_blank">Claude</a>. Source credited to <a href="https://jonbarron.info/" target="_blank">Dr. Jon Barron</a>.
+</td></tr></tbody></table>
+</div><!-- /content -->
+
+<script>
+// ══ Utilities ══════════════════════════════════════════════════════
+function dpr(){return Math.min(window.devicePixelRatio||1,2);}
+function setupCanvas(id,h){
+  const c=document.getElementById(id); if(!c)return null;
+  const d=dpr(),pw=c.parentElement.clientWidth||800;
+  c.width=pw*d; c.height=h*d; c.style.width=pw+'px'; c.style.height=h+'px';
+  const ctx=c.getContext('2d'); ctx.scale(d,d);
+  return {c,ctx,w:pw,h};
+}
+const C={
+  bg:'#eef0f6',card:'#ffffff',
+  blue:'#0d3b8e',darkblue:'#1a1a5e',
+  green:'#1a7340',orange:'#b45309',purple:'#7c3aed',red:'#dc2626',
+  sky:'#0284c7',teal:'#0891b2',
+  text:'#2d2d2d',muted:'#666',dim:'#999',
+  lightblue:'#dbeafe',lightgreen:'#dcfce7',lightyellow:'#fef9c3',
+  lightpurple:'#ede9fe',lightorange:'#ffedd5',
+  border:'#e5e7eb'
+};
+function roundRect(ctx,x,y,w,h,r,fill,stroke,lw=1){
+  ctx.beginPath(); ctx.roundRect(x,y,w,h,r);
+  if(fill){ctx.fillStyle=fill;ctx.fill();}
+  if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw;ctx.stroke();}
+}
+function txt(ctx,t,x,y,col=C.text,sz=12,align='center',bold=false,italic=false){
+  ctx.fillStyle=col;
+  ctx.font=(italic?'italic ':'')+(bold?'bold ':'')+sz+'px Segoe UI';
+  ctx.textAlign=align; ctx.fillText(t,x,y);
+}
+function arrow(ctx,x1,y1,x2,y2,col,lw=1.5,dash=[]){
+  const a=Math.atan2(y2-y1,x2-x1);
+  ctx.strokeStyle=col; ctx.lineWidth=lw;
+  if(dash.length) ctx.setLineDash(dash); else ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle=col;
+  ctx.beginPath(); ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-9*Math.cos(a-.38),y2-9*Math.sin(a-.38));
+  ctx.lineTo(x2-9*Math.cos(a+.38),y2-9*Math.sin(a+.38));
+  ctx.closePath(); ctx.fill();
+}
+
+// ══ 0. Pipeline diagram ══════════════════════════════════════════════
+(function(){
+  const cv=setupCanvas('pipeline-canvas',130);
+  if(!cv)return;
+  const{ctx,w,h}=cv;
+  ctx.fillStyle=C.card; ctx.fillRect(0,0,w,h);
+  const steps=[
+    {label:'Raw Text\n"Hello!"',col:C.muted,bg:'#f1f5f9'},
+    {label:'Tokenize\n[9906,0]',col:C.blue,bg:C.lightblue},
+    {label:'Embed\n[0.2,−0.5…]',col:C.green,bg:C.lightgreen},
+    {label:'× 96 Layers\nAttention+FFN',col:C.purple,bg:C.lightpurple},
+    {label:'Logits\np("The")=0.3…',col:C.orange,bg:C.lightorange},
+    {label:'Sample\n→ Token 464',col:C.red,bg:'#fee2e2'},
+    {label:'Output\n"The answer"',col:C.teal,bg:'#e0f2fe'},
+  ];
+  const pad=12,gap=8,bh=72,topY=(h-bh)/2;
+  const bw=Math.floor((w-pad*2-gap*(steps.length-1))/steps.length);
+  steps.forEach((s,i)=>{
+    const x=pad+i*(bw+gap),y=topY;
+    roundRect(ctx,x,y,bw,bh,7,s.bg,s.col,1.5);
+    s.label.split('\n').forEach((ln,li)=>{
+      txt(ctx,ln,x+bw/2,y+22+li*22,s.col,li===0?10:9,undefined,li===0);
+    });
+    if(i<steps.length-1){
+      const ax=x+bw+2,ay=y+bh/2;
+      arrow(ctx,ax,ay,ax+gap-2,ay,s.col,1.5);
+    }
+  });
+  // loop arrow
+  ctx.strokeStyle=C.red; ctx.lineWidth=1.2; ctx.setLineDash([3,2]);
+  const lx=pad+(steps.length-1)*(bw+gap)+bw,ly=topY+bh+4;
+  ctx.beginPath(); ctx.moveTo(lx,ly); ctx.lineTo(lx,ly+20);
+  ctx.lineTo(pad+(3)*(bw+gap),ly+20); ctx.lineTo(pad+(3)*(bw+gap),ly); ctx.stroke();
+  ctx.setLineDash([]);
+  txt(ctx,'← loop (decode phase)',pad+(3)*(bw+gap)+bw/2+40,ly+32,C.red,9);
+})();
+
+// ══ 1. Tokenizer ═════════════════════════════════════════════════════
+(function(){
+  const inp=document.getElementById('tok-input'),
+        out=document.getElementById('tok-output'),
+        cnt=document.getElementById('tok-count'),
+        chars=document.getElementById('tok-chars'),
+        ratio=document.getElementById('tok-ratio');
+  // Simple BPE-like heuristic tokenizer (visual approximation, not real BPE)
+  function tokenize(text){
+    if(!text.trim()) return [];
+    const tokens=[];
+    let i=0;
+    while(i<text.length){
+      // whitespace + word merges
+      let match='';
+      // try to grab a word (letters, digits, apostrophe)
+      const wm=text.slice(i).match(/^[ \t]*[A-Za-z][A-Za-z']*/);
+      if(wm){match=wm[0];}
+      else{
+        // numbers
+        const nm=text.slice(i).match(/^[ \t]*\d+/);
+        if(nm) match=nm[0];
+        else{ match=text[i]; }
+      }
+      tokens.push(match); i+=match.length;
+    }
+    return tokens;
+  }
+  function render(){
+    const text=inp.value;
+    const tokens=tokenize(text);
+    const colors=8;
+    out.innerHTML=tokens.map((t,i)=>`<span class="tok t${i%colors}" title="token ${i}: '${t.trim()}'">${t.replace(/ /g,'·')}</span>`).join('');
+    cnt.textContent=tokens.length;
+    chars.textContent=text.length;
+    ratio.textContent=(text.length/Math.max(1,tokens.length)).toFixed(1);
+  }
+  inp.addEventListener('input',render); render();
+})();
+
+// ══ 3. Attention heatmap ═════════════════════════════════════════════
+(function(){
+  const cv=setupCanvas('attn-canvas',380);
+  if(!cv)return;
+  const{c,ctx,w,h}=cv;
+  const sentence=['The','cat','sat','on','the','mat','because','it','was','tired'];
+  let selToken=3; // "on"
+  let headIdx=0,tempV=1.0;
+  // Synthetic attention patterns per head (8 heads, each 10×10)
+  function syntheticAttn(head,fromIdx,toIdx){
+    // Different heads have different patterns
+    const patterns=[
+      // head 0: local window
+      (f,t)=>Math.exp(-Math.abs(f-t)/1.5),
+      // head 1: subject-verb
+      (f,t)=>(f<=2&&t<=2)||(f>=2&&t<=2)?0.8:0.1,
+      // head 2: previous token
+      (f,t)=>t===f-1?1.5:t===f?0.5:0.1,
+      // head 3: uniform
+      ()=>1,
+      // head 4: first token focus
+      (f,t)=>t===0?2.0:0.3,
+      // head 5: end of sentence
+      (f,t)=>t>=sentence.length-2?1.5:0.3,
+      // head 6: coreference ("it" → "cat")
+      (f,t)=>(f===7&&t===1)?3.0:Math.exp(-Math.abs(f-t)/3),
+      // head 7: long range
+      (f,t)=>Math.exp(-Math.abs(f-t)/4)+0.2,
+    ];
+    const raw=patterns[head](fromIdx,toIdx);
+    return Math.max(0,raw);
+  }
+  function getAttnRow(from,head,temp){
+    const raw=sentence.map((_,t)=>t<=from?syntheticAttn(head,from,t):0);
+    const scaled=raw.map(v=>Math.exp(v/temp));
+    const sum=scaled.reduce((a,b)=>a+b,1e-9);
+    return scaled.map(v=>v/sum);
+  }
+
+  document.getElementById('attn-head').addEventListener('input',e=>{headIdx=+e.target.value;document.getElementById('attn-head-val').textContent=headIdx+1;draw();});
+  document.getElementById('attn-temp').addEventListener('input',e=>{tempV=+e.target.value;document.getElementById('attn-temp-val').textContent=tempV.toFixed(1);draw();});
+  c.addEventListener('click',e=>{
+    const rect=c.getBoundingClientRect();
+    const mx=(e.clientX-rect.left)*(c.width/rect.width)/dpr();
+    const bw=Math.floor((w-40)/sentence.length);
+    const col=Math.floor((mx-20)/bw);
+    if(col>=0&&col<sentence.length){selToken=col;draw();}
+  });
+
+  function draw(){
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle=C.card; ctx.fillRect(0,0,w,h);
+    const n=sentence.length;
+    const bw=Math.floor((w-40)/n);
+    const tokenY=28, heatY=80, heatCell=Math.floor((h-heatY-60)/n);
+
+    // Draw tokens at top
+    sentence.forEach((tok,i)=>{
+      const x=20+i*bw,active=i===selToken;
+      roundRect(ctx,x+2,tokenY-18,bw-4,24,5,active?C.blue:C.lightblue,active?C.blue:C.border,active?2:1);
+      txt(ctx,tok,x+bw/2,tokenY-18+16,active?'white':C.blue,10.5,undefined,active);
+    });
+    txt(ctx,'← click a token to see its attention pattern',w/2,tokenY+12,C.muted,9);
+
+    // Attention row for selected token
+    const attnRow=getAttnRow(selToken,headIdx,tempV);
+
+    // Heatmap
+    txt(ctx,`Attention from "${sentence[selToken]}" to all past tokens (head ${headIdx+1}/8):`,w/2,heatY-8,C.darkblue,10.5,undefined,true);
+    sentence.forEach((_,toIdx)=>{
+      if(toIdx>selToken) return;
+      const weight=attnRow[toIdx];
+      const x=20+toIdx*bw, y=heatY;
+      // color: 0=white, 1=deep blue
+      const intensity=Math.min(1,weight*2.5);
+      const r=Math.round(255-(255-13)*intensity);
+      const g=Math.round(255-(255-59)*intensity);
+      const b=Math.round(255-(255-142)*intensity);
+      roundRect(ctx,x+2,y,bw-4,34,5,`rgb(${r},${g},${b})`,C.border,.5);
+      txt(ctx,(weight*100).toFixed(0)+'%',x+bw/2,y+22,intensity>0.4?'white':C.blue,9);
+    });
+
+    // Bar chart of attention weights
+    const barY=heatY+44, maxBar=h-barY-44;
+    txt(ctx,'Attention weight distribution:',w/2,barY-8,C.muted,9);
+    sentence.forEach((tok,i)=>{
+      if(i>selToken) return;
+      const bh2=Math.round(attnRow[i]*maxBar);
+      const x=20+i*bw;
+      const intense=attnRow[i];
+      roundRect(ctx,x+4,barY+maxBar-bh2,bw-8,bh2,3,`rgba(13,59,142,${0.2+intense*0.8})`,C.blue,.8);
+      txt(ctx,tok,x+bw/2,barY+maxBar+14,C.text,9.5);
+    });
+
+    // Selected token label
+    txt(ctx,`Query: "${sentence[selToken]}" → attends most to: "${sentence[attnRow.indexOf(Math.max(...attnRow))]}"`,w/2,h-8,C.darkblue,10,undefined,true);
+  }
+  draw();
+})();
+
+// ══ 4. Transformer Block diagram ══════════════════════════════════════
+(function(){
+  const cv=setupCanvas('block-canvas',320);
+  if(!cv)return;
+  const{ctx,w,h}=cv;
+  ctx.fillStyle='#f8f9fc'; ctx.fillRect(0,0,w,h);
+
+  const cx=w/2, gap=20;
+  // Define boxes: [label, x_center, y_center, w, h, fill, border]
+  const BW=180,BH=36;
+  const items=[
+    {l:'Input h ∈ ℝⁿˣᵈ',x:cx,y:28,w:BW+40,h:32,bg:'#f1f5f9',bc:C.border,tc:C.muted,bold:false},
+    {l:'RMSNorm',x:cx,y:80,w:BW,h:BH,bg:C.lightblue,bc:C.blue,tc:C.darkblue,bold:true},
+    {l:'Multi-Head Causal Attention',x:cx,y:134,w:BW+40,h:BH,bg:'#e0e7ff',bc:C.purple,tc:C.purple,bold:true},
+    {l:'+ Residual (h = h + attn_out)',x:cx,y:186,w:BW+60,h:28,bg:'#f0fdf4',bc:C.green,tc:C.green,bold:false},
+    {l:'RMSNorm',x:cx,y:232,w:BW,h:BH,bg:C.lightblue,bc:C.blue,tc:C.darkblue,bold:true},
+    {l:'Feed-Forward (SwiGLU, 4d→d)',x:cx,y:284,w:BW+60,h:BH,bg:C.lightorange,bc:C.orange,tc:C.orange,bold:true},
+    {l:'+ Residual (h = h + ffn_out)',x:cx,y:336,w:BW+60,h:28,bg:'#f0fdf4',bc:C.green,tc:C.green,bold:false},
+  ];
+  // Only draw what fits
+  const visItems=items.filter(it=>it.y+it.h<h-16);
+  visItems.forEach((it,i)=>{
+    roundRect(ctx,it.x-it.w/2,it.y-it.h/2,it.w,it.h,6,it.bg,it.bc,1.5);
+    txt(ctx,it.l,it.x,it.y+4,it.tc,10.5,'center',it.bold);
+    if(i<visItems.length-1){
+      const ny=visItems[i+1];
+      arrow(ctx,it.x,it.y+it.h/2+1,ny.x,ny.y-ny.h/2-1,C.muted,1.5);
+    }
+  });
+
+  // Residual skip arrows (left side)
+  const skip1y1=items[0].y,skip1y2=items[2].y+items[2].h/2+12;
+  const sx=cx-BW/2-60;
+  ctx.strokeStyle=C.green; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+  ctx.beginPath(); ctx.moveTo(sx,skip1y1+14); ctx.lineTo(sx,skip1y2); ctx.stroke();
+  ctx.setLineDash([]);
+  arrow(ctx,sx,skip1y2,cx-BW/2-4,skip1y2,C.green,1.5);
+  txt(ctx,'skip',sx-18,skip1y1+(skip1y2-skip1y1)/2,C.green,8,'center');
+
+  const skip2y1=items[3].y+14;
+  const skip2y2=items[5].y+items[5].h/2+12;
+  ctx.strokeStyle=C.green; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+  ctx.beginPath(); ctx.moveTo(sx,skip2y1); ctx.lineTo(sx,skip2y2); ctx.stroke();
+  ctx.setLineDash([]);
+  arrow(ctx,sx,skip2y2,cx-BW/2-4,skip2y2,C.green,1.5);
+  txt(ctx,'skip',sx-18,skip2y1+(skip2y2-skip2y1)/2,C.green,8,'center');
+
+  // Right annotation
+  txt(ctx,'× L layers',cx+BW/2+80,(h)/2,C.darkblue,14,'center',true);
+  txt(ctx,'(96 for large models)',cx+BW/2+80,(h)/2+18,C.muted,9,'center');
+  ctx.strokeStyle=C.border; ctx.lineWidth=1;
+  ctx.strokeRect(cx+BW/2+24,20,120,h-40);
+})();
+
+// ══ 5. Autoregressive generation ═════════════════════════════════════
+(function(){
+  const cv=setupCanvas('ar-canvas',360);
+  if(!cv)return;
+  const{ctx,w,h}=cv;
+
+  const prompt=['The','sky','is'];
+  const generated=['blue','and','vast','beyond','measure'];
+  // Logit distributions for each generation step
+  const logits=[
+    [{w:'blue',p:.38},{w:'dark',p:.18},{w:'clear',p:.14},{w:'bright',p:.11},{w:'grey',p:.08},{w:'red',p:.04},{w:'...',p:.07}],
+    [{w:'and',p:.31},{w:'with',p:.22},{w:'but',p:.15},{w:',',p:.12},{w:'or',p:.10},{w:'...',p:.10}],
+    [{w:'vast',p:.29},{w:'full',p:.20},{w:'filled',p:.16},{w:'endless',p:.13},{w:'...',p:.22}],
+    [{w:'beyond',p:.35},{w:'in',p:.22},{w:'.',p:.18},{w:'above',p:.12},{w:'...',p:.13}],
+    [{w:'measure',p:.42},{w:'words',p:.24},{w:'us',p:.18},{w:'all',p:.10},{w:'...',p:.06}],
+  ];
+  let step=0;
+  let autoTimer=null;
+
+  function draw(){
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle='#f8f9fc'; ctx.fillRect(0,0,w,h);
+    const allTokens=[...prompt,...generated.slice(0,step)];
+
+    // Context window
+    txt(ctx,'Context window (all tokens are input to the model):',20,20,C.darkblue,10.5,'left',true);
+    const colors8=[C.blue,C.green,C.purple,C.orange,C.red,C.teal,'#7c3aed','#0891b2'];
+    let tx=16,ty=34,bpad=4;
+    allTokens.forEach((tok,i)=>{
+      const tw=ctx.measureText(tok).width+20;
+      const active=i===allTokens.length-1;
+      roundRect(ctx,tx,ty,tw+bpad,24,5,active?C.blue:i<prompt.length?C.lightblue:'#f0fdf4',active?C.blue:colors8[i%8],active?2:1);
+      txt(ctx,tok,tx+(tw+bpad)/2,ty+16,active?'white':colors8[i%8],10.5);
+      if(i<allTokens.length-1){
+        const ntw=ctx.measureText(allTokens[i+1]).width+20;
+        arrow(ctx,tx+tw+bpad,ty+12,tx+tw+bpad+7,ty+12,C.muted,1);
+      }
+      tx+=tw+bpad+10;
+    });
+    // Query indicator
+    if(allTokens.length>0){
+      const lastTokW=ctx.measureText(allTokens[allTokens.length-1]).width+24;
+      txt(ctx,'↑ query',tx-lastTokW/2-10,ty+38,C.blue,9);
+    }
+
+    // Transformer box
+    roundRect(ctx,16,74,w-32,52,8,'#ede9fe','#7c3aed',1.5);
+    txt(ctx,'Transformer (96 layers of attention + FFN)',w/2,96,C.purple,11,'center',true);
+    txt(ctx,'processes all tokens → final hidden state for last token → projection to vocabulary logits',w/2,114,C.purple,9.5);
+
+    // Logit bar chart
+    if(step<logits.length){
+      const ld=logits[step];
+      const barAreaY=140, barAreaH=h-barAreaY-30;
+      const maxP=Math.max(...ld.map(l=>l.p));
+      const barW=Math.floor((w-40)/(ld.length+1));
+      txt(ctx,'Next token probability distribution:',20,barAreaY-8,C.darkblue,10.5,'left',true);
+      ld.forEach((item,i)=>{
+        const bh=Math.round(item.p/maxP*barAreaH*0.85);
+        const bx=20+(i+0.5)*(w-40)/ld.length;
+        const selected=generated[step]===item.w;
+        roundRect(ctx,bx-barW/2+2,barAreaY+barAreaH-bh,barW-4,bh,4,
+          selected?C.blue:C.lightblue, selected?C.blue:C.border,selected?2:.5);
+        txt(ctx,(item.p*100).toFixed(0)+'%',bx,barAreaY+barAreaH-bh-6,selected?C.blue:C.muted,9);
+        txt(ctx,item.w,bx,barAreaY+barAreaH+16,selected?C.blue:C.text,10.5,'center',selected);
+      });
+      const chosen=generated[step];
+      txt(ctx,`→ Sampled: "${chosen}" (highlighted)`,w/2,h-6,C.blue,10,'center',true);
+    } else {
+      txt(ctx,'Generation complete.',w/2,h/2+40,C.green,13,'center',true);
+    }
+
+    // Step indicator
+    txt(ctx,`Step ${step+1}: generating token ${prompt.length+step+1}`,w-16,20,C.muted,9,'right');
+  }
+
+  document.getElementById('ar-next').addEventListener('click',()=>{if(step<logits.length){step++;draw();}});
+  document.getElementById('ar-prev').addEventListener('click',()=>{if(step>0){step--;draw();}});
+  document.getElementById('ar-reset').addEventListener('click',()=>{step=0;if(autoTimer){clearInterval(autoTimer);autoTimer=null;document.getElementById('ar-play').textContent='▶ Auto';}draw();});
+  document.getElementById('ar-play').addEventListener('click',()=>{
+    if(autoTimer){clearInterval(autoTimer);autoTimer=null;document.getElementById('ar-play').textContent='▶ Auto';}
+    else{document.getElementById('ar-play').textContent='■ Stop';autoTimer=setInterval(()=>{if(step<logits.length){step++;draw();}else{clearInterval(autoTimer);autoTimer=null;document.getElementById('ar-play').textContent='▶ Auto';}},1400);}
+  });
+  draw();
+})();
+
+// ══ 6. KV Cache ══════════════════════════════════════════════════════
+(function(){
+  const cv=setupCanvas('kv-canvas',300);
+  if(!cv)return;
+  const{ctx,w,h}=cv;
+  const sl=document.getElementById('kv-len');
+  sl.addEventListener('input',()=>{document.getElementById('kv-len-val').textContent=sl.value;draw();});
+
+  function draw(){
+    const n=+sl.value;
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle=C.card; ctx.fillRect(0,0,w,h);
+    const cellW=Math.min(36,Math.floor((w-80)/n));
+    const rowH=42,topPad=30;
+
+    // Without cache
+    txt(ctx,'WITHOUT KV Cache — every decode step recomputes all tokens:',20,topPad-10,C.red,10.5,'left',true);
+    for(let t=0;t<n;t++){
+      for(let step=0;step<=t;step++){
+        const x=20+step*cellW, y=topPad;
+        const isCurrent=step===t;
+        roundRect(ctx,x+1,y,cellW-2,rowH-4,4,isCurrent?'#fee2e2':'#fef2f2',isCurrent?C.red:'#fca5a5',isCurrent?1.5:.5);
+        if(cellW>20) txt(ctx,step,x+cellW/2,y+rowH/2+4,isCurrent?C.red:'#fca5a5',8.5);
+      }
+      txt(ctx,'→',20+t*cellW+cellW+2,topPad+rowH/2+2,C.muted,9,'left');
+      const cost=(t+1);
+      txt(ctx,`×${cost}`,20+t*cellW+cellW+3,topPad+rowH/2+16,C.red,8,'left');
+    }
+    txt(ctx,`Total ops ∝ 1+2+…+${n} = ${n*(n+1)/2}`,20,topPad+rowH+14,C.red,9,'left');
+
+    // With cache
+    const y2=topPad+rowH+36;
+    txt(ctx,'WITH KV Cache — only the new token is computed, rest is cached:',20,y2-10,C.green,10.5,'left',true);
+    for(let t=0;t<n;t++){
+      for(let step=0;step<=t;step++){
+        const x=20+step*cellW,y=y2;
+        const isCurrent=step===t;
+        const isCached=step<t;
+        roundRect(ctx,x+1,y,cellW-2,rowH-4,4,
+          isCurrent?C.lightgreen:isCached?'#f0fdf4':'#f8f9fc',
+          isCurrent?C.green:isCached?'#86efac':C.border,
+          isCurrent?1.5:.5);
+        if(cellW>20) txt(ctx,step,x+cellW/2,y+rowH/2+4,isCurrent?C.green:isCached?'#86efac':C.muted,8.5);
+      }
+    }
+    txt(ctx,'Cached (free read)',20,y2+rowH+12,C.green,9,'left');
+    roundRect(ctx,120,y2+rowH+2,18,12,2,'#f0fdf4','#86efac');
+    txt(ctx,'Current step (compute)',160,y2+rowH+12,C.green,9,'left');
+    roundRect(ctx,298,y2+rowH+2,18,12,2,C.lightgreen,C.green);
+    txt(ctx,`Total ops ∝ ${n} (same each step!)`,20,y2+rowH+26,C.green,9,'left');
+
+    // Speedup label
+    const speedup=(n*(n+1)/2/n).toFixed(1);
+    txt(ctx,`KV Cache speedup: ~${speedup}× at context length ${n}`,w/2,h-8,C.darkblue,10.5,'center',true);
+  }
+  draw();
+})();
+
+// ══ 7. Sampling ══════════════════════════════════════════════════════
+(function(){
+  const cv=setupCanvas('sample-canvas',320);
+  if(!cv)return;
+  const{ctx,w,h}=cv;
+  // Base logits (a natural-ish distribution)
+  const vocab=['blue','dark','clear','bright','grey','violet','azure','pale','deep','light','crimson','golden','pure','soft','vivid','bright','stark','vast','wide','endless'];
+  const baseLogits=[4.2,3.1,2.8,2.4,2.0,1.8,1.5,1.3,1.1,0.9,0.7,0.5,0.4,0.3,0.2,0.1,0.0,-0.1,-0.2,-0.4];
+
+  const tS=document.getElementById('temp-slider'),
+        ppS=document.getElementById('topp-slider'),
+        pkS=document.getElementById('topk-slider');
+
+  function softmax(logits){
+    const maxL=Math.max(...logits);
+    const exp=logits.map(l=>Math.exp(l-maxL));
+    const sum=exp.reduce((a,b)=>a+b,0);
+    return exp.map(e=>e/sum);
+  }
+
+  function draw(){
+    const T=+tS.value, topP=+ppS.value, topK=+pkS.value;
+    document.getElementById('temp-val').textContent=T.toFixed(1);
+    document.getElementById('topp-val').textContent=topP.toFixed(2);
+    document.getElementById('topk-val').textContent=topK===0?'0 (off)':topK;
+
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle=C.card; ctx.fillRect(0,0,w,h);
+
+    const scaled=baseLogits.map(l=>l/T);
+    const probs=softmax(scaled);
+
+    // Apply top-k
+    let mask=new Array(vocab.length).fill(true);
+    if(topK>0){
+      const sorted=[...probs].map((p,i)=>({p,i})).sort((a,b)=>b.p-a.p);
+      mask=new Array(vocab.length).fill(false);
+      sorted.slice(0,topK).forEach(s=>mask[s.i]=true);
+    }
+    // Apply top-p
+    const sortedByP=[...probs].map((p,i)=>({p,i})).sort((a,b)=>b.p-a.p);
+    let cumSum=0;
+    const topp_mask=new Array(vocab.length).fill(false);
+    for(const{p,i} of sortedByP){
+      topp_mask[i]=true; cumSum+=p;
+      if(cumSum>=topP) break;
+    }
+    const finalMask=mask.map((m,i)=>m&&topp_mask[i]);
+    const maskedProbs=probs.map((p,i)=>finalMask[i]?p:0);
+    const normSum=maskedProbs.reduce((a,b)=>a+b,1e-9);
+    const finalProbs=maskedProbs.map(p=>p/normSum);
+
+    const N=vocab.length;
+    const barW=Math.floor((w-40)/N);
+    const maxP=Math.max(...probs);
+    const barAreaH=h-80;
+    const topY=16;
+
+    txt(ctx,'Next-token distribution after temperature + top-p + top-k filtering:',w/2,topY,C.darkblue,10.5,'center',true);
+
+    probs.forEach((p,i)=>{
+      const bh=Math.round(p/maxP*barAreaH*0.85);
+      const x=20+i*barW;
+      const active=finalMask[i];
+      roundRect(ctx,x+1,topY+barAreaH-bh+14,barW-2,bh,3,active?C.lightblue:'#f1f5f9',active?C.blue:C.border,.8);
+      if(barW>18){
+        txt(ctx,(finalProbs[i]*100).toFixed(0)+'%',x+barW/2,topY+barAreaH-bh+8,active?C.blue:C.dim,8);
+        txt(ctx,vocab[i],x+barW/2,topY+barAreaH+30,active?C.text:C.dim,8.5,'center',active);
+      }
+    });
+
+    txt(ctx,`T=${T.toFixed(1)}  top-p=${topP.toFixed(2)}  top-k=${topK||'off'}  →  ${finalMask.filter(Boolean).length}/${N} tokens eligible`,w/2,h-6,C.muted,9,'center');
+  }
+  [tS,ppS,pkS].forEach(s=>s.addEventListener('input',draw));
+  draw();
+})();
+
+// ══ 9. Scaling laws ══════════════════════════════════════════════════
+(function(){
+  const cv=setupCanvas('scale-canvas',260);
+  if(!cv)return;
+  const{ctx,w,h}=cv;
+  const sl=document.getElementById('scale-c');
+  sl.addEventListener('input',()=>{document.getElementById('scale-c-val').textContent=(+sl.value).toFixed(1);draw();});
+
+  function optimalN(C){ return 0.5*C; } // log scale: N* ∝ sqrt(C)
+  function loss(N,D,A=406.4,B=410.7,alpha=0.34,beta=0.28){
+    return A/Math.pow(N,alpha)+B/Math.pow(D,beta)+1.69;
+  }
+
+  function draw(){
+    const logC=+sl.value;
+    const C=Math.pow(10,logC);
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle=C.card||'white'; ctx.fillRect(0,0,w,h);
+
+    const pad={l:50,r:20,t:30,b:40};
+    const pw=w-pad.l-pad.r, ph=h-pad.t-pad.b;
+
+    // N range: logC/2 - 2 to logC/2 + 2
+    const logNMin=logC/2-2.5, logNMax=logC/2+2.5;
+    const lossVals=[];
+    const NSteps=80;
+    for(let i=0;i<=NSteps;i++){
+      const logN=logNMin+i*(logNMax-logNMin)/NSteps;
+      const N=Math.pow(10,logN);
+      const D=C/(6*N); // FLOPs ≈ 6ND
+      const l=D>1?loss(N,D):99;
+      lossVals.push({logN,l:Math.min(l,8)});
+    }
+    const minL=Math.min(...lossVals.map(v=>v.l));
+    const maxL=Math.min(8,Math.max(...lossVals.map(v=>v.l)));
+
+    // Axes
+    ctx.strokeStyle=C.border||'#e5e7eb'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pad.l,pad.t); ctx.lineTo(pad.l,pad.t+ph); ctx.lineTo(pad.l+pw,pad.t+ph); ctx.stroke();
+
+    function tx(logN){return pad.l+pw*(logN-logNMin)/(logNMax-logNMin);}
+    function ty(l){return pad.t+ph*(1-(l-minL)/(maxL-minL+.01));}
+
+    // Loss curve
+    ctx.strokeStyle=C.blue||'#0d3b8e'; ctx.lineWidth=2.5; ctx.setLineDash([]);
+    ctx.beginPath();
+    lossVals.forEach(({logN,l},i)=>{
+      const x=tx(logN),y=ty(l);
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+
+    // Optimal point
+    const optLogN=optimalN(logC);
+    const optN=Math.pow(10,optLogN);
+    const optD=C/(6*optN);
+    const optL=optD>1?loss(optN,optD):99;
+    const ox=tx(optLogN), oy=ty(optL);
+    ctx.fillStyle=C.green||'#1a7340';
+    ctx.beginPath(); ctx.arc(ox,oy,6,0,Math.PI*2); ctx.fill();
+    ctx.setLineDash([3,2]); ctx.strokeStyle=C.green||'#1a7340'; ctx.lineWidth=1.2;
+    ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(ox,pad.t+ph); ctx.stroke();
+    ctx.setLineDash([]);
+    txt(ctx,`Optimal N ≈ 10^${optLogN.toFixed(1)}`,ox,oy-12,C.green||'#1a7340',9,'center',true);
+    txt(ctx,`D = 20N tokens`,ox,oy-24,C.green||'#1a7340',8.5,'center');
+
+    // Axis labels
+    txt(ctx,'Test Loss →',pad.l-12,pad.t+ph/2,C.muted||'#666',9,'center');
+    txt(ctx,'Model Size N (parameters, log scale) →',pad.l+pw/2,pad.t+ph+32,C.muted||'#666',9,'center');
+    txt(ctx,'Loss vs. Model Size at Fixed Compute Budget (Chinchilla)',w/2,14,C.darkblue||'#1a1a5e',10.5,'center',true);
+    txt(ctx,'Too small',tx(logNMin+0.5),ty(maxL*.97+minL*.03)+14,C.red||'#dc2626',9,'center');
+    txt(ctx,'Too large (undertrained)',tx(logNMax-0.5),ty(maxL*.97+minL*.03)+14,C.orange||'#b45309',9,'center');
+  }
+  draw();
+})();
+
+// ══ 10. Speculative decoding ══════════════════════════════════════════
+(function(){
+  const cv=setupCanvas('spec-canvas',220);
+  if(!cv)return;
+  const{ctx,w,h}=cv;
+  ctx.fillStyle=C.card; ctx.fillRect(0,0,w,h);
+
+  const pad=20, bw=60, bh=36, gap=6;
+  const drafted=['fast','draft','tokens','appear','here'];
+  const accepted=[true,true,true,false,null];
+
+  // Draft model row
+  txt(ctx,'Draft model (small, fast):',pad,24,C.muted,10,'left',true);
+  drafted.forEach((tok,i)=>{
+    const x=pad+180+i*(bw+gap), y=10;
+    roundRect(ctx,x,y,bw,bh,6,'#f0fdf4',C.green,1.5);
+    txt(ctx,tok,x+bw/2,y+14,C.green,9,'center',true);
+    txt(ctx,'~5ms',x+bw/2,y+27,C.muted,8);
+  });
+  arrow(ctx,pad,29,pad+174,29,C.green,1.5);
+  txt(ctx,'generates 5 tokens in ~5ms total',pad+92,40,C.green,8.5,'center');
+
+  // Big model row
+  txt(ctx,'Large model (big, accurate):',pad,80,C.muted,10,'left',true);
+  drafted.forEach((tok,i)=>{
+    const x=pad+180+i*(bw+gap), y=66;
+    const acc=accepted[i];
+    const col=acc===true?C.green:acc===false?C.red:C.muted;
+    const bg=acc===true?C.lightgreen:acc===false?'#fee2e2':'#f1f5f9';
+    roundRect(ctx,x,y,bw,bh,6,bg,col,1.5);
+    txt(ctx,tok,x+bw/2,y+14,col,9,'center',true);
+    txt(ctx,acc===true?'✓ accept':acc===false?'✗ reject':'skip',x+bw/2,y+27,col,8);
+  });
+  // "verify all in one pass"
+  roundRect(ctx,pad,64,164,40,6,'#ede9fe',C.purple,1.5);
+  txt(ctx,'1 forward pass',pad+82,80,C.purple,10,'center',true);
+  txt(ctx,'verifies ALL 5',pad+82,94,C.purple,9,'center');
+  arrow(ctx,pad+164,84,pad+180-4,84,C.purple,1.5);
+
+  // Result
+  txt(ctx,'Accepted 3/5 draft tokens → ~3× speedup vs. decoding one-by-one',pad+10,h-16,C.blue,10,'left',true);
+  txt(ctx,'(all operations are exact — no quality loss)',w-pad,h-4,C.muted,8.5,'right');
+})();
+
+// ══ Resize handler ════════════════════════════════════════════════════
+let rt;
+window.addEventListener('resize',()=>{
+  clearTimeout(rt);
+  rt=setTimeout(()=>document.querySelectorAll('input[type=range]').forEach(s=>s.dispatchEvent(new Event('input'))),200);
+});
+</script>
+</body>
+</html>
