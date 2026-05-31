@@ -119,7 +119,7 @@ $$\begin{bmatrix}Y\\Cb\\Cr\end{bmatrix} = \begin{bmatrix}0.299 & 0.587 & 0.114\\
 <p>The <strong>4:2:0 chroma subsampling</strong> format stores Cb and Cr at half the spatial resolution in both dimensions — one chroma sample per 2×2 luma block. This alone cuts data by <em>50%</em> before any codec compression, with minimal perceived quality loss.</p>
 
 <div class="graphic-container">
-  <canvas id="ycbcr-canvas" style="width:100%;display:block;" height="220"></canvas>
+  <canvas id="ycbcr-canvas" style="width:100%;display:block;" height="310"></canvas>
   <div class="controls">
     <div class="ctrl-grid">
       <div class="ctrl-group">
@@ -214,14 +214,15 @@ $$F[u,v] = \frac{2}{N}\,C_u\,C_v \sum_{x=0}^{N-1}\sum_{y=0}^{N-1} f[x,y]\cos\!\l
 
 <!-- INTERACTIVE DCT VISUALIZATION -->
 <div class="graphic-container">
-  <canvas id="dct-canvas" style="width:100%;display:block;" height="340"></canvas>
+  <canvas id="dct-canvas" style="width:100%;display:block;" height="440"></canvas>
   <div class="controls">
-    <p style="font-size:.79rem;color:#6060a0;margin-bottom:10px;">Click any cell in the 8×8 pixel block (left) to toggle it. Watch how energy concentrates in the DCT domain (right).</p>
+    <p style="font-size:.79rem;color:#6060a0;margin-bottom:10px;">Select a preset or click/drag cells in the <strong>Original</strong> block. Watch the full intra-encode pipeline update: Original → Prediction → Residual → DCT Spectrum.</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button class="tab-btn" id="dct-preset-smooth">Smooth Gradient</button>
       <button class="tab-btn" id="dct-preset-edge">Vertical Edge</button>
       <button class="tab-btn" id="dct-preset-checker">Checkerboard</button>
-      <button class="tab-btn" id="dct-preset-clear">Clear</button>
+      <button class="tab-btn" id="dct-preset-natural">Natural Block</button>
+      <button class="tab-btn" id="dct-preset-clear">Flat (128)</button>
     </div>
   </div>
 </div>
@@ -258,9 +259,9 @@ $$\text{Reconstructed Block} = \text{Ref}[y+\Delta y,\, x+\Delta x] + \text{IDCT
 
 <!-- INTERACTIVE MOTION ESTIMATION VISUALIZATION -->
 <div class="graphic-container">
-  <canvas id="me-canvas" style="width:100%;display:block;" height="360"></canvas>
+  <canvas id="me-canvas" style="width:100%;display:block;" height="480"></canvas>
   <div class="controls">
-    <p style="font-size:.79rem;color:#6060a0;margin-bottom:10px;">Drag the <strong>orange block</strong> in the current frame to move it. Watch the motion vector and SAD cost update as the encoder searches the reference frame.</p>
+    <p style="font-size:.79rem;color:#6060a0;margin-bottom:10px;">Adjust <strong>Object Velocity</strong> to move the subject between frames. The <strong>SAD heatmap</strong> shows encoder search cost at every candidate position — green = good match, red = poor match. The best match is found at the minimum.</p>
     <div class="ctrl-grid">
       <div class="ctrl-group">
         <label>Search Window <span class="val" id="me-range-val">±16px</span></label>
@@ -346,7 +347,7 @@ $$\text{Reconstructed Block} = \text{Ref}[y+\Delta y,\, x+\Delta x] + \text{IDCT
 
 <!-- GOP TIMELINE VISUALIZATION -->
 <div class="graphic-container">
-  <canvas id="gop-canvas" style="width:100%;display:block;" height="260"></canvas>
+  <canvas id="gop-canvas" style="width:100%;display:block;" height="360"></canvas>
   <div class="controls">
     <div class="ctrl-grid">
       <div class="ctrl-group">
@@ -406,7 +407,7 @@ $$Q_{\text{step}}(u,v) = Q_{\text{base}}(QP) \times W[u,v], \quad W[u,v] \uparro
 
 <!-- QUANTIZATION INTERACTIVE VISUALIZATION -->
 <div class="graphic-container">
-  <canvas id="quant-canvas" style="width:100%;display:block;" height="360"></canvas>
+  <canvas id="quant-canvas" style="width:100%;display:block;" height="420"></canvas>
   <div class="controls">
     <div class="ctrl-grid">
       <div class="ctrl-group">
@@ -478,7 +479,7 @@ $$J = D + \lambda \cdot R$$
 
 <!-- DECODE ANIMATION -->
 <div class="graphic-container">
-  <canvas id="decode-canvas" style="width:100%;display:block;" height="300"></canvas>
+  <canvas id="decode-canvas" style="width:100%;display:block;" height="400"></canvas>
   <div class="controls">
     <p style="font-size:.79rem;color:#6060a0;margin-bottom:10px;">Step through the decode pipeline of a single P-frame block.</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -714,8 +715,8 @@ ffmpeg -i input.mp4 \
      ALL INTERACTIVE JAVASCRIPT BELOW
 ══════════════════════════════════════════════════════════════════ -->
 <script>
-// ─── Utility ───────────────────────────────────────────────────────
-function dpr(){return window.devicePixelRatio||1;}
+// ─── Shared Utilities ──────────────────────────────────────────────
+function dpr(){return Math.min(window.devicePixelRatio||1,2);}
 function setupCanvas(id,h){
   const c=document.getElementById(id);
   if(!c)return null;
@@ -727,507 +728,1180 @@ function setupCanvas(id,h){
   ctx.scale(d,d);
   return {c,ctx,w,h:h};
 }
-const DARK='#0c0c14',PANEL='#0f0f1e',GRID='#1a1a28',
+const DARK='#0c0c14',PANEL='#0f0f1e',PANEL2='#111128',GRID='#1a1a28',
       BLUE='#38bdf8',GREEN='#22c55e',PURPLE='#c084fc',
-      AMBER='#facc15',RED='#f87171',TEXT='#a0a0b8',TEXTH='#d4d4e0';
+      AMBER='#facc15',RED='#f87171',ORANGE='#fb923c',
+      TEXT='#a0a0b8',TEXTH='#d4d4e0',DIM='#4a4a68';
+
+// draw a pixel grid using ImageData for crisp rendering
+function drawPixels(ctx,pixels,ox,oy,cols,rows,px){
+  const id=ctx.createImageData(cols*px,rows*px);
+  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+    const v=pixels[r*cols+c]; // 0-255 gray unless array of [r,g,b]
+    const [R,G,B]=Array.isArray(v)?v:[v,v,v];
+    for(let dy=0;dy<px;dy++) for(let dx=0;dx<px;dx++){
+      const i=((r*px+dy)*cols*px+(c*px+dx))*4;
+      id.data[i]=R; id.data[i+1]=G; id.data[i+2]=B; id.data[i+3]=255;
+    }
+  }
+  ctx.putImageData(id,ox*dpr(),oy*dpr());
+  ctx.scale(1/dpr(),1/dpr()); // undo scale so we can draw at CSS coords
+  ctx.putImageData(id,ox*dpr(),oy*dpr());
+  ctx.scale(dpr(),dpr());
+}
+// draw upscaled ImageData block (already in CSS coords)
+function blitPixels(ctx,pixels,ox,oy,cols,rows,px){
+  const id=ctx.createImageData(cols*px,rows*px);
+  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+    const v=pixels[r*cols+c];
+    const [R,G,B]=Array.isArray(v)?v:[v,v,v];
+    for(let dy=0;dy<px;dy++) for(let dx=0;dx<px;dx++){
+      const i=((r*px+dy)*cols*px+(c*px+dx))*4;
+      id.data[i]=R; id.data[i+1]=G; id.data[i+2]=B; id.data[i+3]=255;
+    }
+  }
+  // draw at device coords
+  const d=dpr();
+  const tmp=document.createElement('canvas');
+  tmp.width=cols*px; tmp.height=rows*px;
+  tmp.getContext('2d').putImageData(id,0,0);
+  ctx.save(); ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(tmp,ox,oy,cols*px,rows*px);
+  ctx.restore();
+}
+function arrow(ctx,x1,y1,x2,y2,col,lw=1.5){
+  const a=Math.atan2(y2-y1,x2-x1);
+  ctx.strokeStyle=col; ctx.fillStyle=col; ctx.lineWidth=lw;
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-10*Math.cos(a-.4),y2-10*Math.sin(a-.4));
+  ctx.lineTo(x2-10*Math.cos(a+.4),y2-10*Math.sin(a+.4));
+  ctx.closePath(); ctx.fill();
+}
+function label(ctx,txt,x,y,col=TEXT,sz=10,bold=false){
+  ctx.fillStyle=col; ctx.font=(bold?'bold ':'')+sz+'px Segoe UI';
+  ctx.textAlign='center'; ctx.fillText(txt,x,y);
+}
+function panelBox(ctx,x,y,w,h,title,col){
+  ctx.fillStyle=PANEL; ctx.beginPath(); ctx.roundRect(x,y,w,h,6); ctx.fill();
+  ctx.strokeStyle=col||GRID; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.roundRect(x,y,w,h,6); ctx.stroke();
+  if(title){
+    ctx.fillStyle=col||BLUE; ctx.font='bold 10px Segoe UI'; ctx.textAlign='center';
+    ctx.fillText(title,x+w/2,y-5);
+  }
+}
 
 // ─── 1. YCbCr Visualizer ───────────────────────────────────────────
 (function(){
-  const cv=setupCanvas('ycbcr-canvas',220);
+  const cv=setupCanvas('ycbcr-canvas',310);
   if(!cv)return;
-  const {ctx,w,h}=cv;
+  const {c,ctx,w,h}=cv;
   const rS=document.getElementById('r-slider'),
         gS=document.getElementById('g-slider'),
         bS=document.getElementById('b-slider');
+  // Generate a synthetic 32×20 "video frame" — warm sunset gradient
+  const IW=32,IH=20;
+  function makeScene(probeR,probeG,probeB){
+    const px=[]; // [r,g,b] per pixel
+    for(let r=0;r<IH;r++) for(let c=0;c<IW;c++){
+      const t=c/IW; // 0=left,1=right
+      const s=r/IH; // 0=top,1=bottom
+      // sky: blue-top to orange-bottom gradient
+      const skyR=Math.round(30+t*120+s*160);
+      const skyG=Math.round(60+t*80+s*60);
+      const skyB=Math.round(200-s*160);
+      // ground: darker
+      const groundR=Math.round(40+c*2);
+      const groundG=Math.round(30+c);
+      const groundB=Math.round(20);
+      const blend=s>0.6?(s-0.6)/0.4:0;
+      const R=Math.round(skyR*(1-blend)+groundR*blend);
+      const G=Math.round(skyG*(1-blend)+groundG*blend);
+      const B=Math.round(skyB*(1-blend)+groundB*blend);
+      // mark probe pixel in top-left 4×4
+      if(r<4&&c<4) px.push([probeR,probeG,probeB]);
+      else px.push([Math.min(255,R),Math.min(255,G),Math.min(255,B)]);
+    }
+    return px;
+  }
+  function rgb2ycbcr(R,G,B){
+    const Y=Math.round(0.299*R+0.587*G+0.114*B);
+    const Cb=Math.round(-0.169*R-0.331*G+0.500*B+128);
+    const Cr=Math.round(0.500*R-0.419*G-0.081*B+128);
+    return [Math.min(255,Math.max(0,Y)),Math.min(255,Math.max(0,Cb)),Math.min(255,Math.max(0,Cr))];
+  }
+
+  const PX=6; // display pixels per image pixel
+  const imgW=IW*PX, imgH=IH*PX;
+
   function draw(){
     const R=+rS.value,G=+gS.value,B=+bS.value;
     document.getElementById('r-val').textContent=R;
     document.getElementById('g-val').textContent=G;
     document.getElementById('b-val').textContent=B;
-    const Y=Math.round(0.299*R+0.587*G+0.114*B);
-    const Cb=Math.round(-0.169*R-0.331*G+0.500*B+128);
-    const Cr=Math.round(0.500*R-0.419*G-0.081*B+128);
+
     ctx.clearRect(0,0,w,h);
     ctx.fillStyle=DARK; ctx.fillRect(0,0,w,h);
-    const sw=w/5, pad=18, bw=sw-pad*2, bh=h-60;
-    const colors=[
-      [`rgb(${R},${G},${B})`,'RGB Input',`(${R},${G},${B})`],
-      [`rgb(${Y},${Y},${Y})`,'Y (Luma)',`${Y}`],
-      [`rgb(0,0,${Cb})`,'Cb (−)',`${Cb}`],
-      [`rgb(${Cr},0,0)`,'Cr (−)',`${Cr}`],
-      [null,'4:2:0\nSubsamp.',null],
-    ];
-    colors.forEach(([col,label,val],i)=>{
-      const x=i*sw+pad, y=18;
-      if(col){
-        ctx.fillStyle=col;
-        ctx.beginPath(); ctx.roundRect(x,y,bw,bh,6); ctx.fill();
-        ctx.fillStyle='rgba(0,0,0,0.4)';
-        ctx.beginPath(); ctx.roundRect(x,y,bw,bh,6); ctx.fill();
-      } else {
-        // 4:2:0 grid illustration
-        const gs=bw/4;
-        for(let r=0;r<4;r++) for(let c2=0;c2<4;c2++){
-          ctx.fillStyle=`rgb(${Y},${Y},${Y})`;
-          ctx.fillRect(x+c2*gs,y+r*gs,gs-1,gs-1);
-        }
-        for(let r=0;r<2;r++) for(let c2=0;c2<2;c2++){
-          ctx.strokeStyle=BLUE; ctx.lineWidth=1.5;
-          ctx.strokeRect(x+c2*gs*2+0.5,y+r*gs*2+0.5,gs*2-1,gs*2-1);
-        }
-      }
-      ctx.fillStyle=TEXTH; ctx.font='bold 10px Segoe UI';
-      ctx.textAlign='center';
-      ctx.fillText(label,x+bw/2,y+bh+14);
-      if(val){ctx.fillStyle=BLUE; ctx.font='10px monospace'; ctx.fillText(val,x+bw/2,y+bh+26);}
+
+    const scene=makeScene(R,G,B);
+    // Build channel images
+    const Ypx=[],Cbpx=[],Crpx=[];
+    scene.forEach(([r,g,b])=>{
+      const [Y,Cb,Cr]=rgb2ycbcr(r,g,b);
+      Ypx.push([Y,Y,Y]);
+      // Cb: map 0-255 to blue channel visualization (blue-diff)
+      const cbv=Math.round((Cb-128)*1.5+128);
+      Cbpx.push([Math.max(0,Math.min(255,128-cbv)),Math.max(0,Math.min(255,128)),Math.max(0,Math.min(255,128+cbv))]);
+      // Cr: map to red channel visualization
+      const crv=Math.round((Cr-128)*1.5+128);
+      Crpx.push([Math.max(0,Math.min(255,128+crv)),Math.max(0,Math.min(255,128-crv>>1)),Math.max(0,Math.min(255,128-crv))]);
     });
-    ctx.fillStyle=TEXT; ctx.font='11px Segoe UI'; ctx.textAlign='left';
-    ctx.fillText('Y full res · Cb/Cr half res (4:2:0) → 50% bandwidth saving before codec',10,h-4);
+
+    // Layout: 4 panels side by side + spacing
+    const nPanels=4, gap=10, topY=32;
+    const totalGaps=gap*(nPanels+1);
+    const panW=Math.floor((w-totalGaps)/nPanels);
+    const panH=imgH+2;
+
+    const titles=['RGB (Original)','Y — Luma','Cb — Chroma Blue','Cr — Chroma Red'];
+    const colors=[TEXTH,BLUE,'#818cf8',RED];
+    const imgs=[scene,Ypx,Cbpx,Crpx];
+
+    imgs.forEach((img,i)=>{
+      const px2=Math.floor(panW/IW);
+      const ox=gap+i*(panW+gap);
+      panelBox(ctx,ox,topY,panW,IH*px2+20,titles[i],colors[i]);
+      // render image
+      const id=document.createElement('canvas');
+      id.width=IW*px2; id.height=IH*px2;
+      const ic=id.getContext('2d');
+      const imgdata=ic.createImageData(IW*px2,IH*px2);
+      img.forEach(([r,g,b],idx)=>{
+        const row=Math.floor(idx/IW),col=idx%IW;
+        for(let dy=0;dy<px2;dy++) for(let dx=0;dx<px2;dx++){
+          const p=((row*px2+dy)*IW*px2+(col*px2+dx))*4;
+          imgdata.data[p]=r; imgdata.data[p+1]=g; imgdata.data[p+2]=b; imgdata.data[p+3]=255;
+        }
+      });
+      ic.putImageData(imgdata,0,0);
+      ctx.save(); ctx.imageSmoothingEnabled=false;
+      ctx.drawImage(id,ox+1,topY+1,IW*px2,IH*px2);
+      ctx.restore();
+
+      // probe pixel highlight (top-left 4×4 area)
+      ctx.strokeStyle=AMBER; ctx.lineWidth=1.5;
+      ctx.setLineDash([2,2]);
+      ctx.strokeRect(ox+1,topY+1,4*px2,4*px2);
+      ctx.setLineDash([]);
+
+      // value annotation
+      const [Y2,Cb2,Cr2]=rgb2ycbcr(R,G,B);
+      const vals=[`R=${R} G=${G} B=${B}`,`Y=${Y2}`,`Cb=${Cb2}`,`Cr=${Cr2}`];
+      ctx.fillStyle=colors[i]; ctx.font='bold 9px monospace'; ctx.textAlign='center';
+      ctx.fillText(vals[i],ox+panW/2,topY+IH*px2+14);
+    });
+
+    // ── 4:2:0 subsampling diagram ────────────────────────────────
+    const diagY=topY+IH*Math.floor((w-gap*(nPanels+1))/nPanels/IW)+36;
+    ctx.fillStyle=TEXTH; ctx.font='bold 11px Segoe UI'; ctx.textAlign='left';
+    ctx.fillText('4:2:0 Chroma Subsampling — one Cb/Cr sample per 2×2 luma block:',gap,diagY);
+
+    const gs=18; // grid square size
+    const gox=gap, goy=diagY+12;
+    for(let r=0;r<4;r++) for(let cc=0;cc<8;cc++){
+      ctx.fillStyle=`rgba(56,189,248,0.18)`;
+      ctx.fillRect(gox+cc*gs,goy+r*gs,gs-1,gs-1);
+      ctx.fillStyle=BLUE; ctx.font='8px monospace'; ctx.textAlign='center';
+      ctx.fillText('Y',gox+cc*gs+gs/2,goy+r*gs+gs/2+3);
+    }
+    // chroma samples — one per 2×2
+    for(let r=0;r<2;r++) for(let cc=0;cc<4;cc++){
+      ctx.strokeStyle=PURPLE; ctx.lineWidth=1.5;
+      ctx.strokeRect(gox+cc*gs*2+0.5,goy+r*gs*2+0.5,gs*2-1,gs*2-1);
+      ctx.fillStyle=PURPLE; ctx.font='bold 8px monospace'; ctx.textAlign='center';
+      ctx.fillText('C',gox+cc*gs*2+gs,goy+r*gs*2+gs+3);
+    }
+    ctx.fillStyle=TEXT; ctx.font='10px Segoe UI'; ctx.textAlign='left';
+    ctx.fillText('16 Y samples',gox+8*gs+8,goy+20);
+    ctx.fillStyle=PURPLE;
+    ctx.fillText('4 chroma samples  →  2:1 in each direction  →  50% bandwidth saved',gox+8*gs+8,goy+36);
+
+    // bytes breakdown bar
+    const barX=gox+8*gs+8, barY=goy+52, barW=w-barX-16, barH=14;
+    ctx.fillStyle='#1a1a28'; ctx.fillRect(barX,barY,barW,barH);
+    const yFrac=2/3,cbFrac=1/6,crFrac=1/6;
+    ctx.fillStyle='rgba(56,189,248,0.7)'; ctx.fillRect(barX,barY,barW*yFrac,barH);
+    ctx.fillStyle='rgba(192,132,252,0.7)'; ctx.fillRect(barX+barW*yFrac,barY,barW*cbFrac,barH);
+    ctx.fillStyle='rgba(248,113,113,0.7)'; ctx.fillRect(barX+barW*(yFrac+cbFrac),barY,barW*crFrac,barH);
+    ctx.fillStyle=DARK; ctx.font='bold 9px Segoe UI'; ctx.textAlign='center';
+    ctx.fillText('Y  66.7%',barX+barW*yFrac/2,barY+10);
+    ctx.fillText('Cb 16.7%',barX+barW*(yFrac+cbFrac/2),barY+10);
+    ctx.fillText('Cr 16.7%',barX+barW*(yFrac+cbFrac+crFrac/2),barY+10);
+    ctx.fillStyle=TEXT; ctx.font='9px Segoe UI'; ctx.textAlign='left';
+    ctx.fillText('← 4:2:0 byte budget (vs 33% each for 4:4:4)',barX,barY+barH+12);
   }
   [rS,gS,bS].forEach(s=>s.addEventListener('input',draw));
   draw();
 })();
 
-// ─── 2. DCT Visualizer ─────────────────────────────────────────────
+// ─── 2. DCT Full Intra Encode Pipeline ─────────────────────────────
 (function(){
-  const cv=setupCanvas('dct-canvas',340);
+  const cv=setupCanvas('dct-canvas',440);
   if(!cv)return;
   const {c,ctx,w,h}=cv;
-  const N=8; let pixels=new Float32Array(N*N).fill(128);
+  const N=8;
+  // Default: natural-ish block
+  let pixels=new Float32Array([
+    156,148,140,132,128,124,120,116,
+    162,154,146,138,132,128,124,120,
+    168,160,152,144,138,132,128,124,
+    172,164,156,148,142,136,132,128,
+    176,168,160,152,146,140,136,132,
+    180,172,164,156,150,144,140,136,
+    184,176,168,160,154,148,144,140,
+    188,180,172,164,158,152,148,144,
+  ]);
+
   function dct2d(f){
     const F=new Float32Array(N*N);
     for(let u=0;u<N;u++) for(let v=0;v<N;v++){
       let s=0;
-      for(let x=0;x<N;x++) for(let y=0;y<N;y++){
+      for(let x=0;x<N;x++) for(let y=0;y<N;y++)
         s+=f[x*N+y]*Math.cos((2*x+1)*u*Math.PI/(2*N))*Math.cos((2*y+1)*v*Math.PI/(2*N));
-      }
       const cu=u===0?1/Math.sqrt(2):1, cv2=v===0?1/Math.sqrt(2):1;
       F[u*N+v]=(2/N)*cu*cv2*s;
     }
     return F;
   }
+  function dcPred(f){ // DC intra prediction
+    let sum=0; for(let i=0;i<N;i++) sum+=f[i]; // top row average
+    const dc=sum/N;
+    const p=new Float32Array(N*N);
+    p.fill(dc);
+    return p;
+  }
+
+  // Layout: 4 panels in one row
+  function draw(){
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle=DARK; ctx.fillRect(0,0,w,h);
+
+    const nPanels=4, gap=12, topY=50;
+    const arrowGap=28;
+    const totalArrows=nPanels-1;
+    const panW=Math.floor((w - gap*(nPanels+1) - arrowGap*totalArrows)/nPanels);
+    const cs=Math.floor(panW/N); // cell size
+    const gridW=cs*N, gridH=cs*N;
+
+    const pred=dcPred(pixels);
+    const residual=new Float32Array(N*N);
+    for(let i=0;i<N*N;i++) residual[i]=pixels[i]-pred[i];
+    const F=dct2d(residual);
+    const fMax=Math.max(...Array.from(F).map(Math.abs),1);
+
+    const panelTitles=['① Original Block','② DC Intra Prediction','③ Residual  (①−②)','④ DCT Spectrum'];
+    const panelColors=[TEXTH,GREEN,ORANGE,BLUE];
+    const panelHints=['Pixel luma values\n(click/drag to edit)','Predicted from\ntop neighbor mean','After subtracting\nprediction','Energy compacted\nto low frequencies'];
+
+    let px0=gap;
+    for(let pi=0;pi<nPanels;pi++){
+      const ox=px0, oy=topY;
+      panelBox(ctx,ox,oy,panW,gridH+18,panelTitles[pi],panelColors[pi]);
+
+      // render grid
+      for(let r=0;r<N;r++) for(let cc=0;cc<N;cc++){
+        let R2,G2,B2;
+        if(pi===0){
+          const v=Math.round(Math.min(255,Math.max(0,pixels[r*N+cc])));
+          R2=G2=B2=v;
+        } else if(pi===1){
+          const v=Math.round(Math.min(255,Math.max(0,pred[r*N+cc])));
+          R2=G2=B2=v;
+        } else if(pi===2){
+          const rv=residual[r*N+cc];
+          const mapped=Math.round(128+rv*1.5);
+          const v=Math.min(255,Math.max(0,mapped));
+          if(rv>4){R2=Math.min(255,56+Math.round(rv*3));G2=188;B2=248;}
+          else if(rv<-4){R2=248;G2=Math.max(0,113-Math.round(-rv*2));B2=113;}
+          else{R2=G2=B2=128;}
+        } else {
+          const fv=F[r*N+cc], norm=Math.abs(fv)/fMax;
+          const on=fv>0;
+          if(norm<0.02){R2=G2=B2=18;}
+          else if(on){R2=Math.round(20+norm*36);G2=Math.round(80+norm*109);B2=Math.round(100+norm*148);}
+          else{R2=Math.round(80+norm*168);G2=Math.round(20+norm*50);B2=Math.round(20+norm*50);}
+        }
+        ctx.fillStyle=`rgb(${R2},${G2},${B2})`;
+        ctx.fillRect(ox+cc*cs,oy+r*cs,cs,cs);
+
+        // value label (only if cell is big enough)
+        if(cs>=16){
+          let val='';
+          if(pi===0) val=Math.round(pixels[r*N+cc]);
+          else if(pi===1) val=Math.round(pred[r*N+cc]);
+          else if(pi===2) val=Math.round(residual[r*N+cc]);
+          else val=Math.abs(F[r*N+cc])>fMax*0.04?Math.round(F[r*N+cc]):'';
+          if(val!==''){
+            ctx.fillStyle=pi===3?'rgba(255,255,255,0.85)':'rgba(0,0,0,0.65)';
+            ctx.font=`bold ${Math.max(7,cs-7)}px monospace`;
+            ctx.textAlign='center';
+            ctx.fillText(val,ox+cc*cs+cs/2,oy+r*cs+cs/2+cs*0.18);
+          }
+        }
+      }
+      // grid lines
+      ctx.strokeStyle='rgba(255,255,255,0.08)'; ctx.lineWidth=0.5;
+      for(let i=0;i<=N;i++){
+        ctx.beginPath();ctx.moveTo(ox+i*cs,oy);ctx.lineTo(ox+i*cs,oy+N*cs);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(ox,oy+i*cs);ctx.lineTo(ox+panW,oy+i*cs);ctx.stroke();
+      }
+      // highlight DC corner on DCT panel
+      if(pi===3){
+        ctx.strokeStyle=AMBER; ctx.lineWidth=2;
+        ctx.strokeRect(ox,oy,cs,cs);
+        ctx.fillStyle=AMBER; ctx.font='bold 8px Segoe UI'; ctx.textAlign='left';
+        ctx.fillText('DC',ox+2,oy+8);
+      }
+
+      // hint text
+      const hint=panelHints[pi];
+      ctx.fillStyle=DIM; ctx.font='9px Segoe UI'; ctx.textAlign='center';
+      hint.split('\n').forEach((ln,li)=>ctx.fillText(ln,ox+panW/2,oy+gridH+12+li*12));
+
+      // operation arrow between panels
+      if(pi<nPanels-1){
+        const ax=ox+panW+gap/2, ay=oy+gridH/2;
+        const opLabels=['−','DCT'];
+        arrow(ctx,ax,ay,ax+arrowGap,ay,AMBER,2);
+        ctx.fillStyle=AMBER; ctx.font='bold 10px Segoe UI'; ctx.textAlign='center';
+        ctx.fillText(pi===1?'−':'DCT',ax+arrowGap/2,ay-7);
+      }
+      px0+=panW+gap+arrowGap;
+    }
+
+    // ── energy bar chart below ────────────────────────────────────
+    const barY=topY+gridH+44;
+    ctx.fillStyle=TEXTH; ctx.font='bold 10px Segoe UI'; ctx.textAlign='left';
+    ctx.fillText('Energy distribution — how many coefficients carry >1% of total energy:',gap,barY);
+
+    const origE=Array.from(pixels).map(v=>(v-128)**2);
+    const resE=Array.from(residual).map(v=>v**2);
+    const dctE=Array.from(F).map(v=>v**2);
+    function countSignificant(energies){
+      const tot=energies.reduce((a,b)=>a+b,1e-9);
+      return energies.filter(e=>e/tot>0.01).length;
+    }
+    const barData=[
+      {label:'Original',n:countSignificant(origE),col:TEXTH},
+      {label:'Residual',n:countSignificant(resE),col:ORANGE},
+      {label:'DCT',n:countSignificant(dctE),col:BLUE},
+    ];
+    const maxN=64;
+    barData.forEach((bd,bi)=>{
+      const bx=gap+bi*(w/3-8), by=barY+14;
+      const bw2=w/3-24, bh=12;
+      ctx.fillStyle='#1a1a28'; ctx.fillRect(bx,by,bw2,bh);
+      ctx.fillStyle=bd.col+'99';
+      ctx.fillRect(bx,by,Math.round(bw2*bd.n/maxN),bh);
+      ctx.fillStyle=bd.col; ctx.font='9px Segoe UI'; ctx.textAlign='left';
+      ctx.fillText(`${bd.label}: ${bd.n}/64 significant`,bx,by+bh+12);
+    });
+
+    ctx.fillStyle=GREEN; ctx.font='bold 10px Segoe UI'; ctx.textAlign='center';
+    ctx.fillText(`DCT energy compaction: ${countSignificant(origE)} → ${countSignificant(dctE)} significant coefficients after prediction+transform`,w/2,barY+50);
+  }
+
+  // cell editing
   let dragging=false;
   function cellAt(e){
     const rect=c.getBoundingClientRect();
-    const panelW=Math.min(w,380), panelH=h-10;
-    const cellSz=Math.floor(Math.min(panelW,panelH)/(N+1));
-    const ox=20, oy=30;
+    const nPanels=4,gap=12,arrowGap=28,topY=50;
+    const panW=Math.floor((w-gap*(nPanels+1)-arrowGap*(nPanels-1))/nPanels);
+    const cs=Math.floor(panW/N);
+    const ox=gap, oy=topY;
     const mx=(e.clientX-rect.left)*(c.width/rect.width)/dpr();
     const my=(e.clientY-rect.top)*(c.height/rect.height)/dpr();
-    const col=Math.floor((mx-ox)/cellSz), row=Math.floor((my-oy)/cellSz);
+    const col=Math.floor((mx-ox)/cs), row=Math.floor((my-oy)/cs);
     if(col>=0&&col<N&&row>=0&&row<N) return row*N+col;
     return -1;
   }
-  c.addEventListener('mousedown',e=>{dragging=true; const i=cellAt(e); if(i>=0){pixels[i]=pixels[i]>192?64:200;draw();}});
-  c.addEventListener('mousemove',e=>{if(dragging){const i=cellAt(e);if(i>=0){pixels[i]=pixels[i]>192?64:200;draw();}}});
+  c.addEventListener('mousedown',e=>{dragging=true;const i=cellAt(e);if(i>=0){pixels[i]=pixels[i]>170?80:220;draw();}});
+  c.addEventListener('mousemove',e=>{if(dragging){const i=cellAt(e);if(i>=0){pixels[i]=pixels[i]>170?80:220;draw();}}});
   c.addEventListener('mouseup',()=>dragging=false);
-  document.getElementById('dct-preset-smooth').addEventListener('click',()=>{
-    for(let x=0;x<N;x++) for(let y=0;y<N;y++) pixels[x*N+y]=64+Math.round(128*(x+y)/(2*(N-1)));
-    draw();
+
+  const presets={
+    'dct-preset-smooth':()=>{for(let x=0;x<N;x++)for(let y=0;y<N;y++)pixels[x*N+y]=80+Math.round(96*(x+y)/(2*(N-1)));},
+    'dct-preset-edge':()=>{for(let x=0;x<N;x++)for(let y=0;y<N;y++)pixels[x*N+y]=y<N/2?210:50;},
+    'dct-preset-checker':()=>{for(let x=0;x<N;x++)for(let y=0;y<N;y++)pixels[x*N+y]=(x+y)%2===0?220:40;},
+    'dct-preset-natural':()=>{pixels=new Float32Array([156,148,140,132,128,124,120,116,162,154,146,138,132,128,124,120,168,160,152,144,138,132,128,124,172,164,156,148,142,136,132,128,176,168,160,152,146,140,136,132,180,172,164,156,150,144,140,136,184,176,168,160,154,148,144,140,188,180,172,164,158,152,148,144]);},
+    'dct-preset-clear':()=>{pixels.fill(128);},
+  };
+  Object.entries(presets).forEach(([id,fn])=>{
+    const el=document.getElementById(id);
+    if(el) el.addEventListener('click',()=>{fn();draw();});
   });
-  document.getElementById('dct-preset-edge').addEventListener('click',()=>{
-    for(let x=0;x<N;x++) for(let y=0;y<N;y++) pixels[x*N+y]=y<N/2?200:60;
-    draw();
-  });
-  document.getElementById('dct-preset-checker').addEventListener('click',()=>{
-    for(let x=0;x<N;x++) for(let y=0;y<N;y++) pixels[x*N+y]=(x+y)%2===0?220:40;
-    draw();
-  });
-  document.getElementById('dct-preset-clear').addEventListener('click',()=>{pixels.fill(128);draw();});
-  function draw(){
-    ctx.clearRect(0,0,w,h);
-    ctx.fillStyle=DARK; ctx.fillRect(0,0,w,h);
-    const panelW=Math.floor((w-60)/2), cellSz=Math.floor(Math.min(panelW,h-40)/(N+1));
-    const ox=20, oy=30, ox2=ox+cellSz*N+50;
-    const F=dct2d(pixels);
-    const fMax=Math.max(...Array.from(F).map(Math.abs))||1;
-    ctx.fillStyle=TEXTH; ctx.font='bold 11px Segoe UI'; ctx.textAlign='center';
-    ctx.fillText('Pixel Block (click to edit)',ox+cellSz*N/2,oy-12);
-    ctx.fillText('DCT Coefficients',ox2+cellSz*N/2,oy-12);
-    ctx.fillStyle=TEXT; ctx.font='9px Segoe UI';
-    ctx.fillText('DC→',ox2-4,oy+8);
-    for(let r=0;r<N;r++) for(let cc2=0;cc2<N;cc2++){
-      const px=pixels[r*N+cc2],v=Math.round(px);
-      ctx.fillStyle=`rgb(${v},${v},${v})`;
-      ctx.fillRect(ox+cc2*cellSz,oy+r*cellSz,cellSz-1,cellSz-1);
-      const fv=F[r*N+cc2], norm=fv/fMax;
-      const bright=Math.round(128+norm*127);
-      const pos=norm>0;
-      ctx.fillStyle=pos?`rgba(56,189,248,${Math.abs(norm)})`:`rgba(248,113,113,${Math.abs(norm)})`;
-      ctx.fillRect(ox2+cc2*cellSz,oy+r*cellSz,cellSz-1,cellSz-1);
-      if(Math.abs(fv)>fMax*0.05){
-        ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.font=`${Math.max(7,cellSz-6)}px monospace`;
-        ctx.textAlign='center';
-        ctx.fillText(Math.round(fv),ox2+cc2*cellSz+cellSz/2,oy+r*cellSz+cellSz/2+4);
-      }
-    }
-    ctx.strokeStyle=GRID; ctx.lineWidth=1;
-    [ox,ox2].forEach(bx=>{
-      for(let i=0;i<=N;i++){ctx.beginPath();ctx.moveTo(bx+i*cellSz,oy);ctx.lineTo(bx+i*cellSz,oy+N*cellSz);ctx.stroke();}
-      for(let i=0;i<=N;i++){ctx.beginPath();ctx.moveTo(bx,oy+i*cellSz);ctx.lineTo(bx+N*cellSz,oy+i*cellSz);ctx.stroke();}
-    });
-    ctx.fillStyle=TEXT; ctx.font='10px Segoe UI'; ctx.textAlign='left';
-    const nzero=Array.from(F).filter(v=>Math.abs(v)>2).length;
-    ctx.fillText(`Non-zero AC: ${nzero-1}/63  |  DC=${Math.round(F[0])}`,ox,oy+N*cellSz+20);
-    ctx.fillStyle=AMBER; ctx.font='10px Segoe UI';
-    ctx.fillText('Blue=positive  Red=negative  Intensity=magnitude',ox2,oy+N*cellSz+20);
-  }
   draw();
 })();
 
-// ─── 3. Motion Estimation Visualizer ───────────────────────────────
+// ─── 3. Motion Estimation + SAD Heatmap ────────────────────────────
 (function(){
-  const cv=setupCanvas('me-canvas',360);
+  const cv=setupCanvas('me-canvas',480);
   if(!cv)return;
   const {c,ctx,w,h}=cv;
-  const FW=Math.floor((w-60)/2), FH=h-60;
-  const BW=40,BH=40;
-  let blockX=Math.floor((FW-BW)/2), blockY=Math.floor((FH-BH)/2);
-  let vel=8, searchRange=16;
-  let draggingME=false, dragOX=0,dragOY=0;
-  const rangeS=document.getElementById('me-range');
-  const velS=document.getElementById('me-vel');
-  rangeS.addEventListener('input',()=>{searchRange=+rangeS.value;document.getElementById('me-range-val').textContent='±'+searchRange+'px';draw();});
-  velS.addEventListener('input',()=>{vel=+velS.value;document.getElementById('me-vel-val').textContent=vel+'px';draw();});
-  c.addEventListener('mousedown',e=>{
-    const rect=c.getBoundingClientRect();
-    const mx=(e.clientX-rect.left)*(c.width/rect.width)/dpr()-20;
-    const my=(e.clientY-rect.top)*(c.height/rect.height)/dpr()-30;
-    if(mx>=blockX&&mx<=blockX+BW&&my>=blockY&&my<=blockY+BH){draggingME=true;dragOX=mx-blockX;dragOY=my-blockY;}
-  });
-  c.addEventListener('mousemove',e=>{
-    if(!draggingME)return;
-    const rect=c.getBoundingClientRect();
-    const mx=(e.clientX-rect.left)*(c.width/rect.width)/dpr()-20;
-    const my=(e.clientY-rect.top)*(c.height/rect.height)/dpr()-30;
-    blockX=Math.max(0,Math.min(FW-BW,mx-dragOX));
-    blockY=Math.max(0,Math.min(FH-BH,my-dragOY));
+
+  // Scene dimensions (pixel-level) and display scale
+  const FW=80,FH=60, SCALE=Math.floor((w*0.38)/FW);
+  const DW=FW*SCALE, DH=FH*SCALE;
+  // Block to track
+  const BW=16,BH=16;
+  const BX=28,BY=20; // block position in current frame (fixed)
+
+  let vel=10, searchRange=20;
+  document.getElementById('me-range').addEventListener('input',e=>{
+    searchRange=+e.target.value;
+    document.getElementById('me-range-val').textContent='±'+searchRange+'px';
     draw();
   });
-  c.addEventListener('mouseup',()=>draggingME=false);
-  function drawFrame(ox,oy,label,blocks,highlight){
-    ctx.fillStyle=PANEL; ctx.beginPath(); ctx.roundRect(ox,oy,FW,FH,6); ctx.fill();
-    ctx.strokeStyle=GRID; ctx.lineWidth=1; ctx.strokeRect(ox,oy,FW,FH);
-    // draw fake objects
-    blocks.forEach(b=>{
-      const gr=ctx.createLinearGradient(ox+b.x,oy+b.y,ox+b.x+b.w,oy+b.y+b.h);
-      gr.addColorStop(0,b.c1); gr.addColorStop(1,b.c2);
-      ctx.fillStyle=gr; ctx.fillRect(ox+b.x,oy+b.y,b.w,b.h);
-    });
-    ctx.fillStyle=TEXTH; ctx.font='bold 11px Segoe UI'; ctx.textAlign='center';
-    ctx.fillText(label,ox+FW/2,oy-6);
-    if(highlight){
-      ctx.strokeStyle=AMBER; ctx.lineWidth=2;
-      ctx.strokeRect(ox+highlight.x,oy+highlight.y,highlight.w,highlight.h);
-    }
+  document.getElementById('me-vel').addEventListener('input',e=>{
+    vel=+e.target.value;
+    document.getElementById('me-vel-val').textContent=vel+'px';
+    draw();
+  });
+
+  // deterministic noise for scene texture
+  function noise(x,y,seed=0){
+    let h=seed^(x*374761393)^(y*668265263);
+    h=(h^(h>>>13))*1274126177;
+    return ((h^(h>>>16))&0xff);
   }
+
+  function buildScene(dx,dy){
+    // Background: gradient sky + horizontal bands
+    // Subject: bright 20×14 rectangle at position (20+dx, 18+dy)
+    const px=[]; // [r,g,b]
+    const subjectX=20+dx, subjectY=18+dy;
+    for(let r=0;r<FH;r++) for(let cc=0;cc<FW;cc++){
+      const t=cc/FW, s=r/FH;
+      // background: gradient
+      const bgR=Math.round(20+t*40+s*20+noise(cc,r,1)*0.12);
+      const bgG=Math.round(30+t*30+s*15+noise(cc,r,2)*0.10);
+      const bgB=Math.round(60+t*20+noise(cc,r,3)*0.15);
+      // subject
+      const inSubj=(cc>=subjectX&&cc<subjectX+20&&r>=subjectY&&r<subjectY+14);
+      if(inSubj){
+        px.push([200+Math.round(noise(cc,r,7)*0.05), 120+Math.round(noise(cc,r,8)*0.05), 40]);
+      } else {
+        px.push([Math.min(255,bgR),Math.min(255,bgG),Math.min(255,bgB)]);
+      }
+    }
+    return px;
+  }
+
+  function getBlock(scene,bx,by){
+    const block=[];
+    for(let r=0;r<BH;r++) for(let cc=0;cc<BW;cc++){
+      const px=Math.max(0,Math.min(FH-1,by+r))*FW+Math.max(0,Math.min(FW-1,bx+cc));
+      block.push(scene[px]);
+    }
+    return block;
+  }
+
+  function SAD(a,b){
+    let s=0;
+    for(let i=0;i<a.length;i++) s+=Math.abs(a[i][0]-b[i][0])+Math.abs(a[i][1]-b[i][1])+Math.abs(a[i][2]-b[i][2]);
+    return s;
+  }
+
+  function renderScene(scene,ox,oy){
+    const id=document.createElement('canvas');
+    id.width=FW; id.height=FH;
+    const ic=id.getContext('2d');
+    const imgd=ic.createImageData(FW,FH);
+    scene.forEach(([r2,g2,b2],i)=>{
+      imgd.data[i*4]=r2; imgd.data[i*4+1]=g2; imgd.data[i*4+2]=b2; imgd.data[i*4+3]=255;
+    });
+    ic.putImageData(imgd,0,0);
+    ctx.save(); ctx.imageSmoothingEnabled=false;
+    ctx.drawImage(id,ox,oy,DW,DH);
+    ctx.restore();
+  }
+
   function draw(){
     ctx.clearRect(0,0,w,h);
     ctx.fillStyle=DARK; ctx.fillRect(0,0,w,h);
-    const ox1=20,oy1=30,ox2=ox1+FW+20;
-    const refBlocks=[
-      {x:20,y:20,w:80,h:50,c1:'#1a2a40',c2:'#0d1a2e'},
-      {x:Math.max(0,Math.min(FW-50,blockX+vel)),y:Math.max(0,Math.min(FH-40,blockY)),w:50,h:40,c1:'#b45309',c2:'#d97706'},
-      {x:FW-90,y:FH-60,w:70,h:45,c1:'#14532d',c2:'#166534'},
-    ];
-    const curBlocks=[
-      {x:20,y:20,w:80,h:50,c1:'#1a2a40',c2:'#0d1a2e'},
-      {x:blockX,y:blockY,w:BW,h:BH,c1:'#92400e',c2:'#b45309'},
-      {x:FW-90,y:FH-60,w:70,h:45,c1:'#14532d',c2:'#166534'},
-    ];
-    drawFrame(ox2,oy1,'Reference Frame (past)',refBlocks,null);
-    drawFrame(ox1,oy1,'Current Frame',curBlocks,{x:blockX,y:blockY,w:BW,h:BH});
-    // search window on reference
-    const sX=Math.max(0,Math.min(FW-BW,blockX-searchRange)),
-          sY=Math.max(0,Math.min(FH-BH,blockY-searchRange)),
-          sW=Math.min(FW-sX,BW+2*searchRange),
-          sH=Math.min(FH-sY,BH+2*searchRange);
-    ctx.strokeStyle='rgba(250,204,21,0.35)'; ctx.lineWidth=1.5;
-    ctx.setLineDash([4,3]);
-    ctx.strokeRect(ox2+sX,oy1+sY,sW,sH);
-    ctx.setLineDash([]);
-    ctx.fillStyle='rgba(250,204,21,0.07)'; ctx.fillRect(ox2+sX,oy1+sY,sW,sH);
-    // best match block on reference
-    const refX=Math.max(0,Math.min(FW-BW,blockX+vel));
-    const refY=Math.max(0,Math.min(FH-BH,blockY));
-    ctx.strokeStyle=GREEN; ctx.lineWidth=2;
-    ctx.strokeRect(ox2+refX,oy1+refY,BW,BH);
-    // motion vector arrow
-    const ax=ox1+blockX+BW/2, ay=oy1+blockY+BH/2;
-    const bx=ox2+refX+BW/2, by=oy1+refY+BH/2;
-    ctx.strokeStyle=GREEN; ctx.lineWidth=2;
-    ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx,by); ctx.stroke();
-    ctx.fillStyle=GREEN;
-    const ang=Math.atan2(by-ay,bx-ax);
-    ctx.beginPath(); ctx.moveTo(bx,by);
-    ctx.lineTo(bx-12*Math.cos(ang-0.4),by-12*Math.sin(ang-0.4));
-    ctx.lineTo(bx-12*Math.cos(ang+0.4),by-12*Math.sin(ang+0.4));
-    ctx.closePath(); ctx.fill();
+
+    const gap=16, topY=38;
+    const ox1=gap, oy1=topY;
+    const ox2=ox1+DW+gap+10;
+
+    const curScene=buildScene(0,0);
+    const refScene=buildScene(vel,0);
+    const curBlock=getBlock(curScene,BX,BY);
+
+    // ── Panel 1: Current Frame ──────────────────────────────────
+    panelBox(ctx,ox1-2,oy1-2,DW+4,DH+4,'Current Frame  (frame T)',BLUE);
+    renderScene(curScene,ox1,oy1);
+    // highlight tracked block
+    ctx.strokeStyle=AMBER; ctx.lineWidth=2;
+    ctx.strokeRect(ox1+BX*SCALE,oy1+BY*SCALE,BW*SCALE,BH*SCALE);
+    ctx.fillStyle=AMBER; ctx.font='bold 9px Segoe UI'; ctx.textAlign='center';
+    ctx.fillText('Block to\nencode'.split('\n')[0],ox1+BX*SCALE+BW*SCALE/2,oy1+BY*SCALE-4);
+    ctx.fillText('to encode',ox1+BX*SCALE+BW*SCALE/2,oy1+BY*SCALE-15+12);
+
+    // ── Panel 2: Reference Frame + SAD Heatmap ───────────────────
+    panelBox(ctx,ox2-2,oy1-2,DW+4,DH+4,'Reference Frame  (frame T−1) + SAD Heatmap',GREEN);
+    renderScene(refScene,ox2,oy1);
+
+    // Compute SAD at each candidate position (step 2px for speed)
+    const step=2;
+    const sadMap=[];
+    let minSAD=Infinity, minDX=0, minDY=0, maxSAD=0;
+    for(let dy=-searchRange;dy<=searchRange;dy+=step){
+      for(let dx=-searchRange;dx<=searchRange;dx+=step){
+        const cx=BX+dx, cy=BY+dy;
+        if(cx<0||cy<0||cx+BW>FW||cy+BH>FH){sadMap.push({dx,dy,sad:999999});continue;}
+        const cand=getBlock(refScene,cx,cy);
+        const s=SAD(curBlock,cand);
+        sadMap.push({dx,dy,sad:s});
+        if(s<minSAD){minSAD=s;minDX=dx;minDY=dy;}
+        if(s<999999&&s>maxSAD) maxSAD=s;
+      }
+    }
+    // Draw heatmap over reference frame
+    sadMap.forEach(({dx,dy,sad})=>{
+      if(sad===999999) return;
+      const cx=BX+dx, cy=BY+dy;
+      const t=Math.min(1,(sad-minSAD)/(maxSAD-minSAD+1));
+      // green (good match) → yellow → red (poor match)
+      let R2,G2,B2;
+      if(t<0.5){R2=Math.round(t*2*255);G2=200;B2=30;}
+      else{R2=255;G2=Math.round((1-t)*2*200);B2=30;}
+      ctx.fillStyle=`rgba(${R2},${G2},${B2},0.45)`;
+      ctx.fillRect(ox2+cx*SCALE,oy1+cy*SCALE,BW*SCALE,BH*SCALE);
+    });
+    // Search window border
+    const swX=Math.max(0,BX-searchRange),swY=Math.max(0,BY-searchRange);
+    const swW=Math.min(FW-swX,BW+2*searchRange),swH=Math.min(FH-swY,BH+2*searchRange);
+    ctx.strokeStyle='rgba(250,204,21,0.6)'; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+    ctx.strokeRect(ox2+swX*SCALE,oy1+swY*SCALE,swW*SCALE,swH*SCALE); ctx.setLineDash([]);
+    // Best match (green box)
+    const bestX=BX+minDX, bestY=BY+minDY;
+    ctx.strokeStyle=GREEN; ctx.lineWidth=2.5;
+    ctx.strokeRect(ox2+bestX*SCALE,oy1+bestY*SCALE,BW*SCALE,BH*SCALE);
+
+    // ── Motion vector arrow across panels ───────────────────────
+    const ax=ox1+BX*SCALE+BW*SCALE/2, ay=oy1+BY*SCALE+BH*SCALE/2;
+    const bx2=ox2+bestX*SCALE+BW*SCALE/2, by2=oy1+bestY*SCALE+BH*SCALE/2;
+    arrow(ctx,ax,ay,bx2,by2,GREEN,2.5);
     ctx.fillStyle=GREEN; ctx.font='bold 10px monospace'; ctx.textAlign='center';
-    ctx.fillText(`MV=(+${vel},0)`,ax+(bx-ax)/2,ay+(by-ay)/2-8);
-    const inSearch=Math.abs(vel)<=searchRange;
-    const sad=inSearch?Math.round(12*Math.random()*10+8):9999;
+    ctx.fillText(`MV=(${minDX>0?'+':''}${minDX}, ${minDY>0?'+':''}${minDY})`,
+      (ax+bx2)/2, Math.min(ay,by2)-10);
+
+    // ── Legend ──────────────────────────────────────────────────
+    const legX=ox2+DW+12, legY=oy1+10;
+    ctx.fillStyle=TEXTH; ctx.font='bold 10px Segoe UI'; ctx.textAlign='left';
+    ctx.fillText('SAD Legend',legX,legY);
+    const legGrad=ctx.createLinearGradient(legX,legY+6,legX,legY+6+80);
+    legGrad.addColorStop(0,'rgba(0,200,30,0.8)');
+    legGrad.addColorStop(0.5,'rgba(255,200,0,0.8)');
+    legGrad.addColorStop(1,'rgba(255,30,30,0.8)');
+    ctx.fillStyle=legGrad; ctx.fillRect(legX,legY+6,14,80);
+    ctx.strokeStyle=GRID; ctx.lineWidth=0.5; ctx.strokeRect(legX,legY+6,14,80);
+    ctx.fillStyle=GREEN; ctx.font='9px Segoe UI'; ctx.textAlign='left';
+    ctx.fillText('Low',legX+17,legY+14);
+    ctx.fillStyle=TEXT; ctx.fillText('SAD',legX+17,legY+50);
+    ctx.fillStyle=RED; ctx.fillText('High',legX+17,legY+84);
+
+    // ── Residual panel (bottom) ──────────────────────────────────
+    const resY=oy1+DH+28;
+    ctx.fillStyle=TEXTH; ctx.font='bold 11px Segoe UI'; ctx.textAlign='left';
+    ctx.fillText('After Motion Compensation — Residual Block (what still needs to be encoded):',gap,resY);
+
+    const bestBlock=getBlock(refScene,bestX,bestY);
+    const resBlockSize=Math.floor((w-gap*3)/2);
+    const rcs=Math.floor(resBlockSize/BW);
+
+    // Pred block
+    panelBox(ctx,gap,resY+14,resBlockSize,BH*rcs,'Predicted Block (from reference)',GREEN);
+    for(let r=0;r<BH;r++) for(let cc2=0;cc2<BW;cc2++){
+      const [R2,G2,B2]=bestBlock[r*BW+cc2];
+      ctx.fillStyle=`rgb(${R2},${G2},${B2})`;
+      ctx.fillRect(gap+cc2*rcs,resY+14+r*rcs,rcs,rcs);
+    }
+    // Residual
+    const ox3=gap*2+resBlockSize;
+    panelBox(ctx,ox3,resY+14,resBlockSize,BH*rcs,'Residual (amplified ×4)',ORANGE);
+    let totalResidual=0;
+    for(let r=0;r<BH;r++) for(let cc2=0;cc2<BW;cc2++){
+      const [oR,oG,oB]=curBlock[r*BW+cc2];
+      const [pR,pG,pB]=bestBlock[r*BW+cc2];
+      const dR=oR-pR,dG=oG-pG,dB=oB-pB;
+      totalResidual+=Math.abs(dR)+Math.abs(dG)+Math.abs(dB);
+      const mapped=v=>Math.min(255,Math.max(0,128+v*4));
+      ctx.fillStyle=`rgb(${mapped(dR)},${mapped(dG)},${mapped(dB)})`;
+      ctx.fillRect(ox3+cc2*rcs,resY+14+r*rcs,rcs,rcs);
+    }
+    const avgRes=(totalResidual/(BW*BH*3)).toFixed(1);
     document.getElementById('me-info').textContent=
-      `SAD: ${inSearch?sad:'Out of search range'} · MV: (+${vel}, 0) · Search: ±${searchRange}px`;
+      `Best MV=(${minDX>0?'+':''}${minDX},${minDY>0?'+':''}${minDY}) · Min SAD=${minSAD} · Avg residual per channel pixel=${avgRes} · Search: ±${searchRange}px`;
   }
   draw();
 })();
 
-// ─── 4. GOP Timeline Visualizer ────────────────────────────────────
+// ─── 4. GOP Timeline — decode order + display order + size bars ────
 (function(){
-  const cv=setupCanvas('gop-canvas',260);
+  const cv=setupCanvas('gop-canvas',360);
   if(!cv)return;
   const {ctx,w,h}=cv;
-  const nS=document.getElementById('gop-n'), mS=document.getElementById('gop-m');
+  const nS=document.getElementById('gop-n'),mS=document.getElementById('gop-m');
+
+  // Build GOP in display order, return also decode order
   function buildGOP(N,M){
-    const frames=[];
-    frames.push({t:'I',ref:[]});
+    const disp=[]; // display order
+    disp.push({t:'I',di:0});
     let refIdx=0;
-    while(frames.length<N){
-      const nextP=frames.length+M;
-      for(let b=0;b<M&&frames.length<N-1;b++){
-        frames.push({t:'B',ref:[refIdx,Math.min(nextP,N-1)]});
-      }
-      if(frames.length<N){frames.push({t:'P',ref:[refIdx]});refIdx=frames.length-1;}
+    while(disp.length<N){
+      const nextPDisplay=disp.length+M;
+      for(let b=0;b<M&&disp.length<N-1;b++)
+        disp.push({t:'B',di:disp.length,pastRef:refIdx,futureRef:Math.min(nextPDisplay,N-1)});
+      if(disp.length<N){disp.push({t:'P',di:disp.length,pastRef:refIdx});refIdx=disp.length-1;}
     }
-    return frames;
+    // Decode order: I first, then for each I-P-B group → transmit P before B
+    const decode=[];
+    let i=0;
+    while(i<disp.length){
+      const f=disp[i];
+      if(f.t==='I'||f.t==='P'){decode.push({...f});i++;}
+      else{
+        // find the next P
+        let j=i;
+        while(j<disp.length&&disp[j].t==='B') j++;
+        if(j<disp.length) decode.push({...disp[j]}); // P first
+        for(let k=i;k<j;k++) decode.push({...disp[k]}); // then B's
+        i=j+1;
+      }
+    }
+    return {disp,decode};
   }
-  function draw(){
-    const N=+nS.value, M=+mS.value;
-    document.getElementById('gop-n-val').textContent=N;
-    document.getElementById('gop-m-val').textContent=M;
-    const frames=buildGOP(N,M);
-    const nI=frames.filter(f=>f.t==='I').length;
-    const nP=frames.filter(f=>f.t==='P').length;
-    const nB=frames.filter(f=>f.t==='B').length;
-    document.getElementById('gop-info').textContent=`Frame breakdown: I=${nI} · P=${nP} · B=${nB} · Total=${N}`;
-    ctx.clearRect(0,0,w,h);
-    ctx.fillStyle=DARK; ctx.fillRect(0,0,w,h);
-    const pad=30, availW=w-2*pad;
-    const fw=Math.min(36,Math.floor(availW/frames.length)-4);
-    const fh=44, rowY=h/2-fh/2;
-    const totalW=frames.length*(fw+4)-4;
-    const startX=pad+Math.max(0,(availW-totalW)/2);
-    const COLORS={I:GREEN,P:BLUE,B:PURPLE};
-    const BG={I:'#061410',P:'#04101a',B:'#0e0814'};
+
+  const COLORS={I:GREEN,P:BLUE,B:PURPLE};
+  const SIZES={I:10,P:3,B:1}; // relative sizes for height bar
+
+  function drawRow(frames,rowY,rowH,label,startX,fw,gap,showSizeBar){
+    ctx.fillStyle=DIM; ctx.font='bold 9px Segoe UI'; ctx.textAlign='left';
+    ctx.fillText(label,4,rowY+rowH/2+4);
+
     frames.forEach((f,i)=>{
-      const x=startX+i*(fw+4), y=rowY;
-      ctx.fillStyle=BG[f.t];
-      ctx.beginPath(); ctx.roundRect(x,y,fw,fh,5); ctx.fill();
-      ctx.strokeStyle=COLORS[f.t]; ctx.lineWidth=2;
-      ctx.beginPath(); ctx.roundRect(x,y,fw,fh,5); ctx.stroke();
-      ctx.fillStyle=COLORS[f.t]; ctx.font=`bold ${Math.max(11,fw-6)}px monospace`;
+      const x=startX+i*(fw+gap);
+      const col=COLORS[f.t];
+      const bg={I:'#061410',P:'#04101a',B:'#0e0814'}[f.t];
+
+      if(showSizeBar){
+        // height-proportional "bitrate bar" above the frame box
+        const maxBarH=22;
+        const barH=Math.round(SIZES[f.t]/10*maxBarH);
+        ctx.fillStyle=col+'55';
+        ctx.fillRect(x,rowY-barH-2,fw,barH);
+        ctx.fillStyle=col+'99';
+        ctx.fillRect(x,rowY-4,fw,4);
+      }
+
+      ctx.fillStyle=bg;
+      ctx.beginPath(); ctx.roundRect(x,rowY,fw,rowH,4); ctx.fill();
+      ctx.strokeStyle=col; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.roundRect(x,rowY,fw,rowH,4); ctx.stroke();
+      ctx.fillStyle=col; ctx.font=`bold ${Math.max(10,fw-5)}px monospace`;
       ctx.textAlign='center';
-      ctx.fillText(f.t,x+fw/2,y+fh/2+5);
-      ctx.fillStyle=TEXT; ctx.font='9px Segoe UI';
-      ctx.fillText(i,x+fw/2,y+fh+14);
+      ctx.fillText(f.t,x+fw/2,rowY+rowH/2+4);
+      // frame index below
+      ctx.fillStyle=DIM; ctx.font='8px Segoe UI';
+      ctx.fillText(f.di,x+fw/2,rowY+rowH+11);
     });
-    // reference arrows for first GOP
+  }
+
+  function drawRefArrows(frames,rowY,rowH,startX,fw,gap,above){
     ctx.save();
     frames.forEach((f,i)=>{
-      if(f.t==='P'&&f.ref.length>0){
-        const r=f.ref[0];
-        const x1=startX+r*(fw+4)+fw/2, x2=startX+i*(fw+4)+fw/2;
-        const y1=rowY-4, y2=rowY-4;
-        ctx.strokeStyle='rgba(56,189,248,0.5)'; ctx.lineWidth=1.5;
-        ctx.setLineDash([3,2]);
-        ctx.beginPath(); ctx.moveTo(x1,y1);
-        ctx.bezierCurveTo(x1,y1-20,x2,y2-20,x2,y2);
-        ctx.stroke();
+      const x2=startX+i*(fw+gap)+fw/2;
+      if(f.t==='P'&&f.pastRef!==undefined){
+        const r=frames.findIndex(ff=>ff.di===f.pastRef);
+        if(r<0) return;
+        const x1=startX+r*(fw+gap)+fw/2;
+        const ay=above?rowY-2:rowY+rowH+2;
+        const curv=above?-18:18;
+        ctx.strokeStyle='rgba(56,189,248,0.55)'; ctx.lineWidth=1.3; ctx.setLineDash([3,2]);
+        ctx.beginPath(); ctx.moveTo(x1,ay);
+        ctx.bezierCurveTo(x1,ay+curv,x2,ay+curv,x2,ay); ctx.stroke();
+        // arrowhead
+        ctx.setLineDash([]);
+        ctx.fillStyle='rgba(56,189,248,0.7)';
+        ctx.beginPath(); ctx.moveTo(x2,ay);
+        ctx.lineTo(x2-5,ay+(above?-5:5)); ctx.lineTo(x2+5,ay+(above?-5:5));
+        ctx.closePath(); ctx.fill();
       }
-      if(f.t==='B'&&f.ref.length===2){
-        [f.ref[0],f.ref[1]].forEach((r,ri)=>{
-          const x1=startX+r*(fw+4)+fw/2, x2=startX+i*(fw+4)+fw/2;
-          const yy=rowY+fh+4;
-          ctx.strokeStyle=`rgba(192,132,252,${ri===0?0.6:0.4})`; ctx.lineWidth=1.2;
-          ctx.setLineDash([2,2]);
-          ctx.beginPath(); ctx.moveTo(x1,yy);
-          ctx.bezierCurveTo(x1,yy+18,x2,yy+18,x2,yy);
-          ctx.stroke();
+      if(f.t==='B'){
+        [f.pastRef,f.futureRef].filter(r=>r!==undefined).forEach((ri,idx)=>{
+          const ri2=frames.findIndex(ff=>ff.di===ri);
+          if(ri2<0) return;
+          const x1=startX+ri2*(fw+gap)+fw/2;
+          const ay=above?rowY-2:rowY+rowH+2;
+          const curv=above?-(22+idx*8):(22+idx*8);
+          ctx.strokeStyle=`rgba(192,132,252,${idx===0?0.6:0.4})`; ctx.lineWidth=1.1; ctx.setLineDash([2,2]);
+          ctx.beginPath(); ctx.moveTo(x1,ay);
+          ctx.bezierCurveTo(x1,ay+curv,x2,ay+curv,x2,ay); ctx.stroke();
+          ctx.setLineDash([]);
         });
       }
     });
     ctx.restore();
-    ctx.fillStyle=TEXT; ctx.font='10px Segoe UI'; ctx.textAlign='left';
-    ctx.fillText('--- P ref (past)     --- B refs (past+future)',startX,h-8);
+  }
+
+  function draw(){
+    const N=Math.min(+nS.value,20), M=+mS.value;
+    document.getElementById('gop-n-val').textContent=N;
+    document.getElementById('gop-m-val').textContent=M;
+    const {disp,decode}=buildGOP(N,M);
+    const nI=disp.filter(f=>f.t==='I').length;
+    const nP=disp.filter(f=>f.t==='P').length;
+    const nB=disp.filter(f=>f.t==='B').length;
+    document.getElementById('gop-info').textContent=`I=${nI} · P=${nP} · B=${nB} · Total=${N}  |  Relative size: I≈10× · P≈3× · B≈1×`;
+
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle=DARK; ctx.fillRect(0,0,w,h);
+
+    const labelW=64, pad=6;
+    const availW=w-labelW-pad*2;
+    const fw=Math.min(28,Math.floor(availW/N)-3);
+    const gap=Math.min(3,Math.floor((availW-N*fw)/N));
+    const startX=labelW+pad;
+    const rowH=28;
+
+    // Row 1: bitrate bars + decode order
+    ctx.fillStyle=TEXTH; ctx.font='bold 10px Segoe UI'; ctx.textAlign='left';
+    ctx.fillText('Bitstream\n(Decode Order)'.split('\n').join(' / '),4,30);
+    ctx.fillStyle=TEXT; ctx.font='9px Segoe UI';
+    ctx.fillText('← bars = relative frame size',startX,18);
+
+    drawRow(decode,38,rowH,'',startX,fw,gap,true);
+    drawRefArrows(decode,38,rowH,startX,fw,gap,false);
+
+    // Divider
+    ctx.strokeStyle=GRID; ctx.lineWidth=1; ctx.setLineDash([4,3]);
+    ctx.beginPath(); ctx.moveTo(labelW,h/2); ctx.lineTo(w,h/2); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle=AMBER; ctx.font='bold 9px Segoe UI'; ctx.textAlign='center';
+    ctx.fillText('↕  reorder for display (B-frames need future reference decoded first)',w/2,h/2+10);
+
+    // Row 2: display order
+    ctx.fillStyle=TEXTH; ctx.font='bold 10px Segoe UI'; ctx.textAlign='left';
+    ctx.fillText('Display Order',4,h/2+30);
+    drawRow(disp,h/2+16,rowH,'',startX,fw,gap,false);
+    drawRefArrows(disp,h/2+16,rowH,startX,fw,gap,true);
+
+    // Frame-size legend
+    const legY=h-30, legX=startX;
+    [{t:'I',label:'I-frame  ~10× size',col:GREEN},{t:'P',label:'P-frame  ~3× size',col:BLUE},{t:'B',label:'B-frame  ~1× (smallest)',col:PURPLE}]
+      .forEach(({label:lb,col},li)=>{
+        ctx.fillStyle=col; ctx.font='bold 9px Segoe UI'; ctx.textAlign='left';
+        ctx.fillText('■ '+lb,legX+li*(w-labelW)/3,legY);
+      });
   }
   [nS,mS].forEach(s=>s.addEventListener('input',draw));
   draw();
 })();
 
-// ─── 5. Quantization Visualizer ────────────────────────────────────
+// ─── 5. Quantization: Image Quality + PSNR ─────────────────────────
 (function(){
-  const cv=setupCanvas('quant-canvas',360);
+  const cv=setupCanvas('quant-canvas',420);
   if(!cv)return;
   const {ctx,w,h}=cv;
   const qpS=document.getElementById('qp-slider');
   const N=8;
-  // Typical 8x8 DCT coefficients for a natural image block (luminance)
-  const origCoeffs=[
-    [280,-42,18,-12, 8,-5, 3,-2],
-    [-45, 25,-10,  6,-4, 2,-1, 1],
-    [ 20,-12,  8, -5, 3,-2, 1,-1],
-    [-14,  8, -5,  3,-2, 1,-1, 0],
-    [  9, -5,  3, -2, 1,-1, 0, 0],
-    [ -6,  3, -2,  1,-1, 0, 0, 0],
-    [  4, -2,  1, -1, 0, 0, 0, 0],
-    [ -2,  1, -1,  0, 0, 0, 0, 0],
+
+  // Original 8×8 pixel block (natural image, luminance)
+  const origPixels=[
+    156,159,162,165,167,168,170,172,
+    152,155,158,162,164,165,167,170,
+    148,151,155,158,160,162,164,167,
+    144,147,150,154,156,158,160,162,
+    140,143,146,150,152,154,156,158,
+    136,139,142,146,148,150,152,154,
+    132,135,138,142,144,146,148,150,
+    128,131,134,138,140,142,144,146,
   ];
-  // Std JPEG luminance quant matrix (scaled)
+
   const stdW=[
-    [16,11,10,16,24,40,51,61],
-    [12,12,14,19,26,58,60,55],
-    [14,13,16,24,40,57,69,56],
-    [14,17,22,29,51,87,80,62],
-    [18,22,37,56,68,109,103,77],
-    [24,35,55,64,81,104,113,92],
-    [49,64,78,87,103,121,120,101],
-    [72,92,95,98,112,100,103,99],
+    [16,11,10,16,24,40,51,61],[12,12,14,19,26,58,60,55],
+    [14,13,16,24,40,57,69,56],[14,17,22,29,51,87,80,62],
+    [18,22,37,56,68,109,103,77],[24,35,55,64,81,104,113,92],
+    [49,64,78,87,103,121,120,101],[72,92,95,98,112,100,103,99],
   ];
+
+  function dct2d(f){
+    const F=new Float32Array(N*N);
+    for(let u=0;u<N;u++) for(let v=0;v<N;v++){
+      let s=0;
+      for(let x=0;x<N;x++) for(let y=0;y<N;y++)
+        s+=f[x*N+y]*Math.cos((2*x+1)*u*Math.PI/(2*N))*Math.cos((2*y+1)*v*Math.PI/(2*N));
+      const cu=u===0?1/Math.sqrt(2):1, cv2=v===0?1/Math.sqrt(2):1;
+      F[u*N+v]=(2/N)*cu*cv2*s;
+    }
+    return F;
+  }
+  function idct2d(F){
+    const f=new Float32Array(N*N);
+    for(let x=0;x<N;x++) for(let y=0;y<N;y++){
+      let s=0;
+      for(let u=0;u<N;u++) for(let v=0;v<N;v++){
+        const cu=u===0?1/Math.sqrt(2):1, cv2=v===0?1/Math.sqrt(2):1;
+        s+=cu*cv2*F[u*N+v]*Math.cos((2*x+1)*u*Math.PI/(2*N))*Math.cos((2*y+1)*v*Math.PI/(2*N));
+      }
+      f[x*N+y]=(2/N)*s;
+    }
+    return f;
+  }
   function qstep(qp){return Math.pow(2,(qp-4)/6);}
+
   function draw(){
     const qp=+qpS.value;
     document.getElementById('qp-val').textContent=qp;
     const qs=qstep(qp);
+
+    // compute DCT, quantize, dequantize, IDCT
+    const origF=new Float32Array(origPixels);
+    const F=dct2d(origF);
+    const Fq=new Float32Array(N*N); let nz=0;
+    for(let r=0;r<N;r++) for(let cc=0;cc<N;cc++){
+      const i=r*N+cc;
+      const qv=Math.round(F[i]/(qs*stdW[r][cc]/16));
+      Fq[i]=qv*(qs*stdW[r][cc]/16);
+      if(Math.round(F[i]/(qs*stdW[r][cc]/16))!==0) nz++;
+    }
+    const reconPixels=idct2d(Fq);
+
+    // PSNR
+    let mse=0;
+    for(let i=0;i<N*N;i++) mse+=(origPixels[i]-reconPixels[i])**2;
+    mse/=N*N;
+    const psnr=mse<0.001?99:10*Math.log10(255*255/mse);
+
     ctx.clearRect(0,0,w,h);
     ctx.fillStyle=DARK; ctx.fillRect(0,0,w,h);
-    const side=Math.floor(Math.min((w-80)/2,h-80)/N);
-    const ox1=20, oy1=40, ox2=ox1+N*side+44;
-    ctx.fillStyle=TEXTH; ctx.font='bold 11px Segoe UI'; ctx.textAlign='center';
-    ctx.fillText('Original DCT Coefficients',ox1+N*side/2,oy1-14);
-    ctx.fillText('After Quantization (QP='+qp+')',ox2+N*side/2,oy1-14);
-    let nz=0;
-    const maxOrig=280;
-    for(let r=0;r<N;r++) for(let cc=0;cc<N;cc++){
-      const orig=origCoeffs[r][cc];
-      const qval=Math.round(orig/(qs*stdW[r][cc]/16));
-      const recon=qval*qs*stdW[r][cc]/16;
-      if(qval!==0) nz++;
-      const xo=ox1+cc*side, yo=oy1+r*side;
-      const xq=ox2+cc*side, yq=oy1+r*side;
-      // original
-      const alpha=Math.min(1,Math.abs(orig)/maxOrig);
-      ctx.fillStyle=orig>0?`rgba(56,189,248,${0.15+alpha*0.85})`:`rgba(248,113,113,${0.15+alpha*0.85})`;
-      ctx.fillRect(xo,yo,side-1,side-1);
-      ctx.fillStyle='rgba(255,255,255,0.75)'; ctx.font=`${Math.max(8,side-8)}px monospace`;
-      ctx.textAlign='center';
-      ctx.fillText(orig,xo+side/2,yo+side/2+4);
-      // quantized
-      if(qval===0){
-        ctx.fillStyle='rgba(26,26,40,0.9)';
-        ctx.fillRect(xq,yq,side-1,side-1);
-        ctx.fillStyle='rgba(100,100,120,0.5)'; ctx.font=`${Math.max(8,side-8)}px monospace`;
-        ctx.textAlign='center';
-        ctx.fillText('0',xq+side/2,yq+side/2+4);
-      } else {
-        const alpha2=Math.min(1,Math.abs(qval)/20);
-        ctx.fillStyle=qval>0?`rgba(34,197,94,${0.2+alpha2*0.8})`:`rgba(250,204,21,${0.2+alpha2*0.8})`;
-        ctx.fillRect(xq,yq,side-1,side-1);
-        ctx.fillStyle='rgba(0,0,0,0.7)'; ctx.font=`bold ${Math.max(8,side-8)}px monospace`;
-        ctx.textAlign='center';
-        ctx.fillText(qval,xq+side/2,yq+side/2+4);
+
+    // ── 3 pixel panels ─────────────────────────────────────────
+    const nPanels=3, gap=14, topY=42;
+    const panW=Math.floor((w-gap*(nPanels+1))/nPanels);
+    const cs=Math.floor(panW/N);
+    const gridW=N*cs, gridH=N*cs;
+
+    const panTitles=['Original Block','Reconstructed (QP='+qp+')','Error × 8 (magnified)'];
+    const panColors=[TEXTH,qp<20?GREEN:qp<35?AMBER:RED,ORANGE];
+
+    for(let pi=0;pi<nPanels;pi++){
+      const ox=gap+pi*(panW+gap), oy=topY;
+      panelBox(ctx,ox,oy,panW,gridH+22,panTitles[pi],panColors[pi]);
+
+      for(let r=0;r<N;r++) for(let cc=0;cc<N;cc++){
+        const i=r*N+cc;
+        let v;
+        if(pi===0){v=Math.round(Math.min(255,Math.max(0,origPixels[i])));ctx.fillStyle=`rgb(${v},${v},${v})`;}
+        else if(pi===1){v=Math.round(Math.min(255,Math.max(0,reconPixels[i])));ctx.fillStyle=`rgb(${v},${v},${v})`;}
+        else{
+          const err=origPixels[i]-reconPixels[i];
+          const amp=Math.round(128+err*8);
+          const mv=Math.min(255,Math.max(0,amp));
+          if(err>1) ctx.fillStyle=`rgb(${Math.min(255,150+err*6)},${Math.max(0,90-err*4)},${Math.max(0,90-err*4)})`;
+          else if(err<-1) ctx.fillStyle=`rgb(${Math.max(0,90+err*6)},${Math.max(0,90+err*6)},${Math.min(255,150-err*4)})`;
+          else ctx.fillStyle=`rgb(60,60,60)`;
+        }
+        ctx.fillRect(ox+cc*cs,oy+r*cs,cs,cs);
+        if(cs>=14){
+          ctx.fillStyle='rgba(255,255,255,0.65)';
+          ctx.font=`${Math.max(7,cs-6)}px monospace`; ctx.textAlign='center';
+          const val=pi===0?Math.round(origPixels[i]):pi===1?Math.round(reconPixels[i]):Math.round(origPixels[i]-reconPixels[i]);
+          ctx.fillText(val,ox+cc*cs+cs/2,oy+r*cs+cs/2+cs*0.18);
+        }
       }
+      // grid lines
+      ctx.strokeStyle='rgba(255,255,255,0.06)'; ctx.lineWidth=0.5;
+      for(let i=0;i<=N;i++){
+        ctx.beginPath();ctx.moveTo(ox+i*cs,oy);ctx.lineTo(ox+i*cs,oy+N*cs);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(ox,oy+i*cs);ctx.lineTo(ox+panW,oy+i*cs);ctx.stroke();
+      }
+      // label below panel
+      ctx.fillStyle=panColors[pi]; ctx.font='9px Segoe UI'; ctx.textAlign='center';
+      if(pi===0) ctx.fillText('Ground truth',ox+panW/2,oy+gridH+15);
+      else if(pi===1) ctx.fillText(`${nz}/64 non-zero coeffs`,ox+panW/2,oy+gridH+15);
+      else ctx.fillText('Red=over · Blue=under',ox+panW/2,oy+gridH+15);
     }
-    ctx.strokeStyle=GRID; ctx.lineWidth=1;
-    [ox1,ox2].forEach(bx=>{
-      for(let i=0;i<=N;i++){ctx.beginPath();ctx.moveTo(bx+i*side,oy1);ctx.lineTo(bx+i*side,oy1+N*side);ctx.stroke();}
-      for(let i=0;i<=N;i++){ctx.beginPath();ctx.moveTo(bx,oy1+i*side);ctx.lineTo(bx+N*side,oy1+i*side);ctx.stroke();}
-    });
-    document.getElementById('quant-info').textContent=`Non-zero coefficients: ${nz} / 64   |   Q-step ≈ ${qs.toFixed(2)}   |   Zero-out rate: ${Math.round((64-nz)/64*100)}%`;
-    ctx.fillStyle=TEXT; ctx.font='10px Segoe UI'; ctx.textAlign='left';
-    ctx.fillText('Blue/Red = original sign · Green/Amber = quantized · Gray = zeroed out',ox1,oy1+N*side+20);
+
+    // ── PSNR meter ──────────────────────────────────────────────
+    const meterY=topY+gridH+36;
+    ctx.fillStyle=TEXTH; ctx.font='bold 11px Segoe UI'; ctx.textAlign='left';
+    ctx.fillText('PSNR (Peak Signal-to-Noise Ratio):',gap,meterY);
+
+    const psnrColor=psnr>40?GREEN:psnr>32?AMBER:RED;
+    ctx.font=`bold 32px Segoe UI`; ctx.textAlign='left';
+    ctx.fillStyle=psnrColor;
+    ctx.fillText(psnr>90?'∞':psnr.toFixed(1)+' dB',gap,meterY+36);
+    ctx.font='10px Segoe UI'; ctx.fillStyle=TEXT;
+    ctx.fillText(psnr>40?'Excellent — visually lossless':psnr>32?'Good — typical streaming quality':psnr>24?'Acceptable — visible artifacts':'Poor — heavy blocking visible',gap+160,meterY+32);
+
+    // QP → bitrate curve (simplified)
+    const curveX=w/2+20, curveY=meterY, curveW=w/2-30, curveH=60;
+    ctx.fillStyle=TEXTH; ctx.font='bold 10px Segoe UI'; ctx.textAlign='left';
+    ctx.fillText('Relative bitrate vs QP (same content):',curveX,curveY);
+    ctx.fillStyle=PANEL; ctx.fillRect(curveX,curveY+8,curveW,curveH);
+    ctx.strokeStyle=GRID; ctx.lineWidth=1; ctx.strokeRect(curveX,curveY+8,curveW,curveH);
+
+    // Draw curve: bitrate ≈ 2^((base-QP)/6)
+    ctx.strokeStyle=BLUE; ctx.lineWidth=2; ctx.beginPath();
+    for(let q=0;q<=51;q++){
+      const br=Math.pow(2,(30-q)/6);
+      const x=curveX+q/51*curveW;
+      const y=curveY+8+curveH-(Math.min(1,br/Math.pow(2,26/6)))*curveH*0.9;
+      if(q===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+    // current QP marker
+    const cqpBr=Math.pow(2,(30-qp)/6);
+    const cqpX=curveX+qp/51*curveW;
+    const cqpY=curveY+8+curveH-(Math.min(1,cqpBr/Math.pow(2,26/6)))*curveH*0.9;
+    ctx.fillStyle=psnrColor;
+    ctx.beginPath(); ctx.arc(cqpX,cqpY,5,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle=psnrColor; ctx.setLineDash([2,2]);
+    ctx.beginPath(); ctx.moveTo(cqpX,curveY+8+curveH); ctx.lineTo(cqpX,cqpY); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle=psnrColor; ctx.font='bold 9px monospace'; ctx.textAlign='center';
+    ctx.fillText('QP='+qp,cqpX,curveY+8+curveH+11);
+
+    // axis labels
+    ctx.fillStyle=DIM; ctx.font='8px Segoe UI';
+    ctx.textAlign='left'; ctx.fillText('QP=0',curveX,curveY+8+curveH+11);
+    ctx.textAlign='right'; ctx.fillText('QP=51',curveX+curveW,curveY+8+curveH+11);
+    ctx.fillStyle=TEXT; ctx.font='9px Segoe UI'; ctx.textAlign='left';
+    const bits=Math.round(nz*8); // rough estimate
+    ctx.fillText(`~${bits} bits for this block · ${Math.round((64-nz)/64*100)}% coefficients zeroed`,gap,meterY+56);
+
+    document.getElementById('quant-info').textContent=
+      `Non-zero coefficients: ${nz}/64 · Q-step ≈ ${qs.toFixed(2)} · PSNR = ${psnr>90?'∞':psnr.toFixed(1)} dB · MSE = ${mse.toFixed(2)}`;
   }
   qpS.addEventListener('input',draw);
   draw();
 })();
 
-// ─── 6. Decode Step-Through ────────────────────────────────────────
+// ─── 6. Decode Pipeline — data at each stage ───────────────────────
 (function(){
-  const cv=setupCanvas('decode-canvas',300);
+  const cv=setupCanvas('decode-canvas',400);
   if(!cv)return;
   const {ctx,w,h}=cv;
   let step=0;
-  const steps=[
-    {label:'Step 1 of 6: Parse Bitstream',
-     desc:'The NAL unit is parsed. Block partition (16×16 MB), prediction mode (inter/P), motion vector MV=(+8,+3), and quantized coefficient array are extracted from the CABAC-decoded bitstream.'},
-    {label:'Step 2 of 6: Entropy Decode',
-     desc:'CABAC arithmetic decoder recovers the quantized DCT coefficients in zig-zag order. Most high-frequency coefficients are 0 (encoded as run-length "EOB"). Non-zero coefficients: [42, -18, 7, -3, 5, -2] in zig-zag positions 0–5.'},
-    {label:'Step 3 of 6: Dequantize + IDCT',
-     desc:'Each coefficient is multiplied by Q_step(QP=28) = 11.3 and the quantization matrix weight. The 8×8 matrix of dequantized values is passed through the 2D IDCT to reconstruct the residual block in pixel domain.'},
-    {label:'Step 4 of 6: Motion Compensation',
-     desc:'The decoded motion vector MV=(+8,+3) is used to index into the Decoded Picture Buffer (DPB). The reference block is fetched from the past reference frame at offset (+8,+3) with quarter-pixel bilinear interpolation.'},
-    {label:'Step 5 of 6: Add Residual',
-     desc:'Reconstructed block = Reference block (from MC) + IDCT residual. The residual corrects the prediction error. For a good P-block this residual is small — most of the energy was captured by motion compensation.'},
-    {label:'Step 6 of 6: Deblocking Filter',
-     desc:'The deblocking filter smooths block boundaries. It checks boundary strength (BS) based on reference frame, MV difference, and non-zero coefficients. Strong boundaries (BS=2) get a 3-tap filter; weak ones (BS=1) get a conditional 2-tap filter.'},
+
+  const N=8;
+  // Sample block data for each decode stage
+  const qCoeffs=[42,-18,7,-3,5,-2,1,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,
+                 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0];
+  const stdW=[[16,11,10,16,24,40,51,61],[12,12,14,19,26,58,60,55],[14,13,16,24,40,57,69,56],[14,17,22,29,51,87,80,62],[18,22,37,56,68,109,103,77],[24,35,55,64,81,104,113,92],[49,64,78,87,103,121,120,101],[72,92,95,98,112,100,103,99]];
+  const qs=Math.pow(2,(28-4)/6);
+  const Fdq=qCoeffs.map((q,i)=>q*qs*stdW[Math.floor(i/N)][i%N]/16);
+  function idct2d(F){
+    const f=new Float32Array(N*N);
+    for(let x=0;x<N;x++) for(let y=0;y<N;y++){
+      let s=0;
+      for(let u=0;u<N;u++) for(let v=0;v<N;v++){
+        const cu=u===0?1/Math.sqrt(2):1,cv2=v===0?1/Math.sqrt(2):1;
+        s+=cu*cv2*F[u*N+v]*Math.cos((2*x+1)*u*Math.PI/(2*N))*Math.cos((2*y+1)*v*Math.PI/(2*N));
+      }
+      f[x*N+y]=(2/N)*s;
+    }
+    return f;
+  }
+  const residual=idct2d(new Float32Array(Fdq));
+  const refBlock=[148,151,154,157,159,161,163,165,152,155,158,161,163,165,167,169,156,159,162,165,167,169,171,173,160,163,166,169,171,173,175,177,164,167,170,173,175,177,179,181,168,171,174,177,179,181,183,185,172,175,178,181,183,185,187,189,176,179,182,185,187,189,191,193];
+  const reconBlock=refBlock.map((p,i)=>Math.round(Math.min(255,Math.max(0,p+residual[i]))));
+
+  const stageColors=[AMBER,BLUE,GREEN,PURPLE,ORANGE,RED];
+  const stageNames=['① Parse NAL','② CABAC Decode','③ Dequant+IDCT','④ Motion Comp.','⑤ Add Residual','⑥ Deblock'];
+  const stageDescs=[
+    'The compressed bitstream is split into NAL units. The slice header is parsed: frame type=P, QP=28. Each macroblock header specifies: partition=16×16, prediction mode=inter, MV=(+8,+3).',
+    'CABAC arithmetic decoder reads coefficients in zig-zag order. Only 6 non-zero values exist (out of 64) — the rest are run-length encoded as "End-of-Block." Coefficient array shown below.',
+    'Each quantized coefficient is multiplied by Q_step(QP=28)≈11.3 and the quantization matrix weight. The 8×8 dequantized array is passed through 2D IDCT to reconstruct the residual in pixel domain.',
+    'The motion vector MV=(+8,+3) indexes into the Decoded Picture Buffer (DPB). The reference block is fetched from the past reference frame with quarter-pixel bilinear interpolation. No search needed.',
+    'Reconstructed = Reference Block + IDCT Residual. The residual (small values near 0) corrects prediction error. Large residuals → bad prediction → more bits spent. Small residuals → efficient P-frame.',
+    'The deblocking filter smooths 8×8 block boundaries to remove blocking artifacts. Boundary strength (BS=0–2) is computed per edge. BS=2: strong 3-tap filter. BS=1: conditional 2-tap. BS=0: skip.',
   ];
-  const icons=['📦','🔢','🔄','🎯','➕','🧹'];
-  const colors=[AMBER,BLUE,GREEN,PURPLE,RED,GREEN];
-  function draw(){
-    ctx.clearRect(0,0,w,h);
-    ctx.fillStyle=DARK; ctx.fillRect(0,0,w,h);
-    const total=steps.length;
-    const bw=Math.floor((w-40)/(total));
-    for(let i=0;i<total;i++){
-      const x=20+i*bw, y=h/2-20, bh2=40;
-      const done=i<step, active=i===step;
-      ctx.fillStyle=active?colors[i]+'22':(done?'#0a1a0a':'#0a0a18');
-      ctx.beginPath(); ctx.roundRect(x+2,y,bw-4,bh2,6); ctx.fill();
-      ctx.strokeStyle=active?colors[i]:(done?'#1a4a28':'#1a1a28');
-      ctx.lineWidth=active?2:1;
-      ctx.beginPath(); ctx.roundRect(x+2,y,bw-4,bh2,6); ctx.stroke();
-      ctx.fillStyle=active?colors[i]:(done?'#34d399':'#3a3a5a');
-      ctx.font=`${active?16:13}px Segoe UI`; ctx.textAlign='center';
-      ctx.fillText(icons[i],x+bw/2,y+bh2/2+6);
-      if(i<total-1){
-        ctx.strokeStyle=done?GREEN:'#2a2a40'; ctx.lineWidth=1.5;
-        ctx.setLineDash([3,2]);
-        ctx.beginPath(); ctx.moveTo(x+bw,h/2); ctx.lineTo(x+bw,h/2); ctx.stroke();
-        ctx.setLineDash([]);
+
+  function drawMiniGrid(data,ox,oy,gw,gh,cs,colorFn){
+    for(let r=0;r<gh;r++) for(let cc=0;cc<gw;cc++){
+      const v=data[r*gw+cc];
+      ctx.fillStyle=colorFn(v,r,cc);
+      ctx.fillRect(ox+cc*cs,oy+r*cs,cs-1,cs-1);
+      if(cs>=12){
+        ctx.fillStyle='rgba(255,255,255,0.7)';
+        ctx.font=`${Math.max(6,cs-7)}px monospace`; ctx.textAlign='center';
+        ctx.fillText(typeof v==='number'?Math.round(v):'?',ox+cc*cs+cs/2,oy+r*cs+cs/2+cs*0.18);
       }
     }
-    // step names below
-    for(let i=0;i<total;i++){
-      const x=20+i*bw;
-      ctx.fillStyle=i===step?TEXTH:'#4a4a68'; ctx.font=`${Math.max(8,bw-18)}px Segoe UI`;
-      ctx.textAlign='center';
-      const name=['Parse','Entropy\nDecode','Dequant\n+IDCT','Motion\nComp','Add\nResidual','Deblock'][i];
-      name.split('\n').forEach((line,li)=>{
-        ctx.fillText(line,x+bw/2,h/2+30+li*13);
-      });
-    }
-    // progress bar
-    ctx.fillStyle='#1a1a28';
-    ctx.beginPath(); ctx.roundRect(20,h-20,w-40,6,3); ctx.fill();
-    ctx.fillStyle=colors[step];
-    ctx.beginPath(); ctx.roundRect(20,h-20,Math.round((step+1)/(total)*(w-40)),6,3); ctx.fill();
-    document.getElementById('decode-step-label').textContent=steps[step].label;
-    document.getElementById('decode-step-desc').textContent=steps[step].desc;
+    ctx.strokeStyle='rgba(255,255,255,0.06)'; ctx.lineWidth=0.5;
+    for(let i=0;i<=gw;i++){ctx.beginPath();ctx.moveTo(ox+i*cs,oy);ctx.lineTo(ox+i*cs,oy+gh*cs);ctx.stroke();}
+    for(let i=0;i<=gh;i++){ctx.beginPath();ctx.moveTo(ox,oy+i*cs);ctx.lineTo(ox+gw*cs,oy+i*cs);ctx.stroke();}
   }
+
+  function draw(){
+    ctx.clearRect(0,0,w,h); ctx.fillStyle=DARK; ctx.fillRect(0,0,w,h);
+    const total=stageNames.length;
+    const bw=Math.floor((w-16)/total), bh=44, topY=12;
+
+    // Stage boxes
+    for(let i=0;i<total;i++){
+      const x=8+i*bw, active=i===step, done=i<step;
+      const col=stageColors[i];
+      ctx.fillStyle=active?col+'25':done?col+'12':'#0a0a16';
+      ctx.beginPath(); ctx.roundRect(x+2,topY,bw-4,bh,5); ctx.fill();
+      ctx.strokeStyle=active?col:done?col+'55':'#222236';
+      ctx.lineWidth=active?2:1;
+      ctx.beginPath(); ctx.roundRect(x+2,topY,bw-4,bh,5); ctx.stroke();
+
+      // stage name (two lines)
+      const parts=stageNames[i].split(' ');
+      ctx.fillStyle=active?col:done?col+'bb':DIM;
+      ctx.font=`bold ${Math.min(10,bw/5)}px Segoe UI`; ctx.textAlign='center';
+      ctx.fillText(parts[0],x+bw/2,topY+16);
+      ctx.fillText(parts.slice(1).join(' '),x+bw/2,topY+30);
+
+      // connector arrow
+      if(i<total-1){
+        ctx.fillStyle=done?GREEN+'88':'#2a2a40';
+        ctx.beginPath(); ctx.moveTo(x+bw-2,topY+bh/2);
+        ctx.lineTo(x+bw-8,topY+bh/2-4); ctx.lineTo(x+bw-8,topY+bh/2+4);
+        ctx.closePath(); ctx.fill();
+      }
+    }
+
+    // Progress bar
+    ctx.fillStyle='#1a1a28'; ctx.fillRect(8,topY+bh+6,w-16,4);
+    ctx.fillStyle=stageColors[step];
+    ctx.fillRect(8,topY+bh+6,Math.round((step+1)/total*(w-16)),4);
+
+    // ── Data visualization for current step ───────────────────
+    const dataY=topY+bh+18;
+    const dataH=h-dataY-4;
+    const gap=12;
+
+    ctx.fillStyle=stageColors[step]; ctx.font='bold 11px Segoe UI'; ctx.textAlign='left';
+    ctx.fillText(stageDescs[step].split('.')[0]+'.',gap,dataY+14);
+    ctx.fillStyle=TEXT; ctx.font='10px Segoe UI';
+    // second sentence
+    const sentences=stageDescs[step].split('.');
+    if(sentences[1]) ctx.fillText(sentences[1].trim()+'.',gap,dataY+28);
+
+    const gridY=dataY+42, availW=w-gap*2;
+    const cs=Math.floor(Math.min(availW/(N+2),dataH*0.55/N));
+
+    if(step===0){
+      // Show bitstream bytes
+      ctx.fillStyle=TEXTH; ctx.font='bold 10px Segoe UI'; ctx.textAlign='left';
+      ctx.fillText('Parsed syntax elements:',gap,gridY);
+      const items=[['NAL Unit Type','Coded Slice (P)'],['Slice QP','28'],['MB Partition','16×16'],['Pred Mode','Inter (P)'],['Motion Vector','(+8, +3)'],['Coeff Count','6/64 non-zero']];
+      items.forEach(([k,v],i)=>{
+        const rx=gap+(i%3)*(availW/3), ry=gridY+16+Math.floor(i/3)*22;
+        ctx.fillStyle=AMBER; ctx.font='bold 9px Segoe UI'; ctx.fillText(k+':',rx,ry);
+        ctx.fillStyle=BLUE; ctx.font='9px monospace'; ctx.fillText(v,rx+90,ry);
+      });
+    } else if(step===1){
+      // Coefficient grid (zig-zag order)
+      ctx.fillStyle=TEXTH; ctx.font='bold 10px Segoe UI'; ctx.textAlign='left';
+      ctx.fillText('Quantized DCT coefficients (8×8, zig-zag scan):',gap,gridY);
+      drawMiniGrid(qCoeffs,gap,gridY+12,N,N,cs,(v)=>{
+        if(v===0) return '#1a1a2e';
+        const a=Math.min(1,Math.abs(v)/50);
+        return v>0?`rgba(56,189,248,${0.2+a*0.8})`:`rgba(248,113,113,${0.2+a*0.8})`;
+      });
+      ctx.fillStyle=TEXT; ctx.font='9px Segoe UI'; ctx.textAlign='left';
+      ctx.fillText('Gray=zero (not transmitted). Zig-zag groups low-freq (top-left) non-zeros at start.',gap+N*cs+8,gridY+30);
+    } else if(step===2){
+      ctx.fillStyle=TEXTH; ctx.font='bold 10px Segoe UI'; ctx.textAlign='left';
+      ctx.fillText('IDCT residual (pixel domain, 8×8):',gap,gridY);
+      drawMiniGrid(Array.from(residual),gap,gridY+12,N,N,cs,(v)=>{
+        if(Math.abs(v)<1) return 'rgb(60,60,60)';
+        const mapped=Math.round(128+v*6);
+        const mv=Math.min(255,Math.max(0,mapped));
+        return v>0?`rgb(${Math.min(255,80+v*10)},140,200)`:`rgb(200,${Math.max(0,140+v*8)},80)`;
+      });
+      ctx.fillStyle=TEXT; ctx.font='9px Segoe UI';
+      ctx.fillText('Small residuals → good prediction → efficient coding.',gap+N*cs+8,gridY+30);
+    } else if(step===3){
+      ctx.fillStyle=TEXTH; ctx.font='bold 10px Segoe UI'; ctx.textAlign='left';
+      ctx.fillText('Reference block fetched from DPB (MV=+8,+3):',gap,gridY);
+      drawMiniGrid(refBlock,gap,gridY+12,N,N,cs,(v)=>{const g=Math.round(v);return `rgb(${g},${g},${g})`;});
+      ctx.strokeStyle=GREEN; ctx.lineWidth=2; ctx.strokeRect(gap,gridY+12,N*cs,N*cs);
+    } else if(step===4){
+      // Show ref + residual + result
+      const cs2=Math.floor((availW-gap*2)/3/N);
+      ['Reference','+ Residual','= Reconstructed'].forEach((lbl,pi)=>{
+        const ox=gap+pi*(N*cs2+gap+30), oy=gridY+12;
+        ctx.fillStyle=pi===2?GREEN:TEXT; ctx.font=`bold 9px Segoe UI`; ctx.textAlign='center';
+        ctx.fillText(lbl,ox+N*cs2/2,oy-4);
+        drawMiniGrid(pi===0?refBlock:pi===1?Array.from(residual):reconBlock,ox,oy,N,N,cs2,(v,r2,c2)=>{
+          if(pi===1){const mapped=Math.round(128+v*6);return `rgb(${Math.min(255,80+Math.max(0,v)*6)},${Math.min(255,128)},${Math.min(255,80+Math.max(0,-v)*6)})`;}
+          const g=Math.round(Math.min(255,Math.max(0,v)));return `rgb(${g},${g},${g})`;
+        });
+        if(pi<2){ctx.fillStyle=AMBER;ctx.font='bold 14px Segoe UI';ctx.textAlign='left';ctx.fillText(pi===0?'+':'=',ox+N*cs2+6,oy+N*cs2/2+5);}
+      });
+    } else if(step===5){
+      // Before/after deblocking
+      ctx.fillStyle=TEXTH; ctx.font='bold 10px Segoe UI'; ctx.textAlign='left';
+      ctx.fillText('Before deblocking (with blocking artifact at block boundary):',gap,gridY);
+      // Simulate blocking artifact: sharp jump at pixel column 4
+      const blocked=reconBlock.map((v,i)=>i%8<4?v:Math.min(255,v+12));
+      drawMiniGrid(blocked,gap,gridY+12,N,N,cs,(v)=>{const g=Math.round(v);return `rgb(${g},${g},${g})`;});
+      // After
+      const afterX=gap+N*cs+32;
+      ctx.fillStyle=GREEN; ctx.font='bold 10px Segoe UI'; ctx.textAlign='left';
+      ctx.fillText('After deblocking (boundary smoothed):',afterX,gridY);
+      drawMiniGrid(reconBlock,afterX,gridY+12,N,N,cs,(v)=>{const g=Math.round(v);return `rgb(${g},${g},${g})`;});
+      // Draw red line on blocked showing artifact location
+      ctx.strokeStyle=RED; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(gap+4*cs,gridY+12); ctx.lineTo(gap+4*cs,gridY+12+N*cs); ctx.stroke();
+      ctx.fillStyle=RED; ctx.font='8px Segoe UI'; ctx.textAlign='center';
+      ctx.fillText('artifact',gap+4*cs,gridY+12+N*cs+10);
+      ctx.strokeStyle=GREEN; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(afterX+4*cs,gridY+12); ctx.lineTo(afterX+4*cs,gridY+12+N*cs); ctx.stroke();
+      ctx.fillStyle=GREEN; ctx.font='8px Segoe UI'; ctx.textAlign='center';
+      ctx.fillText('smoothed',afterX+4*cs,gridY+12+N*cs+10);
+    }
+
+    document.getElementById('decode-step-label').textContent=stageNames[step]+' — Step '+(step+1)+'/'+total;
+    document.getElementById('decode-step-desc').textContent=stageDescs[step];
+  }
+
   document.getElementById('decode-prev').addEventListener('click',()=>{if(step>0){step--;draw();}});
-  document.getElementById('decode-next').addEventListener('click',()=>{if(step<steps.length-1){step++;draw();}});
+  document.getElementById('decode-next').addEventListener('click',()=>{if(step<stageNames.length-1){step++;draw();}});
   document.getElementById('decode-reset').addEventListener('click',()=>{step=0;draw();});
   let autoPlay=null;
   document.getElementById('decode-auto').addEventListener('click',()=>{
     if(autoPlay){clearInterval(autoPlay);autoPlay=null;document.getElementById('decode-auto').textContent='Auto Play';return;}
-    document.getElementById('decode-auto').textContent='Stop';
+    document.getElementById('decode-auto').textContent='■ Stop';
     autoPlay=setInterval(()=>{
-      if(step<steps.length-1){step++;draw();}
+      if(step<stageNames.length-1){step++;draw();}
       else{clearInterval(autoPlay);autoPlay=null;document.getElementById('decode-auto').textContent='Auto Play';}
-    },1800);
+    },2200);
   });
   draw();
 })();
 
-// ─── Resize all canvases on window resize ──────────────────────────
+// ─── Re-init all canvases on resize ────────────────────────────────
+let resizeTimer;
 window.addEventListener('resize',()=>{
-  document.querySelectorAll('canvas').forEach(c=>{
-    const h=parseInt(c.style.height);
-    const d=dpr(), nw=c.parentElement.clientWidth;
-    c.width=nw*d; c.height=h*d;
-    c.style.width=nw+'px';
-    const ctx=c.getContext('2d'); ctx.scale(d,d);
-  });
+  clearTimeout(resizeTimer);
+  resizeTimer=setTimeout(()=>{
+    // Re-run all init functions by reloading page state would be needed
+    // Instead just resize and trigger redraw via triggering input events
+    document.querySelectorAll('input[type=range]').forEach(s=>{
+      s.dispatchEvent(new Event('input'));
+    });
+  },200);
 });
 </script>
 
