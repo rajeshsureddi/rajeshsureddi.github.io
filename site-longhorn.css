@@ -1,0 +1,88 @@
+/* Interactive 3D longhorn: isolated from the academic site's layout and styles. */
+#site-longhorn {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 1000;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .4s ease;
+  will-change: transform;
+}
+
+#site-longhorn.ready {
+  opacity: 1;
+}
+
+body.site-longhorn-hover {
+  cursor: pointer;
+}
+
+/* Bluebonnets planted by clicking the page. */
+.site-longhorn-flower {
+  position: fixed;
+  z-index: 999;
+  pointer-events: none;
+  transform-origin: 50% 100%;
+  transition: clip-path .3s ease;
+  animation: site-longhorn-sprout .5s cubic-bezier(.3, 1.6, .5, 1) both;
+}
+
+.site-longhorn-flower svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.site-longhorn-flower.gone {
+  animation: site-longhorn-wilt .3s ease-in forwards;
+}
+
+.site-longhorn-fx {
+  position: fixed;
+  z-index: 1002;
+  pointer-events: none;
+  border-radius: 50%;
+  font: 700 16px/1 'Lato', Verdana, sans-serif;
+}
+
+.site-longhorn-bubble {
+  position: fixed;
+  z-index: 1003;
+  padding: 4px 9px 5px;
+  border: 2px solid #4a2a17;
+  border-radius: 10px 10px 10px 2px;
+  background: #fff4e6;
+  box-shadow: 2px 2px 0 #4a2a17;
+  color: #bf5700;
+  font: 700 13px/1 'Lato', Verdana, sans-serif;
+  pointer-events: none;
+  white-space: nowrap;
+  animation: site-longhorn-pop 1.2s ease-out forwards;
+}
+
+@keyframes site-longhorn-sprout {
+  from { opacity: 0; transform: scale(.3, 0); }
+  to { opacity: 1; transform: scale(1, 1); }
+}
+
+@keyframes site-longhorn-wilt {
+  to { opacity: 0; transform: scaleY(.2); }
+}
+
+@keyframes site-longhorn-pop {
+  0% { opacity: 0; transform: translateY(4px) scale(.7); }
+  12% { opacity: 1; transform: translateY(0) scale(1); }
+  78% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-8px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #site-longhorn,
+  .site-longhorn-flower,
+  .site-longhorn-fx,
+  .site-longhorn-bubble {
+    display: none !important;
+  }
+}
