@@ -494,9 +494,12 @@ function start() {
 
   function plantFlower(x, y) {
     const { width, height } = flowerSize();
+    // Keep the bloom within reach of the muzzle without the longhorn leaving the bottom of the screen.
+    const reach = grazeMuzzleOffset(-1).y;
+    const lowest = window.innerHeight - size().height + 20 + reach - height * .45;
     const flower = {
       x: clamp(x - width / 2, 40, window.innerWidth - width - 40),
-      y: clamp(y - height / 2, 150, window.innerHeight - height - 10),
+      y: clamp(y - height / 2, Math.max(150, reach - height * .45), Math.min(window.innerHeight - height - 10, lowest)),
       element: document.createElement('div')
     };
     flower.element.className = 'site-longhorn-flower';
@@ -515,7 +518,8 @@ function start() {
     setTimeout(() => flower.element.remove(), 320);
   }
 
-  // Walk so the muzzle lands on the flower, approaching from whichever side fits on screen.
+  // Walk so the muzzle lands exactly on the flower. Near a screen edge, approach head-first
+  // toward the edge so the body stays on screen.
   function headToFlower() {
     meal = flowers[0];
     if (!meal) return false;
@@ -525,18 +529,18 @@ function start() {
       const offset = grazeMuzzleOffset(side);
       return { x: bloom.x - offset.x, y: bloom.y - offset.y };
     };
-    const inBounds = p => p.x >= -10 && p.x <= window.innerWidth - size().width + 10;
+    const offscreen = p => {
+      const { width } = size();
+      return Math.max(0, -(p.x + width * .25)) + Math.max(0, p.x + width * .75 - window.innerWidth);
+    };
     let side = bloom.x < position.x + size().width / 2 ? -1 : 1;
     let goalSpot = spot(side);
-    if (!inBounds(goalSpot)) {
+    const otherSpot = spot(-side);
+    if (offscreen(otherSpot) < offscreen(goalSpot)) {
       side = -side;
-      goalSpot = spot(side);
+      goalSpot = otherSpot;
     }
-    target = {
-      x: clamp(goalSpot.x, -10, window.innerWidth - size().width + 10),
-      y: clamp(goalSpot.y, 0, window.innerHeight - size().height + 20),
-      facing: side
-    };
+    target = { x: goalSpot.x, y: goalSpot.y, facing: side };
     enter('trot');
     return true;
   }
