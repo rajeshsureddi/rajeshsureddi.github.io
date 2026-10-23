@@ -1,5 +1,5 @@
 // A 3D Texas longhorn that lives in the corner of the page.
-// Click the page to plant bluebonnets for it to graze, wave the cursor near it
+// Double-click the page to plant bluebonnets for it to graze, wave the cursor near it
 // like a matador's cape to make it charge, hover to get its attention, or click it.
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 
@@ -785,8 +785,14 @@ function start() {
         showHearts(2);
         enter('bark');
       }
-      return;
     }
+  });
+
+  // Planting needs a double-click so ordinary clicks on the page stay ordinary.
+  document.addEventListener('dblclick', event => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (isInteractive(event.target) || overLonghorn(event.clientX, event.clientY)) return;
+    // A double-click on text selects a word; leave that alone.
     const selection = window.getSelection();
     if (selection && !selection.isCollapsed) return;
     plantFlower(event.clientX, event.clientY);
