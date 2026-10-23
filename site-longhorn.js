@@ -788,13 +788,46 @@ function start() {
     }
   });
 
+  // Whether the point is over an actual visible character (not blank space beside the text).
+  function pointIsOnText(x, y) {
+    let node;
+    let offset;
+    if (document.caretPositionFromPoint) {
+      const caret = document.caretPositionFromPoint(x, y);
+      if (!caret) return false;
+      node = caret.offsetNode;
+      offset = caret.offset;
+    } else if (document.caretRangeFromPoint) {
+      const caret = document.caretRangeFromPoint(x, y);
+      if (!caret) return false;
+      node = caret.startContainer;
+      offset = caret.startOffset;
+    }
+    if (!node || node.nodeType !== Node.TEXT_NODE) return false;
+    const range = document.createRange();
+    for (const start of [offset - 1, offset]) {
+      if (start < 0 || start >= node.length || !/\S/.test(node.data[start])) continue;
+      range.setStart(node, start);
+      range.setEnd(node, start + 1);
+      for (const rect of range.getClientRects()) {
+        if (x >= rect.left - 2 && x <= rect.right + 2 && y >= rect.top - 3 && y <= rect.bottom + 3) return true;
+      }
+    }
+    return false;
+  }
+
+  const plantable = event => event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey &&
+    !isInteractive(event.target) && !overLonghorn(event.clientX, event.clientY) && !pointIsOnText(event.clientX, event.clientY);
+
+  // Double-clicking blank space would otherwise select stray nearby text; double-clicking a word still selects it.
+  document.addEventListener('mousedown', event => {
+    if (event.detail >= 2 && plantable(event)) event.preventDefault();
+  });
+
   // Planting needs a double-click so ordinary clicks on the page stay ordinary.
   document.addEventListener('dblclick', event => {
-    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-    if (isInteractive(event.target) || overLonghorn(event.clientX, event.clientY)) return;
-    // A double-click on text selects a word; leave that alone.
-    const selection = window.getSelection();
-    if (selection && !selection.isCollapsed) return;
+    if (!plantable(event)) return;
+    window.getSelection()?.removeAllRanges();
     plantFlower(event.clientX, event.clientY);
     if (resting() || state === 'bark') {
       wake();
