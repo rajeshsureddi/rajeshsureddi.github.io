@@ -6,6 +6,7 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.m
 
 const toggle = document.getElementById('site-longhorn-toggle');
 const STORAGE_KEY = 'site-longhorn-on';
+const HINT_KEY = 'site-longhorn-hint-seen';
 
 if (toggle && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) setUpToggle();
 
@@ -498,6 +499,22 @@ function start() {
     setTimeout(() => bubble.remove(), 1250);
   }
 
+  // The first time Fun mode is switched on, tell the visitor how to play.
+  function showHintOnce() {
+    try {
+      if (localStorage.getItem(HINT_KEY)) return;
+      localStorage.setItem(HINT_KEY, '1');
+    } catch (error) { /* private mode: show it anyway */ }
+    const at = screenPoint(steer.head);
+    const bubble = document.createElement('div');
+    bubble.className = 'site-longhorn-bubble site-longhorn-hint';
+    bubble.textContent = 'Double-click anywhere to plant bluebonnets for me! \u{1F33C}';
+    document.body.append(bubble);
+    bubble.style.left = `${clamp(at.x - bubble.offsetWidth / 2, 8, window.innerWidth - bubble.offsetWidth - 8)}px`;
+    bubble.style.top = `${at.y - 70}px`;
+    setTimeout(() => bubble.remove(), 5050);
+  }
+
   // --- bluebonnets ------------------------------------------------------------
 
   const BLUEBONNET = (() => {
@@ -893,6 +910,7 @@ function start() {
     canvas.classList.add('ready');
     lastFrameTime = now();
     frame = requestAnimationFrame(tick);
+    setTimeout(() => { if (enabled) showHintOnce(); }, 500);
   }
 
   function hide() {
@@ -904,6 +922,7 @@ function start() {
     meal = null;
     hovering = false;
     document.body.classList.remove('site-longhorn-hover');
+    document.querySelectorAll('.site-longhorn-hint').forEach(hint => hint.remove());
   }
 
   return { show, hide };
