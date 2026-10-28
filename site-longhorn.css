@@ -78,6 +78,69 @@ body.site-longhorn-hover {
   100% { opacity: 0; transform: translateY(-8px); }
 }
 
+/* "Fun mode" switch in the nav bar; the longhorn only appears when it is on. */
+#site-longhorn-toggle {
+  margin-left: auto;
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 0 8px;
+  border: 0;
+  background: none;
+  color: #555;
+  font: 15px 'Lato', Verdana, sans-serif;
+  cursor: pointer;
+}
+
+#site-longhorn-toggle[hidden] {
+  display: none;
+}
+
+#site-longhorn-toggle:hover {
+  color: #bf5700;
+}
+
+#site-longhorn-toggle .track {
+  position: relative;
+  width: 30px;
+  height: 17px;
+  border-radius: 9px;
+  background: #ccc;
+  transition: background .2s ease;
+}
+
+#site-longhorn-toggle .track::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .3);
+  transition: transform .2s ease;
+}
+
+#site-longhorn-toggle[aria-checked="true"] {
+  color: #bf5700;
+}
+
+#site-longhorn-toggle[aria-checked="true"] .track {
+  background: #bf5700;
+}
+
+#site-longhorn-toggle[aria-checked="true"] .track::after {
+  transform: translateX(13px);
+}
+
+#site-longhorn-toggle:focus-visible {
+  outline: 2px solid #1772d0;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   #site-longhorn,
   .site-longhorn-flower,

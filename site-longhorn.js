@@ -1,9 +1,35 @@
 // A 3D Texas longhorn that lives in the corner of the page.
 // Double-click the page to plant bluebonnets for it to graze, wave the cursor near it
 // like a matador's cape to make it charge, hover to get its attention, or click it.
+// It only appears once the visitor switches on "Fun mode"; the choice is remembered.
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 
-if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) start();
+const toggle = document.getElementById('site-longhorn-toggle');
+const STORAGE_KEY = 'site-longhorn-on';
+
+if (toggle && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) setUpToggle();
+
+function setUpToggle() {
+  let longhorn = null;
+  const remembered = () => { try { return localStorage.getItem(STORAGE_KEY) === '1'; } catch (error) { return false; } };
+  const apply = on => {
+    if (on && !longhorn) longhorn = start();
+    if (on && !longhorn) {
+      // No WebGL: there is nothing to switch on.
+      toggle.hidden = true;
+      return;
+    }
+    toggle.setAttribute('aria-checked', String(on));
+    if (longhorn) longhorn[on ? 'show' : 'hide']();
+  };
+  toggle.hidden = false;
+  toggle.addEventListener('click', () => {
+    const on = toggle.getAttribute('aria-checked') !== 'true';
+    try { localStorage.setItem(STORAGE_KEY, on ? '1' : '0'); } catch (error) { /* private mode */ }
+    apply(on);
+  });
+  apply(remembered());
+}
 
 function start() {
   const canvas = document.createElement('canvas');
@@ -16,7 +42,7 @@ function start() {
     renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
   } catch (error) {
     canvas.remove();
-    return;
+    return null;
   }
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -272,6 +298,8 @@ function start() {
   let hitBox = null;
   const flowers = [];
   let meal = null;
+  let enabled = false;
+  let frame = 0;
 
   // Smoothed pose values; each state sets targets and the rig eases toward them.
   const pose = { lie: 0, neck: 0, head: 0, look: 0, walk: 0, gallop: 0, paw: 0, chew: 0, pitch: 0, blink: 0 };
@@ -765,7 +793,7 @@ function start() {
 
     render(time);
     if (frameCount++ % 8 === 0) updateHitBox();
-    requestAnimationFrame(tick);
+    frame = requestAnimationFrame(tick);
   }
 
   // --- input ------------------------------------------------------------------
@@ -775,6 +803,7 @@ function start() {
   }
 
   document.addEventListener('click', event => {
+    if (!enabled) return;
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     if (isInteractive(event.target)) return;
     if (overLonghorn(event.clientX, event.clientY)) {
@@ -816,7 +845,7 @@ function start() {
     return false;
   }
 
-  const plantable = event => event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey &&
+  const plantable = event => enabled && event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey &&
     !isInteractive(event.target) && !overLonghorn(event.clientX, event.clientY) && !pointIsOnText(event.clientX, event.clientY);
 
   // Double-clicking blank space would otherwise select stray nearby text; double-clicking a word still selects it.
@@ -837,6 +866,7 @@ function start() {
   });
 
   document.addEventListener('pointermove', event => {
+    if (!enabled) return;
     const over = overLonghorn(event.clientX, event.clientY) && !isInteractive(event.target);
     if (over !== hovering) {
       hovering = over;
@@ -845,12 +875,36 @@ function start() {
     }
     trackCape(event);
   }, { passive: true });
-  window.addEventListener('resize', setHome, { passive: true });
+  window.addEventListener('resize', () => { if (enabled) setHome(); }, { passive: true });
 
-  setHome();
-  enter('idle');
-  render(now());
-  updateHitBox();
-  canvas.classList.add('ready');
-  requestAnimationFrame(tick);
+  function show() {
+    if (enabled) return;
+    enabled = true;
+    // Always walk back on stage from the corner, rested and calm.
+    position = null;
+    hop = 0;
+    speed = 0;
+    facing = -1;
+    yaw = yawFor(-1);
+    enter('idle');
+    setHome();
+    render(now());
+    updateHitBox();
+    canvas.classList.add('ready');
+    lastFrameTime = now();
+    frame = requestAnimationFrame(tick);
+  }
+
+  function hide() {
+    if (!enabled) return;
+    enabled = false;
+    cancelAnimationFrame(frame);
+    canvas.classList.remove('ready');
+    flowers.slice().forEach(removeFlower);
+    meal = null;
+    hovering = false;
+    document.body.classList.remove('site-longhorn-hover');
+  }
+
+  return { show, hide };
 }
